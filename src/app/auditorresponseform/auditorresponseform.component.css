@@ -1,0 +1,170 @@
+.audit-card label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #555;
+}
+
+.detail-box div {
+  padding: 6px 10px;
+  background: #f7f7f7;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.card {
+  border-radius: 6px;
+}
+
+.card-header {
+  font-size: 16px;
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+.static-field {
+  padding: 8px 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.action-icon:hover {
+  color: #0d6efd;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
+
+.audit-card h5 {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85rem;
+  letter-spacing: .3px;
+}
+
+button.btn-outline-primary:hover {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.info-message {
+  background: #f8f9fa;
+  border-left: 4px solid #0d6efd;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.info-message ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.info-message li {
+  margin-bottom: 6px;
+}
+
+.file-name {
+  font-size: 13px;
+}
+
+
+
+.toggle-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: #eef2ff;
+  color: #3f51b5;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.count {
+  background: #3f51b5;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.remarks-box {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Header */
+.remarks-header {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.remarks-header .title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Body */
+.remarks-body {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Remark Card */
+.remark-card {
+  background: #f8f9fb;
+  border-left: 3px solid #3f51b5;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+/* Text */
+.remark-text {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+/* Footer */
+.remark-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #666;
+}
+
+/* Toggle Badge */
+.toggle-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: #eef2ff;
+  color: #3f51b5;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toggle-badge i {
+  transition: 0.3s;
+}
+
+.toggle-badge i.rotate {
+  transform: rotate(180deg);
+}

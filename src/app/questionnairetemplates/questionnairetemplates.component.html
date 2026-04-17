@@ -1,0 +1,355 @@
+<div class="audit-page">
+
+  <!-- Top Navigation -->
+  <div class="top-nav mb-3">
+    <button class="back-btn d-flex align-items-center" routerLink="/dashboard">
+      <i class="fa-solid fa-arrow-left me-2"></i>
+      Back to Dashboard
+    </button>
+  </div>
+
+  <!-- Page Title -->
+  <div class="page-header mb-4">
+    <h2 class="page-title fw-bold">
+      <i class="fa fa-user-check me-2"></i> Questionnaire Templates
+    </h2>
+    <p class="page-subtitle text-muted">Create and manage pre-questionnaire templates</p>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="status-grid">
+
+    <div class="status-card gradient-blue shadow-sm">
+      <h5 class="label">Total Templates</h5>
+      <div class="value-section">
+        <span class="value">{{ totalTemplates }}</span>
+        <i class="fa fa-file-alt"></i>
+      </div>
+    </div>
+
+    <div class="status-card gradient-yellow shadow-sm">
+      <h5 class="label">Total Questions</h5>
+      <div class="value-section">
+        <span class="value">{{ totalQuestions }}</span>
+        <i class="fa fa-file-invoice"></i>
+      </div>
+    </div>
+
+    <div class="status-card gradient-green shadow-sm">
+      <h5 class="label">Total Basic Templates</h5>
+      <div class="value-section">
+        <span class="value">{{ totalBasicTemplates }}</span>
+        <i class="fa fa-file"></i>
+      </div>
+    </div>
+
+    <div class="status-card gradient-red shadow-sm">
+      <h5 class="label">Total Non Basic</h5>
+      <div class="value-section">
+        <span class="value">{{ totalNonBasicTemplates }}</span>
+        <i class="fa fa-layer-group"></i>
+      </div>
+    </div>
+
+  </div>
+
+ <br/>
+
+ <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>All Templates</h5>
+    <button class="btn btn-primary" (click)="createModal(createQuestionTemplate)">
+      <i class="bi bi-plus-lg"></i> Add Template
+    </button>
+  </div>
+
+  <p class="text-muted">Pre-questionnaire templates for audits</p>
+
+  <!-- Search Box -->
+  <div class="row mb-3">
+    <div class="col-md-9">
+      <input type="text" class="form-control" name="search" placeholder="🔍 Search..." [(ngModel)]="searchText" />
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
+      </select>
+    </div>
+  </div>
+  <!-- Templates Table -->
+  <div class="table-responsive">
+     <table class="table table-hover table-bordered align-middle modern-table">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Template Name</th>
+          <th>Category</th>
+          <th>Questions</th>
+          <th>Type</th>
+          <th>Created&nbsp;By</th>
+          <th>Created&nbsp;At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+          <tr *ngFor="let cat of filteredData | slice: (page - 1) * pageSize : page * pageSize; let i = index;">
+          <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+          <td>{{ cat.name }}</td>
+          <td>{{ cat.categoryName }}</td>
+          <td>
+            <span class="badge badge-questions">
+              {{ cat.questions }} questions
+            </span>
+          </td>
+          <td>{{ cat.type }}</td>
+          <td>{{ cat.createdBy }}</td>
+          <td>{{ cat.createdAt }}</td>
+
+          <td>
+              <div class="action-group">
+                <button class="action-btn view" title="View" (click)="viewTemplate(viewQuestionTemplate,cat.id)">
+                  <i class="bi bi-eye"></i>
+                </button>
+
+                <button class="action-btn edit" title="Edit" (click)="editTemplate(createQuestionTemplate,cat.id)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+
+                <button class="action-btn delete" title="Delete" (click)="openModal(deleteModal, cat.id, cat.name)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+          </td>
+        </tr>
+      </tbody>
+
+    </table>
+  </div>
+   <!-- Pagination -->
+    <nav>
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="page === 1">
+          <button class="page-link" (click)="prevPage()">Prev</button>
+        </li>
+  
+        <li
+          class="page-item"
+          *ngFor="let p of visiblePages"
+          [class.active]="p === page"
+        >
+          <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
+        </li>
+  
+        <li class="page-item" [class.disabled]="page === totalPages">
+          <button class="page-link" (click)="nextPage()">Next</button>
+        </li>
+      </ul>
+    </nav>
+</div>
+
+<ng-template #createQuestionTemplate let-modal>
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-user-check me-2"></i> Create Question Template</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+      </div>
+      <div class="modal-body">    
+        <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
+        <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
+    
+        <form [formGroup]="questionTemplateForm" (ngSubmit)="addQuestionTemplate(questionTemplateForm.value)" class="was-validated">
+            <div class="row g-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                    <label class="form-label">Question Category</label>
+                    <select class="form-select" formControlName="categoryName">
+                        <option value="" disabled selected>Select Category</option>
+                        <option *ngFor="let category of categories" [value]="category.id">{{ category.categoryName }}</option>
+                    </select>
+                    <ul class="hint-text">
+                        <li>Select the question category for the question</li>
+                        <li>This helps organize questions by type or subject</li>
+                    </ul>
+                    </div>
+                    <div class="col-md-4">
+                    <label class="form-label">Template Name</label>
+                    <input type="text" class="form-control" formControlName="name" placeholder="Enter template name"/>
+                    <ul class="hint-text">
+                        <li>Provide a descriptive name for the template</li>
+                        <li>This helps identify the template's purpose</li>
+                    </ul>
+                    </div>
+                    <div class="col-md-4">
+                    <label class="form-label">Template Type</label>
+                    <div class="template-type-container">
+                    <label class="switch">
+                        <input type="checkbox" [checked]="status" (change)="toggleStatus(status)">
+                        <span class="slider round"></span>
+                    </label>
+
+                    <span class="template-label" [ngClass]="status ?  'basic-status' : 'nonbasic-status'">
+                        {{ status ? 'Basic Template' : 'Non Basic Template' }}
+                    </span>
+                    </div>
+
+                    <ul class="hint-text">
+                    <li>Select the template type. Basic templates are standard</li>
+                    <li>While non-basic templates have additional features</li>
+                    </ul>
+                    </div>                   
+                </div>
+                <br/>
+            </div>
+            <br/>
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark">
+                    <tr>
+                    <th>Sl No</th>
+                    <th>Question</th>
+                    <th>Benchmark if any</th>
+                   
+                    <th><button type="button" class="btn btn-sm btn-success" (click)="addQuestion()"><i class="bi bi-plus-lg"> </i>Add</button></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let component of questionComponent; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>
+                        <textarea type="text" class="form-control"
+                            [(ngModel)]="component.question"
+                            [ngModelOptions]="{standalone: true}"></textarea>
+                    </td>
+                    <td>
+                        <textarea type="text" class="form-control"
+                            [(ngModel)]="component.benchmark"
+                            [ngModelOptions]="{standalone: true}"></textarea>
+                             <input type="hidden" class="form-control"
+                            [(ngModel)]="component.information"
+                            [ngModelOptions]="{standalone: true}" novalidate />
+                    </td>
+                    
+                       
+                    
+                    <td>
+                        <button type="button" class="btn btn-danger" (click)="removeQuestions(deleteModalQuestion, component.id, component.index)">
+                        <i class="fal bi-trash-fill"></i>
+                        </button>
+                    </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Buttons -->
+             <hr/>
+            <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-primary me-4" [disabled]="questionTemplateForm.invalid">{{btnName}}</button>
+            <button type="reset" class="btn btn-warning" onclick="questiontemplateReset()">Reset</button>
+            </div>
+        </form>
+        <br/>
+        <div class="info-message">
+            <ul>
+                <li>Create questionnaire templates for different categories.</li>
+                <li>Use information section to add details about the question.</li>
+                <li>Information will be displayed to users when they answer the question.</li>
+                <li>Use template type to categorize templates as basic or non-basic.</li>
+            </ul>
+            </div>
+      </div>
+</ng-template>
+
+<ng-template #deleteModal let-modal>
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
+        </h5>
+        <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3">
+          You are about to delete this item. Please confirm before proceeding.
+        </p>
+        <div class="border rounded p-2 bg-light text-danger small">
+          <i class="fa fa-exclamation-circle me-1"></i>
+          This operation is irreversible.
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-light border" (click)="modal.dismiss()">
+          Cancel
+        </button>
+        <button class="btn btn-danger shadow-sm" (click)="deleteTemplate(templateId, 'deleteModal')"> Delete Permanently </button>
+      </div>
+</ng-template>
+
+<ng-template #deleteModalQuestion let-modal>
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
+        </h5>
+        <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3">
+          You are about to delete this item. Please confirm before proceeding.
+        </p>
+        <div class="border rounded p-2 bg-light text-danger small">
+          <i class="fa fa-exclamation-circle me-1"></i>
+          This operation is irreversible.
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button class="btn btn-light border" (click)="modal.dismiss()">
+          Cancel
+        </button>
+        <button class="btn btn-danger shadow-sm" (click)="deleteQuestion(questionId, questionIndex, 'deleteModalQuestion')"> Delete Permanently </button>
+      </div>
+</ng-template>
+
+<ng-template #viewQuestionTemplate let-modal>
+      <div class="modal-header">
+        <h5 class="modal-title">Audit Questionnaire Template</h5>
+        <!-- PRINT ICON BUTTON -->
+        <button class="btn btn-sm btn-icon me-2" (click)="printPDF()" title="Print" style="border:none; background:transparent;">
+            <i class="fa fa-print" style="font-size:16px;"></i>
+        </button>
+
+        <!-- CLOSE BUTTON -->
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+
+
+      </div>
+      <div class="modal-body" id="printSection">
+        <h3 class="text-center mb-3 title-text">
+            {{questionTemplate?.name}}
+        </h3>
+
+        <table class="table table-bordered table-sm print-table">
+           <thead>
+              <tr>
+                  <th width="7%">Sl No</th>
+                  <th width="43%">Description</th>
+
+                  <th *ngIf="status" width="25%">Details</th>
+                  <th *ngIf="!status" width="25%">Relevant Benchmark</th>
+
+                  
+              </tr>
+          </thead>
+
+            <tbody>
+                <tr *ngFor="let item of questionTemplate?.questionsList; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td [innerHTML]="item.question"></td>
+                    <td [innerHTML]="item.benchmark"></td>
+                    
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-primary" (click)="printPDF()">Print / Save PDF</button>
+        <button class="btn btn-secondary" (click)="modal.dismiss()">Close</button>
+    </div>
+</ng-template>

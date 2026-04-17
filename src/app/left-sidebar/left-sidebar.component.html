@@ -1,0 +1,50 @@
+<div
+  class="sidenav d-flex flex-column justify-between"
+  [ngClass]="isLeftSidebarCollapsed() ? 'sidenav-collapsed' : ''"
+>
+  <!-- Logo -->
+  <div class="logo-container">
+    <button class="logo" (click)="toggleCollapse()">
+      <i class="fal fa-bars"></i>
+    </button>
+    @if (!isLeftSidebarCollapsed()) {
+        <div class="logo-text">
+    <img src="images/cisf-logo.png" alt="CISF Logo">
+    <span>Q C M T</span>
+    
+</div>
+      <button class="btn-close" (click)="closeSidenav()">
+        <i class="fal fa-times close-icon"></i>
+      </button>
+    }
+  </div>
+
+  <!-- Nav -->
+  <div class="sidenav-nav flex-grow-1">
+  <li *ngFor="let item of permissions; let i = index" class="sidenav-nav-item">
+    <a
+      class="sidenav-nav-link"
+      [routerLink]="item.permissionRoutelink"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <i class="sidenav-link-icon" [class]="item.permissionIcon"></i>
+      <span class="sidenav-link-text" *ngIf="!isLeftSidebarCollapsed()">
+        {{ item.permissionLabel }}
+      </span>
+    </a>
+  </li>
+</div>
+
+  <!-- Profile Section -->
+  <div class="sidenav-profile">
+    <div class="profile-info" *ngIf="!isLeftSidebarCollapsed()">
+      <i class="fal fa-user-circle profile-icon"></i>
+      <span class="profile-name">{{ usernameData }}</span>
+    </div>
+    <button class="logout-btn" (click)="logout()">
+      <i class="fal fa-sign-out-alt"></i>
+      <span *ngIf="!isLeftSidebarCollapsed()">Logout</span>
+    </button>
+  </div>
+</div>

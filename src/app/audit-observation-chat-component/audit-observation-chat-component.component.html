@@ -1,0 +1,97 @@
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="top">
+    <div class="hq">APS HQRS</div>
+    <div class="caso">CASO</div>
+  </div>
+
+  <!-- Basic Info -->
+  <div class="info">
+    <div><span>Letter No :</span> {{data?.letterNo}}</div>
+    <div><span>Letter Date :</span> {{data?.letterDate}}</div>
+  </div>
+
+  <!-- Observation & Details -->
+<div class="obs-details">
+
+  <!-- Observation -->
+  <div class="observation">
+    <div class="title">Observation by APS HQrs</div>
+    <div class="obs-box">
+        {{data?.observation}}
+    </div>
+    <div class="msg-time">
+        {{data?.entryTime}}
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="details">
+    <div class="title">Details</div>
+    <div class="details-box">
+      <div><b>Remarks :</b> {{data?.remarks}}</div>
+      <div><b>Type Criticality :</b> {{data?.typeCriticality}}</div>
+      <div><b>Compliance Status :</b> {{data?.complianceStatus}}</div>
+    </div>
+  </div>
+
+</div>
+<div *ngFor="let row of observationMessages; let i = index">
+  <div *ngIf="row.status === 'CASO'" class="section single">
+    <div>
+      <div class="title">Compliance Status by CASO</div>
+      <div class="card success">
+
+        <div class="sub-info">
+          <div><span>Letter No:</span> {{row.letterNo}}</div>
+          <div><span>Letter Date:</span> {{row.letterDate}}</div>
+        </div>
+
+        <div class="text">
+          {{row.complianceMessage}}
+        </div>      
+
+        <div class="download" *ngIf="row.attachmentStatus === 'Attached'">
+          <a [href]="buildDownloadUrl(row.filePath, row.fileName)"
+                   target="_blank" style="text-decoration: none;">
+                 <i class="bi bi-paperclip"></i> Download
+                </a>
+          
+        </div>       
+      </div>
+        <div class="msg-time">
+            {{row.entryDate}} | {{row.entryTime}}
+        </div>
+    </div>    
+  </div>
+  <div *ngIf="row.status === 'APSHQrs'" class="section single">
+    <div class="section single">
+      <div class="observation">
+        <div class="title">Observation by APS HQrs</div>
+        <div class="obs-box">
+            <div class="sub-info">
+              <div><span>Letter No:</span> {{row.letterNo}}</div>
+              <div><span>Letter Date:</span> {{row.letterDate}}</div>
+            </div>
+            <div class="text">
+            {{row.complianceMessage}}
+            </div>
+        </div>
+        <div class="msg-time">
+             {{row.entryDate}} | {{row.entryTime}}        
+        </div>
+      </div>
+    </div>
+  <div>
+</div>
+
+
+
+ 
+  
+  
+
+
+
+

@@ -1,0 +1,21 @@
+{
+    "/v1/qcmt/auth": {
+      "target": "http://localhost:8060",
+      "secure": false,
+      "changeOrigin": true,
+      "logLevel": "debug"
+    },
+    "/v1/qcmt/master": {
+      "target": "http://localhost:8060",
+      "secure": false,
+      "changeOrigin": true,
+      "logLevel": "debug"
+    },
+    "/v1/qcmt/rbac": {
+      "target": "http://localhost:8060",
+      "secure": false,
+      "changeOrigin": true,
+      "logLevel": "debug"
+    }
+  }
+  

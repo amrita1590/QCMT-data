@@ -1,0 +1,45 @@
+<div>
+  <!-- Profile Image -->
+  <div class="profile-pic">
+    <img [src]="profileImage || 'images/default-avatar.png'" alt="Profile" /><br/>
+    <input type="file" (change)="onFileSelected($event)" class="btn upload"/>
+  </div>
+
+  <!-- Form -->
+  <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
+  <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
+  <form>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" [(ngModel)]="user.fullName" name="fullName" />
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" [(ngModel)]="user.email" name="email" disabled=emailStatus/>
+      <span class="warning-msg">Please get in touch with admin to change email</span>
+    </div>
+
+    <div class="form-group">
+      <label>Mobile</label>
+      <input type="text" [(ngModel)]="user.mobile" name="mobile" maxlength="10" />
+    </div>
+
+    <div class="form-group">
+      <label>Institute Name</label>
+      <input type="text" [(ngModel)]="user.instituteName" name="instituteName" />
+    </div>
+
+    <div class="form-group">
+      <label>Address</label>
+      <textarea [(ngModel)]="user.address" name="address"></textarea>
+    </div>
+    
+
+    <!-- Buttons -->
+    <div class="btn-group">
+      <button type="button" class="btn cancel">Cancel</button>
+      <button type="submit" class="btn save" (click)="updateProfile()">Update</button>
+    </div>
+  </form>
+</div>

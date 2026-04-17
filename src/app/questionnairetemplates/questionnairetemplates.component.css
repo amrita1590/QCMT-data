@@ -1,0 +1,555 @@
+/* Page Header */
+.page-header {
+  margin-bottom: 10px;
+}
+
+.page-title {
+  font-size: 26px;
+  color: #2c3e50;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  margin-top: -6px;
+}
+/* Status Cards */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.status-card {
+  padding: 18px;
+  border-radius: 10px;
+  color: white;
+  position: relative;
+}
+
+.status-card .label {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.value-section {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26px;
+  font-weight: bold;
+  align-items: center;
+}
+
+.gradient-blue {
+  background: linear-gradient(135deg, #007bff, #4dabff);
+}
+
+.gradient-yellow {
+  background: linear-gradient(135deg, #ffc107, #ffde59);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #28a745, #6bd47d);
+}
+
+.gradient-red {
+  background: linear-gradient(135deg, #dc3545, #ff6b81);
+}
+
+/* Search Box */
+.search-box {
+  border-radius: 8px;
+  padding-left: 12px;
+}
+
+/* Modern Table */
+.modern-table th {
+  font-size: 14px;
+  letter-spacing: .4px;
+}
+
+.modern-table tbody td {
+  vertical-align: middle;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.Planned { background: #cce5ff; color: #004085; }
+.status-badge.InProgress { background: #fff3cd; color: #856404; }
+.status-badge.Completed { background: #d4edda; color: #155724; }
+.status-badge.ActionRequired { background: #f8d7da; color: #721c24; }
+
+/* Type Badge */
+/* Badges */
+.type-badge {
+  background: #f0f2f7;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Eye Icon Hover */
+.pointer {
+  cursor: pointer;
+}
+
+.pointer:hover {
+  color: #007bff;
+}
+
+/* Pagination */
+.pagination .page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+
+.summary-card {
+  border-radius: 12px;
+  background: #f7fafc;
+}
+
+.error-msg {
+    color: #820000;
+    font-size: 0.85rem;
+}
+.success-msg {
+    color: #820000;
+    font-size: 0.85rem;
+}
+.icon-box {
+  background: #d3d4d4;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.icon-total-templates { background: #eef2ff; color: #4f46e5; }
+.icon-total-questions { background: #e8f7ef; color: #16a34a; }
+.icon-basic-templates { background: #e7f3ff; color: #1d4ed8; }
+.icon-nonbasic-templates { background: #f3e8ff; color: #7e22ce; }
+
+.icon-box i {
+  font-size: 22px;
+  color: #1b57d6;
+}
+
+.create-btn {
+  padding: 10px 20px;
+  font-size: 15px;
+}
+
+.badge-questions {
+  background: #e6f0ff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1b57d6;
+}
+
+.action-icon {
+  cursor: pointer;
+  font-size: 16px;
+}
+.hint-text {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: #6c757d;
+  }
+  .hint-text li {
+    line-height: 1.4;
+  }
+
+  .selected-classes {
+  margin-top: 12px;
+}
+
+.selected-classes .label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.class-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.chip.pass {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.chip.fail {
+  background: #fdecea;
+  color: #c82333;
+}
+
+.info-message {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    padding: 10px 14px;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+
+  .info-message ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .info-message li {
+    margin-bottom: 6px;
+  }
+
+
+/* Toggle Button */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 65px;
+  height: 32px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 22px;
+  top: 0; left: 0;
+  right: 0; bottom: 0;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 28px;
+  width: 28px;
+  background-color: white;
+  border-radius: 50%;
+  left: 2px;
+  bottom: 2px;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #007bff;
+}
+
+input:checked + .slider:before {
+  transform: translateX(33px);
+}
+.edit-icon {
+  cursor: pointer;
+  color: #0d6efd;
+}
+
+.delete-icon {
+  cursor: pointer;
+}
+.modal-container {
+  width: 450px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+
+
+.summary-card {
+  border-radius: 12px;
+  background: #f7fafc;
+}
+
+.error-msg {
+    color: #820000;
+    font-size: 0.85rem;
+}
+.success-msg {
+    color: #820000;
+    font-size: 0.85rem;
+}
+.icon-box {
+  background: #d3d4d4;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.icon-total-templates { background: #eef2ff; color: #4f46e5; }
+.icon-total-questions { background: #e8f7ef; color: #16a34a; }
+.icon-basic-templates { background: #e7f3ff; color: #1d4ed8; }
+.icon-nonbasic-templates { background: #f3e8ff; color: #7e22ce; }
+
+.icon-box i {
+  font-size: 22px;
+  color: #1b57d6;
+}
+
+.create-btn {
+  padding: 10px 20px;
+  font-size: 15px;
+}
+
+.badge-questions {
+  background: #e6f0ff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1b57d6;
+}
+
+.action-icon {
+  cursor: pointer;
+  font-size: 16px;
+}
+.hint-text {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: #6c757d;
+  }
+  .hint-text li {
+    line-height: 1.4;
+  }
+
+  .selected-classes {
+  margin-top: 12px;
+}
+
+.selected-classes .label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.class-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.chip.pass {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.chip.fail {
+  background: #fdecea;
+  color: #c82333;
+}
+
+.info-message {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    padding: 10px 14px;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+
+  .info-message ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .info-message li {
+    margin-bottom: 6px;
+  }
+
+  .form-group {
+  margin-bottom: 12px;
+}
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+textarea.form-control {
+    background-image: none !important;
+}
+input.form-control {
+    background-image: none !important;
+}
+select.form-select {
+    background-image: none !important;
+}
+
+.template-type-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;            /* spacing between toggle & text */
+  margin-bottom: 12px;
+}
+
+/* Make the label text aligned perfectly */
+.template-label {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+}
+
+/* When active, change color */
+.active-label {
+  color: #1a73e8;       /* same as your blue in screenshot */
+}
+.basic-status {
+  color: #055c02;
+}
+
+.nonbasic-status {
+  color: #0d6efd;
+}
+
+.title-text {
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #003f7f;
+}
+
+.print-table th, .print-table td {
+    border: 1px solid #000 !important;
+}
+
+@media print {
+
+    /* Hide entire page except print section */
+    body * {
+        visibility: hidden !important;
+        background: transparent !important;
+    }
+
+    /* Show only the printable area */
+    #printSection, #printSection * {
+        visibility: visible !important;
+    }
+
+    /* Remove background color / images */
+    html, body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #fff !important;
+    }
+
+    /* Position printable section at top-left */
+    #printSection {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 90%;
+        background: #fff !important;
+    }
+
+    /* Remove modal UI */
+    .modal,
+    .modal-backdrop,
+    .modal-dialog,
+    .modal-content {
+        background: #fff !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* Hide footer / buttons */
+    .modal-footer,
+    button {
+        display: none !important;
+    }
+}
+
+/* Top Navigation */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: #e8efff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  background: #e6e6e6;
+}
+
+.action-group{
+  display:flex;
+  gap:8px;
+}
+
+.action-btn{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  border:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Colors */
+.view{
+  background:#3498db;
+}
+.edit{
+  background:#f39c12;
+}
+.delete{
+  background:#e74c3c;
+}
+
+/* Hover effect */
+.action-btn:hover{
+  transform: scale(1.1);
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}

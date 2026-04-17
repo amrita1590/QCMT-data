@@ -1,0 +1,51 @@
+<div class="container">
+  <div *ngIf="errorStatus" class="text-danger">{{ errorMsg }}</div> 
+  <div *ngIf="successStatus" class="text-success">{{ successMsg }}</div>
+  <div class="row align-items-center">
+    <div class="col">
+      
+    </div>
+    <div class="col">
+        <label for="roleName" class="form-label">Role Name</label>
+        <select id="role" [(ngModel)]="selectedRole"  class="form-select" (change)="onRoleChange($event)">  
+            <option value="">- Select Role -</option>
+            <option *ngFor="let role of roles" [value]="role.id">{{ role.roleName }}</option>
+        </select> 
+    </div>
+    <div class="col">
+      
+    </div>
+  </div>
+
+</div>
+<hr/>
+<div class="containeritem justify-content-center">
+  <div>
+    <h6>Available Permission:</h6>
+    <ul>
+      <li *ngFor="let permission of availablePermissions" (click)="selectAvailable(permission)" [class.selected]="permission === selectedAvailable">
+        {{ permission.permissionLabel }}
+      </li>
+    </ul>
+  </div>
+
+  <div class="buttons">
+    <button class="btn-3d-arrow" (click)="assignPermission()" [disabled]="!selectedAvailable"><i class="bi bi-chevron-double-right"></i></button>
+    <button class="btn-3d-arrow" (click)="removePermission()" [disabled]="!selectedAssigned"><i class="bi bi-chevron-double-left"></i></button>
+  </div>
+
+  <div>
+    <h6>Assigned Permission:</h6>
+    <ul>
+      <li *ngFor="let permission of assignedPermissions" (click)="selectAssigned(permission)" [class.selected]="permission === selectedAssigned">
+        {{ permission.permissionLabel }}
+      </li>
+    </ul>
+  </div>
+</div>
+<hr/>
+<!-- Buttons -->
+<div class="d-flex justify-content-center">
+    <button type="submit" class="btn btn-primary me-4" (click)="saveAssignedPermission()"><i class="bi bi-floppy-fill"></i> Submit</button>
+    <button type="submit" class="btn btn-warning"><i class="bi bi-x-square"></i> Reset</button>
+</div>

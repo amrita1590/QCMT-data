@@ -1,0 +1,19 @@
+.container {
+  max-width: 900px;
+}
+
+.alert {
+  font-weight: bold;
+}
+.error-msg {
+    color: rgb(226, 3, 3);
+    font-size: 14px;
+    margin-top: 5px;
+    font-style: italic;
+}
+.success-msg {
+    color: rgb(8, 129, 28);
+    font-size: 14px;
+    margin-top: 5px;
+    font-style: italic;
+}

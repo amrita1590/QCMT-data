@@ -1,0 +1,110 @@
+    <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Home</a></li>
+      <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Unit Master</li>
+    </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+          Unit Master
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Create & Update - Unit, CASO.</h5>
+          <p class="card-text">Use this form to create or update Unit & CASO details.</p>
+          @if (status) {
+            <div class="alert alert-info">
+               {{statusMsg}}
+            </div>
+          }
+          <form [formGroup]="unitDetailsForm" (ngSubmit)="addUnitDetails(unitDetailsForm.value)">
+            <div class="row mb-3">
+             <div class="col-lg-4">
+                <label for="unitName">Unit Name</label>
+                <input type="text" class="form-control" id="unitName" placeholder="Enter Unit" formControlName="unitName" minlength="2" 
+                [class.is-invalid]="unitName.invalid && (unitName.touched || unitName.dirty)"
+                    [class.is-valid]="unitName.valid && (unitName.touched || unitName.dirty)">
+                
+                    <div *ngIf="casoId.hasError('required') && (casoId.touched || casoId.dirty)" class="invalid-feedback">
+                        <div *ngIf="casoId.hasError('required')">
+                            Unit Name is required.
+                        </div>
+                        <div *ngIf="casoId.hasError('minlength')">
+                            Name must be at least 2 characters long.
+                        </div>
+                        <div *ngIf="casoId.hasError('maxlength')">
+                            Name should not be more than 20 characters long.
+                        </div>
+                      </div>
+              </div> 
+              
+             <div class="col-lg-4">
+                <label>Unit CASO</label>
+                <div class="input-group">
+                  <select
+                    class="form-select"
+                    formControlName="casoId"
+                    [class.is-invalid]="casoId.invalid && (casoId.touched || casoId.dirty)"
+                    [class.is-valid]="casoId.valid && (casoId.touched || casoId.dirty)">
+                    <option value="" disabled selected>-- Select CASO --</option>
+
+                    <option *ngFor="let caso of casoList" [value]="caso.id">
+                       {{ caso.cisfno }}-{{ caso.rank }}&nbsp;{{ caso.name }}
+                    </option>
+                  </select>
+
+                  <div *ngIf="casoId.hasError('required') && (casoId.touched || casoId.dirty)" class="invalid-feedback">
+                    CASO is required.
+                  </div>
+                </div>
+              </div>
+
+
+            
+               <div class="col-lg-4">
+                <label for="isAirport">Is ASG Unit</label>
+                <select class="form-control" id="isAirport" formControlName="isAirport">
+  <option value="" disabled>Select Is ASG Unit</option>
+  <option value="true">Yes</option>
+  <option value="false">No</option>
+</select></div>
+            </div>
+            <div class="row mb-4">
+              <div class="col-lg-4">
+                <label for="zone">Zone</label>
+                <select class="form-control" id="zone" formControlName="zone">
+  <option value="" disabled>Select Zone</option>
+  <option value="NZ">Norh Zone</option>
+  <option value="WZ">West Zone</option>
+  <option value="SZ">South Zone</option>
+  <option value="ENEZ"> East & North East Zone</option>
+ 
+</select>
+            </div>
+            
+             
+              <div class="col-lg-4">
+                <label for="sector">Sector</label>
+                <select class="form-control" id="sector" formControlName="sector">
+  <option value="" disabled>Select Sector</option>
+  <option value="APS I">APS I</option>
+  <option value="APS II">APS II</option>
+</select>
+            </div>
+           <div class="col-lg-4">
+                <label for="addDetails">Additional Details</label>
+                <input type="text" class="form-control" id="addDetails" placeholder="Enter Additional Details" formControlName="addDetails">
+            </div></div>
+            
+            
+            <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-primary me-4" [disabled]="unitDetailsForm.invalid">{{btnName}}</button>
+            <button type="reset" class="btn btn-warning">Reset</button>
+            </div>
+          </form>
+        </div>
+    </div>
+
+    <app-unitdetails></app-unitdetails>
+        

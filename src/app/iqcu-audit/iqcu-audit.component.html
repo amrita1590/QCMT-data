@@ -1,0 +1,130 @@
+<div class="container-fluid mt-3">
+
+  <!-- HEADER -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">IQCU Audit Management</h4>
+      <span class="badge bg-primary">Quality Control & Compliance</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item" *ngFor="let tab of [
+      ['schedule','Audit Schedule'],
+      ['auditor','Auditor Master'],
+      ['category','Question Categories'],
+      ['questionnaire','Questionnaire'],
+      ['observation','Observations'],
+      ['compliance','Compliance']
+    ]">
+      <a class="nav-link"
+         [class.active]="activeTab === tab[0]"
+         (click)="setTab(tab[0])">
+        {{tab[1]}}
+      </a>
+    </li>
+  </ul>
+
+  <!-- AUDIT SCHEDULE -->
+  <div *ngIf="activeTab==='schedule'" class="card shadow-sm">
+    <div class="card-body px-4"><app-audit-schedule></app-audit-schedule></div>
+  </div>
+
+  <!-- AUDITOR MASTER -->
+  <div *ngIf="activeTab==='auditor'" class="card shadow-sm">
+    <div class="card-body px-4"><app-auditors></app-auditors></div>
+  </div>
+
+  <!-- QUESTION CATEGORY -->
+  <div *ngIf="activeTab==='category'" class="card shadow-sm">
+    <div class="card-header fw-bold">Question Categories</div>
+    <div class="card-body">
+      <form [formGroup]="categoryForm" >
+        <div class="row">
+          <div class="col-md-6">
+            <label>Category Name</label>
+            <input class="form-control" formControlName="categoryName">
+          </div>
+          <div class="col-md-3">
+            <label>Status</label>
+            <select class="form-select" formControlName="status">
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-warning mt-3">Save Category</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- QUESTIONNAIRE -->
+  <div *ngIf="activeTab==='questionnaire'" class="card shadow-sm">
+    <div class="card-header fw-bold">Questionnaire Template</div>
+    <div class="card-body">
+      <form [formGroup]="questionnaireForm" >
+        <div class="mb-2">
+          <label>Question</label>
+          <textarea class="form-control" formControlName="question"></textarea>
+        </div>
+        <div class="mb-2">
+          <label>Benchmark (Optional)</label>
+          <input class="form-control" formControlName="benchmark">
+        </div>
+        <button class="btn btn-info">Save Question</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- OBSERVATION -->
+  <div *ngIf="activeTab==='observation'" class="card shadow-sm">
+    <div class="card-header fw-bold">Observation Creation</div>
+    <div class="card-body">
+      <form [formGroup]="observationForm">
+        <div class="row">
+          <div class="col-md-3">
+            <label>Criticality</label>
+            <select class="form-select" formControlName="criticality">
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label>Compliance Status</label>
+            <select class="form-select" formControlName="complianceStatus">
+              <option>Compliant</option>
+              <option>Non-Compliant</option>
+              <option>In-Progress</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label>Responsible Officer</label>
+            <input class="form-control" formControlName="responsibleOfficer">
+          </div>
+          <div class="col-md-3">
+            <label>Deadline</label>
+            <input type="date" class="form-control" formControlName="deadline">
+          </div>
+        </div>
+        <button class="btn btn-danger mt-3">Create Observation</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div *ngIf="activeTab==='compliance'" class="card shadow-sm">
+    <div class="card-header fw-bold">Compliance Submission</div>
+    <div class="card-body">
+      <form [formGroup]="complianceForm">
+        <textarea class="form-control mb-2"
+          placeholder="Compliance Details"
+          formControlName="complianceDetails"></textarea>
+        <input type="file" class="form-control mb-2">
+        <button class="btn btn-success">Submit Compliance</button>
+      </form>
+    </div>
+  </div>
+
+</div>

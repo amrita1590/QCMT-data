@@ -1,0 +1,203 @@
+<div class="container-fluid mt-4">
+  <!-- Top Navigation -->
+  <div class="top-nav mb-3">
+    <button class="back-btn d-flex align-items-center" routerLink="/dashboard">
+      <i class="fa-solid fa-arrow-left me-2"></i>
+      Back to Dashboard
+    </button>
+  </div>
+
+  <!-- Page Title -->
+  <div class="page-header mb-4">
+    <h2 class="page-title fw-bold">
+      <i class="fa fa-user-check me-2"></i> Question Categories
+    </h2>
+    <p class="page-subtitle text-muted">Manage question category headings</p>
+  </div>
+  <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
+  <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card stats-card total-card">
+        <div class="card-body">
+          <h5>Total Categories</h5>
+          <div class="value-section">
+          <h2>{{ totalCategories }}</h2>
+          <i class="fa fa-file-alt"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card stats-card active-card">
+        <div class="card-body">
+          <h5>Active</h5>
+          <div class="value-section">
+          <h2>{{ activeCategories }}</h2>
+          <i class="fa fa-file-invoice"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card stats-card inactive-card">
+        <div class="card-body">
+          <h5>Inactive</h5>
+          <div class="value-section">
+          <h2>{{ inactiveCategories }}</h2>
+          <i class="fa fa-layer-group"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>All Categories</h5>
+    <button class="btn btn-primary" (click)="createModal(createCategoty)">
+      <i class="bi bi-plus-lg"></i> Add Category
+    </button>
+  </div>
+
+  <!-- Search Box -->
+  <div class="row mb-3">
+    <div class="col-md-9">
+      <input type="text" class="form-control" name="search" placeholder="🔍 Search..." [(ngModel)]="searchText" />
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
+      </select>
+    </div>
+  </div>
+  <!-- Table -->
+  <div class="table-responsive">
+     <table class="table table-hover table-bordered align-middle modern-table">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Audit Type</th>
+          <th>Category Name</th>
+          <th>Added By</th>
+          <th>Timestamp</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let cat of filteredData | slice: (page - 1) * pageSize : page * pageSize; let i = index;">
+          <td>{{ (page - 1) * pageSize + i + 1 }}</td> <!-- Serial number -->
+          <td>{{ cat.auditType }}</td>
+          <td>{{ cat.categoryName }}</td>
+          <td>{{ cat.createdBy }}</td>
+          <td>{{ cat.entryDate }}</td>
+
+          <td>
+            <label class="switch">
+              <input type="checkbox" [checked]="cat.status" (change)="toggleStatus(cat)">
+              <span class="slider round"></span>
+            </label>
+            <span [ngClass]="cat.status ? 'active-status' : 'inactive-status'">
+              {{ cat.status ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+
+          <td>
+            <i class="bi bi-pencil me-4 edit-icon" (click)="editCategoryDetails(createCategoty, cat.id)"></i>
+            <i class="bi bi-trash text-danger delete-icon" (click)="openModal(deleteModal, cat.id, cat.categoryName, cat.addDetails, cat.auditType)"></i>
+          </td>
+        </tr>
+      </tbody>
+
+    </table>
+  </div>
+  <!-- Pagination -->
+    <nav>
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="page === 1">
+          <button class="page-link" (click)="prevPage()">Prev</button>
+        </li>
+  
+        <li
+          class="page-item"
+          *ngFor="let p of visiblePages"
+          [class.active]="p === page"
+        >
+          <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
+        </li>
+  
+        <li class="page-item" [class.disabled]="page === totalPages">
+          <button class="page-link" (click)="nextPage()">Next</button>
+        </li>
+      </ul>
+    </nav>
+</div>
+
+<ng-template #deleteModal let-modal>
+  <div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold text-danger">
+      <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <p class="text-muted mb-3">
+      You are about to delete this item. Please confirm before proceeding.
+    </p>
+    <div class="border rounded p-2 bg-light text-danger small">
+      <i class="fa fa-exclamation-circle me-1"></i>
+      This operation is irreversible.
+    </div>
+  </div>
+  <div class="modal-footer border-0">
+    <button class="btn btn-light border" (click)="modal.dismiss()">
+      Cancel
+    </button>
+    <button class="btn btn-danger shadow-sm" (click)="confirmDelete(userId, 'deleteModal')"> Delete Permanently </button>
+  </div>
+</ng-template>
+
+<ng-template #createCategoty let-modal>
+      <div class="modal-header">
+        <h5 class="modal-title">Create Category</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+      </div>
+      <div class="modal-body">    
+        <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
+        <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
+    
+        <form [formGroup]="categoryDetailsForm" (ngSubmit)="addCategory(categoryDetailsForm.value)" class="was-validated">
+            <div class="form-group">
+            <label>Audit Type</label>
+            <select formControlName="auditType" name="auditType">
+                <option value="" disabled selected>Select Audit Type</option>
+                <option value="IQCU">IQCU</option>
+                <option value="CISF Internal">CISF Internal</option>
+                <option value="BCAS">BCAS</option>
+                <option value="ICAO">ICAO</option>                        
+            </select>
+            </div>
+
+            <div class="form-group">
+            <label>Category Name</label>
+            <input type="text" formControlName="categoryName" name="categoryName" />
+            </div>
+        
+            <div class="form-group">
+            <label>Description</label>
+            <textarea formControlName="addDetails" name="addDetails"></textarea>
+            </div>
+            
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-primary me-4" [disabled]="categoryDetailsForm.invalid">{{btnName}}</button>
+            <button type="reset" class="btn btn-warning" onclick="categoryReset()">Reset</button>
+            </div>
+        </form>
+      </div>
+</ng-template>

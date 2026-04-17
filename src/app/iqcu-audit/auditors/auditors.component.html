@@ -1,0 +1,84 @@
+<div class="mt-2 mx-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Auditor Management</h4>
+    <small class="text-muted">Add and manage auditor details</small>
+  </div>
+
+  <button class="btn btn-primary" (click)="openAddAuditorModal(addAuditorModal)">
+      + Add Auditor
+    </button>
+</div></div>
+  
+
+<!-- Modal Template -->
+<ng-template #addAuditorModal let-modal>
+  <div class="modal-header">
+    <i class="bi bi-person-check fs-2 text-primary me-2"></i>
+    <h5 class="modal-title">Add Auditor</h5>
+    <button type="button" class="btn-close" aria-label="Close"
+            (click)="modal.dismiss('Cross click')"></button>
+  </div>
+
+  <div class="modal-body px-4 py-3">
+    <!-- Auditor Form -->
+    <form [formGroup]="auditorsDetailsForm"
+          (ngSubmit)="addAuditorDetails(auditorsDetailsForm.value, modal)">
+
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">CISF ID</label>
+          <input class="form-control" formControlName="officerId">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Rank</label>
+          <input class="form-control" formControlName="rank">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Name</label>
+          <input class="form-control" formControlName="name">
+          <input type="hidden" class="form-control" formControlName="unit">
+        </div>
+
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Current Unit</label>
+           <div formGroupName="unitmaster">
+  <select formControlName="id" class="form-select">
+    <option value="">- Select Unit -</option>
+    <option *ngFor="let unit of units" [value]="unit.id">
+      {{ unit.unitName }}
+    </option>
+  </select>
+</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Email</label>
+          <input type="email" class="form-control" formControlName="email">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Mobile No</label>
+          <input type="text" class="form-control" formControlName="mobileno">
+        </div>
+
+      </div>
+
+      <div class="modal-footer mt-3 d-flex justify-content-center gap-3">
+        
+        <button type="submit" class="btn btn-success"
+                [disabled]="auditorsDetailsForm.invalid">
+          Submit
+        </button>
+        <button type="button" class="btn btn-warning"
+                (click)="modal.dismiss()">Cancel</button>
+      </div>
+
+    </form>
+  </div>
+</ng-template>
+    <app-auditors-detail></app-auditors-detail>

@@ -1,0 +1,17 @@
+  .background {
+    background-image: url('/images/attendo_web_background.jpg'); /* Path to your image */
+    background-repeat: repeat; /* Repeat the background image */
+    background-size: auto; /* Use original size of the image */
+  }
+
+  .container {
+    flex-direction: column;
+    min-height: 95vh; /* Full viewport height */
+    padding-top: 7rem !important;
+  }
+
+  .alert {
+    color: #820000;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }

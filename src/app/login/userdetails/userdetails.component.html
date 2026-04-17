@@ -1,0 +1,178 @@
+    <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Home</a></li>
+      <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="#">Settings</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Manage User's</li>
+    </ol>
+    </nav>
+
+    <div class="card-body">
+        @if (status) {
+        <div class="alert alert-info">
+           {{statusMsg}}
+        </div>
+        }
+        <div class="mt-5">
+            <div class="row mb-3">
+            <div class="col-md-9">
+                <input type="text" class="form-control" name="search" placeholder="Search..." [(ngModel)]="searchText" />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
+                <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
+                </select>
+            </div>
+            </div>
+        
+            <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                <th>Sl No</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Mobile No</th>
+                
+                <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let user of filteredData | slice:(page - 1) * pageSize : page * pageSize; let i = index;">
+                <td>{{ (page - 1) * pageSize + i + 1 }}</td> <!-- Serial number -->
+                
+                <td>
+                {{ user?.mstr_name }}
+                <span *ngIf="user?.status === 'ACCOUNT_LOCKED'" class="error-msg">
+                    <i class="bi bi-exclamation-triangle text-danger"></i>
+                </span>
+                </td>
+                
+                <td>{{ user?.email }}</td>
+                <td>{{ user?.mobileNo }}</td>
+                
+                <td>
+                <button type="button" class="btn btn-info btn-sm" (click)="openModal(manageUser, user?.id)">
+                    <i class="bi bi-eye"></i> View
+                </button>
+                </td>       
+            </tr>
+            </tbody>
+
+            </table>
+
+            <!-- Pagination -->
+            <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item" [class.disabled]="page === 1">
+                <button class="page-link" (click)="prevPage()">Prev</button>
+                </li>
+        
+                <li
+                class="page-item"
+                *ngFor="let p of visiblePages"
+                [class.active]="p === page"
+                >
+                <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
+                </li>
+        
+                <li class="page-item" [class.disabled]="page === totalPages">
+                <button class="page-link" (click)="nextPage()">Next</button>
+                </li>
+            </ul>
+            </nav>
+        </div>
+    </div>
+
+<ng-template #manageUser let-modal>
+    <div class="modal-header">
+        <h5 class="modal-title">🔐 User Details</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <div class="container mt-4">
+        <div class="alert alert-danger text-center" *ngIf="userData?.status === 'ACCOUNT_LOCKED'">
+            <i class="bi bi-exclamation-triangle"></i>
+            Due to multiple failed login attempt user account is locked
+        </div>
+        <div class="alert alert-danger text-center" *ngIf="userData?.status === 'INACTIVE'">
+            <i class="bi bi-exclamation-triangle"></i>
+            User account is inactive
+        </div>
+        <div class="alert alert-danger" *ngIf="errorStatus">{{ errorMsg }}</div>
+        <div class="alert alert-success" *ngIf="successStatus">{{ successMsg }}</div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+            <p><b>Name:</b> {{userData?.username}}</p>
+            <p><b>Email:</b> <a href="{{userData?.email}}"> {{userData?.email}}</a></p>
+            <p><b>Address:</b> {{userData?.address}}</p>
+            <p><b>Created By:</b><i> {{userData?.createdBy}}</i></p>
+            </div>
+            <div class="col-md-6">
+            <p><b>Mobile:</b> {{userData?.mobileNo}}</p>
+            <p><b>Organization:</b> {{userData?.organizationName}}</p>
+            <p><b>Account Status:</b> {{userData?.status}}</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center mb-3">
+            <label for="roleSelect" class="me-2"><b>Role Name :</b></label>
+            <select id="roleSelect" class="form-select w-auto me-2" [(ngModel)]="selectedRole">
+            <option *ngFor="let availableRole of availableRoles" [value]="availableRole.id">{{ availableRole.roleName }}</option>
+            </select>
+            <button class="btn btn-success btn-sm" (click)="assignRole()"><i class="bi bi-person-plus"></i> Assign</button>
+        </div>
+
+        <hr/>
+        <div class="text-center mb-3">
+            <button class="btn btn-info btn-sm me-4" (click)="activate()" *ngIf="userData?.status === 'INACTIVE' else activeTemplate"><i class="bi bi-check-circle"></i> Activate</button>
+            <button class="btn btn-danger btn-sm me-4" (click)="openDeleteModel(deleteConfirm, userData?.id)"><i class="bi bi-trash"></i> Delete</button>
+            <button class="btn btn-primary btn-sm" (click)="unlock()" *ngIf="userData?.status === 'ACCOUNT_LOCKED' else lockedTemplate"><i class="bi bi-unlock"></i> Unlock</button>
+        </div>
+        <ng-template #lockedTemplate>
+            <button class="btn btn-primary btn-sm" [disabled]="true"><i class="bi bi-unlock"></i> Unlock</button>
+        </ng-template>
+
+        <ng-template #activeTemplate>
+            <button class="btn btn-warning btn-sm me-4" (click)="inactivate()" ><i class="bi bi-slash-circle"></i> Inactivate</button>
+        </ng-template>
+
+        <table class="table table-bordered table-striped">
+            <thead class="table-primary">
+            <tr>
+                <th>Role Name</th>
+                <th>Remarks</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let role of userRoles">
+                <td>{{ role.roleName }}</td>
+                <td>{{ role.remarks }}</td>
+                <td>
+                <button class="btn btn-danger btn-sm" (click)="deleteRole(role.roleId)"><i class="bi bi-trash"></i>Delete</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</ng-template>
+
+<ng-template #deleteConfirm let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">Confirm Delete</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      <p>
+        Are you sure you want to delete the user ?
+      </p>
+      <br/>
+      <div class="alert p-2 mb-2 alert-warning">This action cannot be undone and data will be permanently deleted.</div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-warning" (click)="modal.dismiss()">Cancel</button>
+      <button type="button" class="btn btn-danger" (click)="delete()">Yes, Delete</button>
+    </div>
+</ng-template>
+        

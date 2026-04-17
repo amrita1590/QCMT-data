@@ -1,0 +1,5 @@
+.background {
+    background-image: url('/images/attendo_web_background.jpg'); /* Path to your image */
+    background-repeat: repeat; /* Repeat the background image */
+    background-size: auto; /* Use original size of the image */
+}

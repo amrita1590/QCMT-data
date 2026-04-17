@@ -1,0 +1,133 @@
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Home</a></li>
+      <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Student's</li>
+    </ol>
+</nav>
+
+<div class="card">
+    <div class="card-header">
+      Student Master
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">Create & Update - Student Detail's.</h5>
+      <p class="card-text">Use this form to create or update student details.</p>
+      @if (status) {
+        <div class="alert alert-info">
+           {{statusMsg}}
+        </div>
+      }
+      <form [formGroup]="studentDetailsForm" (ngSubmit)="addStudentDetails(studentDetailsForm.value)">
+        <div class="row mb-3">
+          <div class="col">
+            <label for="firstName">First Name</label>
+            <input type="text" class="form-control" id="firstName" placeholder="Enter First Name" formControlName="firstName" minlength="2" required>
+            @if (firstName?.invalid && (firstName?.dirty || firstName?.touched)) {
+                @if (firstName?.hasError('required')) {
+                   <span class="alert-text">Name is required.</span>
+                }
+                @if (firstName?.hasError('minlength')) {
+                   <span class="alert-text">Name must be at least 2 characters long.</span>
+                }
+            }  
+          </div>
+          <div class="col">
+            <label for="lastName">Last Name</label>
+            <input type="text" class="form-control" id="lastName" placeholder="Enter Last Name" formControlName="lastName">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+            <label for="email">Email:</label>
+            <input type="email" class="form-control" id="email" formControlName="email" placeholder="Enter Email Id"  required>
+            @if (email?.invalid && (email?.dirty || email?.touched)) {
+                @if (email?.hasError('required')) {
+                    <span class="alert-text">Email is required.</span>
+                }
+                @if (email?.hasError('email')) {
+                    <span class="alert-text">Please enter valid email id.</span>
+                }
+            } 
+            </div>
+            <div class="col">
+            <label for="mobileNo">Mobile No:</label>
+            <input type="tel" class="form-control" id="mobileNo" formControlName="mobileNo" minlength="10" maxlength="10" placeholder="Enter Mobile No"  required>
+            @if (mobileNo?.invalid && (mobileNo?.dirty || mobileNo?.touched)) {
+                @if (mobileNo?.hasError('required')) {
+                    <span class="alert-text">Mobile No is required.</span>
+                }
+                @if (mobileNo?.hasError('minlength') || mobileNo?.hasError('maxlength')) {
+                    <span class="alert-text">Please enter valid mobile no.</span>
+                }
+            } 
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                <div class="input-group">
+                    <input class="form-control" placeholder="yyyy-mm-dd" name="dateOfBirth" ngbDatepicker #dob="ngbDatepicker" formControlName="dateOfBirth" readonly (click)="dob.toggle()"/>
+                    <button class="btn btn-outline-secondary" (click)="dob.toggle()" type="button">📅</button>
+                </div>
+                <span *ngIf="studentDetailsForm.get('dateOfBirth')?.hasError('required') && studentDetailsForm.get('dateOfBirth')?.touched" class="alert-text">
+                    Date of birth is required.
+                </span>             
+            </div>
+
+            <div class="col">
+                <label for="admissionDate" class="form-label">Admission Date</label>
+                <div class="input-group">
+                    <input class="form-control" placeholder="yyyy-mm-dd" name="admissionDate" ngbDatepicker #ad="ngbDatepicker" formControlName="admissionDate" readonly (click)="ad.toggle()"/>
+                    <button class="btn btn-outline-secondary" (click)="ad.toggle()" type="button">📅</button>
+                </div>
+                <span *ngIf="studentDetailsForm.get('admissionDate')?.hasError('required') && studentDetailsForm.get('admissionDate')?.touched" class="alert-text">
+                    Admission Date is required.
+                </span>             
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col">
+                <label for="subject">Admission No</label>
+                <div class="input-group">
+                <input type="text" class="form-control" id="admissionNo" placeholder="Enter Admission No" formControlName="admissionNo">
+                </div>
+            </div>
+              
+            
+            <div class="col">
+                <label for="subject">Class</label>
+                <div class="input-group">
+                    <select class="form-select"
+                    formControlName="classId"
+                    [class.is-invalid]="studentDetailsForm.get('classId')?.invalid && studentDetailsForm.get('classId')?.touched">
+                    <option value="">-- Select Class --</option>
+                    <option *ngFor="let cls of classList" [value]="cls.id">{{ cls.className }} - {{ cls.sectionName }}</option>
+                    </select>
+                    <div *ngIf="studentDetailsForm.get('classId')?.hasError('required') && studentDetailsForm.get('classId')?.touched"
+                        class="invalid-feedback">
+                    Class is required.
+                    </div>
+                </div>
+            </div>
+        </div>
+          
+        <div class="row mb-4">
+          <div class="col">
+            <label for="addDetails">Additional Details</label>
+            <input type="text" class="form-control" id="addDetails" placeholder="Enter Additional Details" formControlName="addDetails">
+        </div>
+        </div>
+        
+        <div class="d-flex justify-content-center">
+        <button type="submit" class="btn btn-primary me-4" [disabled]="studentDetailsForm.invalid">{{btnName}}</button>
+        <button type="reset" class="btn btn-warning">Reset</button>
+        </div>
+      </form>
+    </div>
+</div>
+
+<app-studentdetails></app-studentdetails>

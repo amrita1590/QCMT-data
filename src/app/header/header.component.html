@@ -1,0 +1,16 @@
+<header class="header">
+    <div class="logo">
+        <img src="images/cisf_aviation_logo.png" alt="QCMT Aviation Logo" height="100">
+    </div>
+    <button class="hamburger" aria-label="Toggle navigation" (click)="openMenu()">
+        &#9776; 
+    </button>
+    <nav class="nav" [class.mobile_menu]="menuValue">
+        <ul>
+            <li><a routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" routerLink="/">Home</a></li>
+            <li><a routerLinkActive="active" routerLink="/about">About</a></li>
+          
+            <li><a routerLinkActive="active" routerLink="/contact">Contact</a></li>
+        </ul>
+    </nav>
+</header>

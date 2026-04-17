@@ -1,0 +1,154 @@
+.container {
+    flex-direction: column;
+    padding-top: 0rem !important;
+}
+.registration-container {
+    max-width: 800px;
+    margin: auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+.registration-title {
+    margin-bottom: 20px;
+}
+.background {
+    background-image: url('/images/attendo_web_background.jpg'); /* Path to your image */
+    background-repeat: repeat; /* Repeat the background image */
+    background-size: auto; /* Use original size of the image */
+}
+
+.btn-cont {
+    padding-top: 1em;
+    padding: auto;
+}
+
+.alert {
+    color: #820000;
+    font-size: 0.85rem;
+}
+
+    
+   .register-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 30px;
+      margin: 40px auto;
+   }
+  .tab-header {
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 20px;
+  }
+  .tab-header button {
+      border: none;
+      background: none;
+      font-weight: 600;
+      padding: 10px 20px;
+      color: #333;
+  }
+  .tab-header .active {
+      border-bottom: 2px solid #0d6efd;
+      color: #0d6efd;
+  }
+  .form-control {
+      border-radius: 8px;
+      padding: 10px;
+  }
+  .btn-register {
+      background: #28a745;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 20px;
+  }
+  .btn-reset {
+      background: #f0ad4e;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 20px;
+  }
+  .small-text {
+      font-size: 0.85rem;
+      color: #666;
+  }
+  h2 {
+      font-weight: 700;
+      margin-bottom: 10px;
+  }
+  p.subtitle {
+      color: #666;
+      margin-bottom: 30px;
+  }  
+
+  
+.ai-card {
+  background: linear-gradient(135deg, #4a90e2, #7b4397);
+  color: white;
+  border-radius: 40px;
+  padding: 30px 20px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ai-card .icon {
+  font-size: 35px;
+  margin-bottom: 12px;
+  color: #e0e0ff;
+}
+.ai-card .subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  color: #e0f0ff;
+}
+
+.attendance-card {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border-radius: 40px;
+  padding: 30px 20px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+.attendance-card .icon {
+  font-size: 35px;
+  margin-bottom: 12px;
+  color: #e0ffe0;
+}
+.attendance-card .title {
+  font-weight: 600;
+}
+.attendance-card .subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  color: #e0f0ff;
+}
+
+.access-card {
+  background: linear-gradient(135deg, #007bff, #6f42c1);
+  color: white;
+  border-radius: 40px;
+  padding: 30px 20px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+.access-card .icon {
+  font-size: 35px;
+  margin-bottom: 12px;
+  color: #e0f0ff;
+}
+.access-card .title {
+  font-weight: 600;
+}
+.access-card .subtitle {
+  font-size: 14px;
+  color: #e0f0ff;
+  opacity: 0.9;
+}

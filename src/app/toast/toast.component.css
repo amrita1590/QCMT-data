@@ -1,0 +1,76 @@
+/* ========== POSITIONING CONTROL ========== */
+/* Change this class for different positions */
+
+.custom-position {
+  position: fixed;
+  top: 20px;       /* change to bottom: 20px for bottom */
+  right: 20px;     /* change to left: 20px for left */
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* FOR CENTER TOP */
+.center-top {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ========== TOAST BOX ========== */
+.toast-item {
+  display: flex;
+  align-items: center;
+  min-width: 290px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  animation: fadeSlideIn 0.4s ease forwards;
+  opacity: 0;
+}
+
+/* SLIDE & FADE ANIMATION */
+@keyframes fadeSlideIn {
+  0% { opacity: 0; transform: translateX(40px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ICON */
+.icon {
+  font-size: 18px;
+  margin-right: 12px;
+}
+
+/* MESSAGE */
+.message {
+  flex: 1;
+  font-size: 14px;
+}
+
+/* CLOSE BUTTON */
+.close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* ========== COLORS ========== */
+.success { background: #28a745; }
+.error   { background: #dc3545; }
+.warning { background: #ffc107; color: #000; }
+.info    { background: #0dcaf0; color: #000; }
+
+.custom-position {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  top: auto;
+  left: auto;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

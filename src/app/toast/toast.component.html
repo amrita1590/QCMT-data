@@ -1,0 +1,24 @@
+<div class="toast-container custom-position">
+
+  <div *ngFor="let t of toastService.toasts" 
+       class="toast-item animate"
+       [ngClass]="{
+          'success': t.type === 'success',
+          'error': t.type === 'error',
+          'warning': t.type === 'warning',
+          'info': t.type === 'info'
+       }">
+
+    <div class="icon">
+      <span *ngIf="t.type === 'success'">✔</span>
+      <span *ngIf="t.type === 'error'">❗</span>
+      <span *ngIf="t.type === 'warning'">⚠</span>
+      <span *ngIf="t.type === 'info'">ℹ</span>
+    </div>
+
+    <div class="message">{{ t.message }}</div>
+
+    <button class="close-btn" (click)="toastService.remove(t.id)">×</button>
+  </div>
+
+</div>

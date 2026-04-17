@@ -1,0 +1,114 @@
+
+    <div class="card-body">
+      <div *ngIf="errorStatus" class="text-danger">{{ errorMsg }}</div> 
+      <div *ngIf="successStatus" class="text-success">{{ successMsg }}</div>
+    
+      <form [formGroup]="permissionForm"  (ngSubmit)="savePermission(permissionForm.value)" >
+        <!-- Permission Name -->
+        <div class="mb-3">
+          <label for="permissionLabel" class="form-label">Permission Name</label>
+          <input
+            id="permissionLabel"
+            type="text"
+            class="form-control"
+            formControlName="permissionLabel"
+            placeholder="Enter permission name"
+          />
+          <div
+            *ngIf="permissionForm.get('permissionLabel')?.invalid && permissionForm.get('permissionLabel')?.touched"
+            class="text-danger small mt-1">
+            Permission name is required
+          </div>
+        </div>
+
+        <!-- Permission URL -->
+        <div class="mb-3">
+          <label for="permissionRoutelink" class="form-label">Permission URL</label>
+          <input
+            id="permissionRoutelink"
+            type="text"
+            class="form-control"
+            formControlName="permissionRoutelink"
+            placeholder="Enter permission URL"
+          />
+          <div
+            *ngIf="permissionForm.get('permissionRoutelink')?.invalid && permissionForm.get('permissionRoutelink')?.touched"
+            class="text-danger small mt-1">
+            Permission URL is required
+          </div>
+        </div>
+
+        <!-- Having Parent -->
+        <div class="mb-3">
+          <label for="isParent" class="form-label">Having Parent</label>
+          <select id="isParent" class="form-select" formControlName="isParent" (change)="onParentChange($event)">
+            <option value="">Select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div
+            *ngIf="permissionForm.get('isParent')?.invalid && permissionForm.get('isParent')?.touched"
+            class="text-danger small mt-1">
+            Please select an option
+        </div>
+
+        <!-- Parent Permissions (shown only if Having Parent is "Yes") -->
+        <div class="mb-3" *ngIf="parentStatus">
+          <label for="parentPermissionId" class="form-label">Parent Permissions</label>
+          <select
+            id="parentPermissionId"
+            class="form-select"
+            formControlName="parentPermissionId">
+            <option value="">Select Parent Permission</option>
+            <option *ngFor="let option of permissionDetails" [value]="option.parentPermissionId">{{ option.permissionLabel }}</option>
+          </select>  
+          <div
+            *ngIf="permissionForm.get('parentPermissionId')?.invalid && permissionForm.get('parentPermissionId')?.touched"
+            class="text-danger small mt-1">
+            Parent permission is required
+        </div>
+        </div>
+        <!-- Icon -->
+        <div class="mb-3">
+          <label for="permissionIcon" class="form-label">Icon</label>
+          <input
+            id="permissionIcon"
+            type="text"
+            class="form-control"
+            formControlName="permissionIcon"
+            placeholder="Enter icon class (e.g., fa fa-user)"
+          />
+        </div>
+
+         <label for="sequence" class="form-label">Permission Sequence</label>
+          <input
+            id="sequence"
+            type="number"
+            maxlength="2"
+            class="form-control"
+            formControlName="sequence"
+            placeholder="Enter Sequence"
+          />
+
+        <!-- Description -->
+        <div class="mb-3">
+          <label for="remark" class="form-label">Description</label>
+          <textarea
+            id="remark"
+            rows="3"
+            class="form-control"
+            formControlName="remark"
+            placeholder="Enter description"
+          ></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-primary me-4" [disabled]="permissionForm.invalid">{{btnName}}</button>
+            <button type="submit" class="btn btn-warning" (click)="resetForm()">Reset</button>
+        </div>
+        
+      </form>
+    </div>
+

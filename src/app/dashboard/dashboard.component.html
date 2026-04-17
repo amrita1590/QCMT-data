@@ -1,0 +1,517 @@
+<div *ngIf="isDashboardLoading" class="dashboard-loader-overlay d-flex justify-content-center align-items-center vh-100">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<div class="dashboard-container">
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+
+    <div class="header-left">
+      <h2 class="fw-bold">Welcome, {{ usernameData }} 👋</h2>
+      <p class="subtitle">Centralized monitoring of security audits across {{dashboardBean?.totalAirport || 0}} airports</p>
+    </div>
+
+    
+    <div class="top-bar">
+      <div class="live-time-box">
+        <span class="live-dot"></span>
+        <span class="time-label">Data as of</span>
+        <span class="live-time">{{ currentDate | date: 'dd MMMM yyyy' }} at <i class="bi bi-clock"></i> {{ currentDate | date:'hh:mm:ss a' }}</span>
+        <i class="fa fa-refresh refresh-icon" (click)="syncData(dateRangeModel)"></i>
+      </div>
+
+      <div class="notification-wrapper">
+        <div class="notification-box" (click)="toggleNotifications()">
+          <i class="fa fa-bell bell-icon"></i>
+          <span class="badge pulse-badge" *ngIf="notificationCount !== 0">{{notificationCount}}</span>
+        </div>
+
+        <div class="notification-dropdown" *ngIf="showNotifications">
+          <div class="dropdown-header">
+            Notifications
+          </div>
+
+          <div class="notification-body">
+            <div class="notification-item" *ngFor="let item of notificationList">
+              <div class="message">{{ item.title }}</div>
+              <div class="time">{{ item.createdOn }}</div>
+            </div>
+          </div>
+
+          <div class="dropdown-footer" (click)="showAllNotificationPopup(showAllNotification)">
+            View All Notifications
+          </div>
+        </div>
+      </div>
+    </div>    
+  </div>
+  <!-- Top Stats -->
+  <div class="stats-grid">
+
+  <div class="stat-card">
+    <div class="card-top-border"></div>
+
+    <div class="card-content">
+      <div>
+        <h4>Total Airports</h4>
+        <h2>{{dashboardBean?.totalAirport || 0}}</h2>
+        <p class="sub">Under CISF security</p>
+      </div>
+
+      <div class="icon-box">
+        <i class="fa-solid fa-plane-departure"></i>
+      </div>
+    </div>
+  </div>
+
+   <!-- CARD 2 -->
+  <div class="stat-card">
+    <div class="card-top-border"></div>
+
+    <div class="card-content">
+      <div>
+        <h4>Total Observations</h4>
+        <h2>{{dashboardBean?.totalObservation || 0}}</h2>
+        <p class="sub">Across all audit types</p>
+        <p class="change red">{{dashboardBean?.totalObservationLast30Days || 0}}% vs last 30 days</p>
+      </div>
+
+      <div class="icon-box">
+        <i class="fa-regular fa-clipboard"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 3 -->
+  <div class="stat-card">
+    <div class="card-top-border"></div>
+
+    <div class="card-content">
+      <div>
+        <h4>Open Observations</h4>
+        <h2>{{dashboardBean?.openObservation || 0}}</h2>
+        <p class="sub">Requires action</p>
+      </div>
+
+      <div class="icon-box danger">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 4 -->
+  <div class="stat-card">
+    <div class="card-top-border"></div>
+
+    <div class="card-content">
+      <div>
+        <h4>Compliance %</h4>
+        <h2 class="green-text">{{dashboardBean?.averageCompliance || 0}}%</h2>
+        <p class="sub">Overall compliance rate</p>
+        <p class="change green">{{dashboardBean?.averageComplianceLast30Days || 0}}% vs last 30 days</p>
+      </div>
+
+      <div class="icon-box success">
+        <i class="fa-solid fa-arrow-trend-up"></i>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- Audit Types Overview -->
+  <h3 class="title mb-4">Audit Types Overview</h3>
+  
+  <div class="audit-grid">
+  <div *ngFor="let item of auditCards" 
+       class="audit-card"
+       [ngStyle]="{'border-top-color': item.color}">
+
+    <!-- Title + Badge -->
+    <div class="card-header">
+      <h3 [ngStyle]="{'color': item.color}">{{ item.title }}</h3>
+      <span class="airport-badge" [ngStyle]="{'background': item.badgeBg, 'color': item.color}">
+        {{ item.airports }}
+      </span>
+    </div>
+
+    <p class="subtitle">{{ item.subtitle }}</p>
+
+    <!-- Main Stats Row -->
+    <div class="stats-row">
+      <div class="left">
+        <h2>{{ item.total }}</h2>
+        <span>Total Observations</span>
+      </div>
+      <div class="right">
+        <h2 class="open">{{ item.open }}</h2>
+        <span>Open</span>
+      </div>
+    </div>
+
+    <!-- Compliance Rate -->
+    <div class="compliance-row">
+      <span>Compliance Rate</span>
+      <span class="rate">{{ item.rate }}%</span>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" [ngStyle]="{'width': item.rate + '%'}"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-row">
+      <span class="audit-date">Last Audit: {{ item.lastAudit }}</span>
+      <a class="view-link" (click)="openObservationDetails(showObservationDetails,item.title,item.subtitle)">View Details →</a>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- Recent Observations + Donut Chart -->
+  <div class="dashboard-bottom">
+
+  <!-- LEFT SIDE : Recent Observations -->
+  <div class="recent-box">
+
+    <h3 class="title">Upcoming Audit</h3>
+    <p class="subtitle">upcoming audit findings across airports</p>
+
+    <div class="obs-item" *ngFor="let obs of dashboardBean?.upcomingAuditTemplate">
+      
+      <div class="obs-left">
+        <span class="obs-badge" [ngClass]="obs.auditType.replace(' ','')">{{ obs.auditType }}</span>
+        <span class="obs-code">{{ obs.name }}</span>
+
+        <div class="obs-title">{{ getShortText(obs.auditDescription) }}</div>
+        <div class="obs-airport">{{ obs.unitName }}</div>
+      </div>
+
+      <div class="obs-right">
+        <span>
+              <div *ngIf="obs.auditStatus === 'Planned'" class="status-badge" [ngClass]="obs.auditStatus.replace(' ','')">
+                <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}            
+              </div>
+              <div *ngIf="obs.auditStatus === 'In Progress'" class="status-badge" [ngClass]="obs.auditStatus.replace(' ','')">
+                <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}
+              </div>
+              <div *ngIf="obs.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="obs.auditStatus.replace(' ','')">
+                <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}
+              </div>
+              <div *ngIf="obs.auditStatus === 'Completed'" class="status-badge" [ngClass]="obs.auditStatus.replace(' ','')">
+                <i class="fa-regular fa-clock"></i>{{ obs.auditStatus }}
+              </div>
+              <div *ngIf="obs.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="obs.auditStatus.replace(' ','')">
+                  <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}
+              </div>
+              <div *ngIf="obs.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="obs.auditStatus.replace(' ','')">
+                <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}
+              </div>
+        </span>
+        <span class="obs-due">Due: {{ obs.auditMonth }}</span>
+      </div>
+
+    </div>
+    <!--Add popup to this button-->
+    <!-- <div class="view-more">View all Upcoming Audit's →</div> -->
+
+    <div class="view-more-link" (click)="createModal(statusAuditTemplate)">
+  📊 View All Unit IQCU Audit Status for the Current Year →
+</div>
+      
+      
+    
+
+  </div>
+<ng-template #statusAuditTemplate let-modal>
+  <div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+      <i class="fa fa-calendar-check me-2"></i> IQCU Audit Schedule
+    </h5>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body">
+
+    <div class="table-responsive shadow-sm rounded">
+      <table class="table table-hover table-bordered align-middle text-center">
+
+        <thead>
+          <tr class="table-primary text-dark">
+            <th rowspan="2">Unit</th>
+            <th rowspan="2">Audit Name</th>
+            <th rowspan="2">Annual Calendar</th>
+            <th colspan="2">📅 Proposed by Auditor</th>
+            <th colspan="2">📅 Actual Conducted</th>
+            <th rowspan="2">Status</th>
+          </tr>
+          <tr  class="table-primary text-dark">
+            <th>From</th>
+            <th>To</th>
+            <th>From</th>
+            <th>To</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let unitAudits of dashboardBean?.unitAuditCurrentStatuslist">
+            <td class="fw-semibold">{{ unitAudits.unitname }}</td>
+            <td>{{ unitAudits.name }}</td>
+            <td class="text-muted">{{ unitAudits.auditMonth | date:'MMM-yyyy'}}</td>
+
+            <td>{{ unitAudits.schedulefromDate | date:'dd-MMM-yyyy' }}</td>
+            <td>{{ unitAudits.scheduletoDate | date:'dd-MMM-yyyy' }}</td>
+
+            <td>{{ unitAudits.fromDate | date:'dd-MMM-yyyy'}}</td>
+            <td>{{ unitAudits.toDate | date:'dd-MMM-yyyy' }}</td>
+
+            <td>
+            <span [ngClass]="getAuditStatusClass(unitAudits.auditStatus)">
+  {{ unitAudits.auditStatus }}
+</span>
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card mt-3 border-0 shadow-sm">
+      <div class="card-body">
+        <h6 class="fw-bold text-primary mb-2">ℹ️ Status Guide</h6>
+        <ul class="mb-0 small">
+          <li><b>Scheduled:</b> Planned for future</li>
+          <li><b>Due:</b> It will complete in current month</li>
+          <li><b>Overdue:</b> Pending from past month</li>
+          <li><b>Completed:</b> Report submitted by Auditor</li>
+          
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</ng-template>
+  <!-- RIGHT SIDE : Donut Chart -->
+  <div class="chart-box">
+
+    <h3 class="title">Observation Status Distribution</h3>
+    <p class="subtitle">All audit types combined</p>
+
+    <canvas id="statusChart"></canvas>
+
+    <div class="chart-legend">
+
+      <div><span class="dot green"></span> Compliance</div>
+      <div><span class="dot yellow"></span> Dropped</div>
+      <div><span class="dot red"></span> Open</div>
+      <div><span class="dot blue"></span> Close</div>
+
+    </div>
+    <hr/>
+
+    <div class="chart-stats">
+      <div class="stat green">Compliance <b>{{chartcompliance}}</b></div>
+      <div class="stat yellow">Dropped <b>{{chartdropped}}</b></div>
+      <div class="stat red">Open <b>{{chartopen}}</b></div>
+      <div class="stat blue">Close <b>{{chartclose}}</b></div>
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+
+<ng-template #dateRangeModel let-modal>
+  <!-- HEADER -->
+  <div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
+      <i class="fa-solid fa-clipboard-check me-2"></i> Dashboard Date Range
+    </h5>
+    <!-- CLOSE BUTTON -->
+     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <!-- BODY -->
+  <div class="modal-body pt-2">
+    <br/>
+    <div>
+          <!-- Current Date Range -->
+          <div class="current-range">
+            <span>
+              Data as of:
+              <strong>{{ fromDate | date:'dd MMM yyyy' }}</strong>
+              to
+              <strong>{{ toDate | date:'dd MMM yyyy' }}</strong>
+            </span>
+          </div>
+
+          <!-- Date Inputs -->
+          <div class="date-inputs">
+            <div class="input-group">
+              <label>From Date</label>
+              <input type="date" [(ngModel)]="fromDate" (change)="validateDates()" />
+            </div>
+
+            <div class="input-group">
+              <label>To Date</label>
+              <input type="date" [(ngModel)]="toDate" (change)="validateDates()" />
+            </div>
+
+          </div>
+
+          <!-- Error -->
+          <div class="error-msg" *ngIf="dateError">
+            {{ dateError }}
+          </div>
+    </div>
+  </div>
+  <!-- FOOTER -->
+  <div class="modal-footer border-0 mt-2">
+    <button type="submit" class="btn btn-primary me-2" (click)="applyFilter()"><i class="fa fa-calendar ms-1 pointer me-2"></i> Apply</button>
+    <button class="btn btn-light border px-4" (click)="modal.dismiss()">
+      <i class="fa-solid fa-xmark"></i>&nbsp;Close
+    </button>
+  </div>
+
+</ng-template>
+
+<ng-template #showObservationDetails let-modal>
+  <!-- HEADER -->
+  <div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
+      <i class="fa-solid fa-clipboard-check me-2"></i> {{auditType}} - Observation Summary
+    </h5>
+    <!-- CLOSE BUTTON -->
+     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <!-- BODY -->
+  <div class="modal-body pt-2">
+    <br/>
+    <div>
+          <!-- Current Date Range -->
+          <div class="current-range">
+            <span>
+             {{auditSubtitle}}
+            </span>
+          </div>
+          <div class="summary-cards">
+            <!-- Total Airports -->
+            <div class="summary-card details-blue">
+              <div class="icon"><i class="bi bi-airplane"></i></div>
+              <div>
+                <h2>{{ airportList?.length || 0 }}</h2>
+                <p>Total Airports</p>
+              </div>
+            </div>
+
+            <!-- Total Observations -->
+            <div class="summary-card details-purple">
+              <div class="icon"><i class="bi bi-bar-chart"></i></div>
+              <div>
+                <h2>{{ getTotalObservation() }}</h2>
+                <p>Total Observations</p>
+              </div>
+            </div>
+
+            <!-- Open Observations -->
+            <div class="summary-card details-red">
+              <div class="icon"><i class="bi bi-exclamation-circle"></i></div>
+              <div>
+                <h2>{{ getTotalOpen() }}</h2>
+                <p>Open Observations</p>
+              </div>
+            </div>
+
+          </div>
+
+          <div *ngIf="airportList && airportList.length > 0; else noData">
+            <div class="airport-grid">
+              <div class="airport-card" *ngFor="let airport of airportList">
+
+                <!-- Header -->
+                <div class="card-header">
+                  <span class="airport-name">✈ {{ airport.airportName }}</span>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats">
+                  <div>
+                    <h2>{{ airport.total }}</h2>
+                    <p>Total</p>
+                  </div>
+
+                  <div>
+                    <h2 class="open">{{ airport.open }}</h2>
+                    <p>Open</p>
+                  </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="details-progress">
+                  <div class="details-progress-bar"
+                      [style.width.%]="getCompliance(airport)">
+                  </div>
+                </div>
+
+                <div class="compliance-text">
+                  Compliance: {{ getCompliance(airport) | number:'1.0-0' }}%
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Empty State -->
+          <ng-template #noData>
+            <div class="no-data">
+              <img src="images/no-data.png" alt="No Data">
+              <h4>No Data Available</h4>
+              <p>No airport observations found for this audit type.</p>
+            </div>
+          </ng-template>
+
+          
+    </div>
+  </div>
+  <!-- FOOTER -->
+  <div class="modal-footer border-0 mt-2">
+    <button class="btn btn-light border px-4" (click)="modal.dismiss()">
+      <i class="fa-solid fa-xmark"></i>&nbsp;Close
+    </button>
+  </div>
+
+</ng-template>
+
+<!-- Popup Modal -->
+<ng-template #showAllNotification let-modal>
+<div class="notification-overlay">
+  <div class="notification-popup">
+
+    <div class="popup-header">
+      <h3><i class="fa fa-bell bell-icon"></i> Notifications</h3>
+      <span class="close-btn" (click)="modal.dismiss()">✕</span>
+    </div>
+    <div class="popup-body">
+      <div class="notification-card" *ngFor="let item of allNotificationList">
+        <div class="message">{{ item.title }}</div>
+        <div class="time">{{ item.createdOn }}</div>
+      </div>
+    </div>
+
+    <div class="popup-footer">
+      <button class="btn btn-light border px-4" (click)="modal.dismiss()">
+        <i class="fa-solid fa-xmark"></i>&nbsp;Close
+      </button>
+    </div>
+
+  </div>
+</div>
+</ng-template>
+  
