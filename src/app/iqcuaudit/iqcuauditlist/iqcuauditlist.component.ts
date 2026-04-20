@@ -5,10 +5,8 @@ import { AuditObservationChatComponentComponent } from '../../audit-observation-
 import { APP_CONSTANTS } from '../../constants/app.constants';
 import { AuditorResponseFilesTemp } from '../../interface/AuditorResponseFilesTemp';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { AuditSchedule } from '../../interface/audit-schedule';
+import { AuditSchedule } from '../../interface/AuditSchedule';
 import { AuditObservationComponent } from '../../interface/AuditObservationComponent';
-
-
 import { AuditObservation } from '../../interface/AuditObservation';
 import { CategoryDetails } from '../../interface/CategoryDetails';
 
@@ -30,12 +28,18 @@ import { UsermanagementService } from '../../service/usermanagement.service';
 import { QuestionsService } from '../../service/questions.service';
 import { ToastService } from '../../service/toast.service';
 import { RefreshService } from '../../service/refresh.service';
+import { forkJoin } from 'rxjs';
+import { HttpEventType } from '@angular/common/http';
+import { AuditBoardScheduleTemplate } from '../../interface/AuditBoardScheduleTemplate';
+import { AuditBoardTemplateGen } from '../../interface/AuditBoardTemplateGen';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-iqcuauditlist',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent],
+  standalone: true,
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent,RouterModule],
   templateUrl: './iqcuauditlist.component.html',
-  styleUrl: './iqcuauditlist.component.css'
+  styleUrls: ['./iqcuauditlist.component.css']
 })
 export class IqcuauditlistComponent {
 constants = APP_CONSTANTS;
@@ -56,8 +60,8 @@ constants = APP_CONSTANTS;
   casoName: string = '';
   casoId: number = 0;
   
-  auditTemplateForm: FormGroup ;
-  observationTemplateForm: FormGroup;
+  auditTemplateForm!: FormGroup ;
+ 
 
   errorMsg: string | null = null;
   errorStatus: boolean = false;
@@ -124,24 +128,8 @@ constants = APP_CONSTANTS;
   chatObservationStatus: string = '';
 
   constructor(private fb: FormBuilder, private categoryService: CategoryService, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService) {        
-      this.auditTemplateForm = this.fb.group({
-        id : new FormControl(''),
-        unitId:new FormControl('', [Validators.required]),
-        name:new FormControl('', [Validators.required, Validators.minLength(2), Validators.maxLength(200)]),
-        // Date of the audit (can be set by user or system)
-        //auditDate :new FormControl(''),
-         auditMonth :new FormControl('', [Validators.required]),
-        auditType:new FormControl('', [Validators.required]),
-        status:new FormControl(''),
-        auditStatus:new FormControl(''),
-        auditorId: new FormControl('', [Validators.required]),
-        auditDescription: new FormControl('', [Validators.required])
-      });
-      this.observationTemplateForm = this.fb.group({
-        id : new FormControl(''),
-        letterNo:new FormControl('', [Validators.required]),
-        letterDate :new FormControl('', [Validators.required])
-      });
+     
+      
   }  
   
   auditorQuestions!: AuditorQuestions;
@@ -168,41 +156,16 @@ constants = APP_CONSTANTS;
     this.getCategoryDetails(); // Initial load 
     this.getUnitDetails(); // Initial load  
     this.getAuditorDetails(); // Initial load  
-    this.auditTemplateForm.valueChanges.subscribe(value => {
-      this.generateAuditName();
-    });
+    
 
 
+  } openModal(content: any, templateId: number, templateName: string) {
+    this.templateName = templateName;
+    this.templateId = templateId;
+
+    this.modalRef = this.modalService.open(content, { centered: true });
   }
-generateAuditName() {
 
-  const unitId = this.auditTemplateForm.get('unitId')?.value;
-  const auditMonth = this.auditTemplateForm.get('auditMonth')?.value;
-  const auditType = this.auditTemplateForm.get('auditType')?.value;
-
-  if (unitId && auditMonth && auditType) {
-
-    const selectedUnit = this.units.find(u => u.id == unitId);
-    const unitName = selectedUnit ? selectedUnit.unitName : '';
-
-    // auditMonth will be like "2026-02"
-    const [year, month] = auditMonth.split('-');
-
-    const dateObj = new Date(Number(year), Number(month) - 1);
-
-    const formattedDate = dateObj.toLocaleString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    });
-
-    const auditName = `${unitName} - ${auditType} - ${formattedDate}`;
-console.log("Generated Audit Name:", auditName);
-    this.auditTemplateForm.patchValue({
-      name: auditName
-    }, { emitEvent: false });
-
-  }
-}
   getAuditDetails() {
     this.auditService.getAuditDetails().subscribe({
       next: (data) => {
@@ -312,157 +275,7 @@ console.log("Generated Audit Name:", auditName);
     this.rows[rowIndex].templateId = null;
   }
 
-  // Button Actions
-  addObservationTemplate(auditObservation: AuditObservation) {
-      
-      if (!this.observationTemplateForm.value.letterNo) {
-        this.toast.show("Please Enter Observation Letter Number.", 'error');
-        return;
-      }
-      if (!this.observationTemplateForm.value.letterDate) {
-        this.toast.show("Please Enter Observation Letter Date.", 'error');
-        return;
-      }
-      if (this.auditObservationComponent.some(fc => !fc.observation || fc.observation === null || !fc.complianceStatus || fc.complianceStatus === null || !fc.typeCriticality || fc.typeCriticality === null)) {
-        this.toast.show("Please fill all observation fields.", 'error');
-        return;
-      }
-      this.auditObservationComponent.map(component => {
-        component.status = 'APSHQrs';
-        return component;
-      });
-      // Prepare the observation data
-      this.auditObservation = {
-        id: this.observationTemplateForm.value.id,
-        letterDate: this.observationTemplateForm.value.letterDate,
-        letterNo: this.observationTemplateForm.value.letterNo,
-        auditTemplateId: this.templateId,
-        auditTemplateName: '',
-        createdBy: '',
-        status: 'APSHQrs',
-        creationDate: new Date().toISOString(),
-        auditObservationComponent: this.auditObservationComponent
-      };
-      console.log("Audit Observation Data:", this.auditObservation);
-      console.log(this.auditScheduleTemplate);
-
-      this.auditService.saveAuditObservationDetails(this.auditObservation).subscribe(response => {
-        console.log("Audit Observation Details saved successfully!", response);
-        this.toast.show('Audit Observation Details added successfully!', 'success');
-        this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
-        if(this.auditScheduleTemplate) {
-          const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
-              next: (data) => {
-                console.log('Notification sent successfully', data);
-              }
-            });
-        }
-        this.auditObservationReset();
-        this.getAuditDetails(); // Refresh the list
-        
-        this.modalService.dismissAll();
-      }, error => {
-        this.toast.show("Error saving audit observation details: " + error, 'error');
-      });    
-  }
-
-  addAuditTemplate(questionTemplate: QuestionTemplate) {
-    if (!this.auditTemplateForm.value.name) {
-      this.toast.show("Please Enter Audit Name.", 'error');
-      return;
-    }
-    if (!this.auditTemplateForm.value.unitId) {
-      this.toast.show("Please select a unit name.", 'error');
-      return;
-    }
-    if (!this.auditTemplateForm.value.auditorId) {
-      this.toast.show("Please select an auditor.", 'error');
-      return;
-    }
-    /*if (!this.auditTemplateForm.value.auditDate) {
-      this.toast.show("Please select an audit date.", 'error');
-      return;
-    }*/
-   if (!this.auditTemplateForm.value.auditMonth) {
-      this.toast.show("Please select an audit Month.", 'error');
-      return;
-    }
-    if (!this.auditTemplateForm.value.auditType) {
-      this.toast.show("Please select an audit type.", 'error');
-      return;
-    }
-    if (!this.auditTemplateForm.value.auditDescription) {
-      this.toast.show("Please enter short audit descrition.", 'error');
-      return;
-    }
-    const desc = this.auditTemplateForm.value.auditDescription;
-    if (!desc || desc.length < 50 || desc.length > 400) {
-      this.toast.show("Audit short description must be between 50 and 400 characters.", 'error');
-      return;
-    }
-    if (this.auditComponent.length === 0) {
-      this.toast.show("Please add at least one question before submitting the audit.", "error");
-      return;
-    }
-    if (this.auditComponent.some(fc => !fc.template || fc.template === null || !fc.category || fc.category === 0)) {
-      this.toast.show("Please fill in all template fields. Category and Template cannot be left blank—either provide the required data or remove the entry.", 'error');
-      return;
-    }
-
-    console.log("Audit form value" ,this.auditTemplateForm.value);
-    console.log(this.auditComponent);
-    
-    this.auditScheduleTemplate = {
-      id: this.auditTemplateForm.value.id,
-      unitId: this.auditTemplateForm.value.unitId,
-      unitName: this.auditTemplateForm.value.unitName,
-      name: this.auditTemplateForm.value.name,
-      auditMonth: this.auditTemplateForm.value.auditMonth,
-      auditType: this.auditTemplateForm.value.auditType,
-      auditorId: this.auditTemplateForm.value.auditorId,
-      auditorName: this.auditTemplateForm.value.auditorName,
-      casoName: this.casoName,
-      casoId: this.casoId,
-      auditStatus: this.auditStatus,
-      auditScheduleList: this.auditComponent,
-      status: this.tempStatus,
-      createdBy: '', // Add current user if available
-      createdById: 0, // Add current user ID if available
-      createdAt: new Date().toISOString(),
-      
-      auditScheduleFromDate: '',
-      auditScheduleToDate: '',
-      auditDescription: this.auditTemplateForm.value.auditDescription
-    };
-    
-    console.log(this.auditScheduleTemplate);
-    if(this.auditScheduleTemplate) {
-      console.log("Audit month"+this.auditScheduleTemplate.auditMonth);
-      this.auditService.saveAuditDetails(this.auditScheduleTemplate).subscribe(response => {
-        console.log("Audit Schedule Template saved successfully!", response);
-        this.toast.show('Audit Schedule Template added successfully!', 'success');       
-        if (this.auditScheduleTemplate) {
-            const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.NEW_AUDIT_CREATED, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName).subscribe({
-              next: (data) => {
-                console.log('Notification sent successfully', data);
-              }
-          });
-        }
-        this.audittemplateReset();
-        this.getAuditDetails(); // Refresh the list
-        this.modalService.dismissAll();
-      }, error => {
-        this.errorMsg = "Error saving audit schedule template:", error;
-        this.errorStatus = true;
-        setTimeout(() => {
-          this.errorStatus = false;
-        }, 10000); // 10000 milliseconds = 10 seconds
-      });  
-    }   
-  }
-
+  
   viewTemplate(content: any, id: number) {
       const template = this.templates.find(t => t.id === id);
       if (!template) return;
@@ -484,93 +297,7 @@ console.log("Generated Audit Name:", auditName);
       this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
   }
 
-  editTemplate(content: any, id: number) {
-    const template = this.templates.find(t => t.id === id);
-
-    
-    if (!template) return;
-    console.log("Editing month  ususiwie ID:", template);
-    this.auditScheduleTemplate = template;
-    if(this.auditScheduleTemplate.auditStatus !== 'Planned') {
-      this.toast.show('Action denied: This audit cannot be edited as it has already moved to the Auditor/CASO bucket.', 'error')
-      return;
-    }
-    
-    this.auditTemplateForm  = template ? this.fb.group({
-      id : new FormControl(template.id),
-      unitId:new FormControl(template.unitId, [Validators.required]),
-      unitName: new FormControl(template.unitName),
-      name: new FormControl(template.name, [Validators.required]),
-      auditMonth: new FormControl(template.auditMonth, [Validators.required]),
-      //auditDate: new FormControl(template.auditDate),
-      auditType: new FormControl(template.auditType, [Validators.required]),
-      auditorId: new FormControl(template.auditorId),
-      auditorName: new FormControl(template.auditorName),
-      casoName: new FormControl(template.casoName),
-      casoId: new FormControl(template.casoId),
-      status:new FormControl(template.status),
-      auditStatus:new FormControl(template.auditStatus),
-      auditDescription: new FormControl(template.auditDescription),
-    }) : this.auditTemplateForm;
-     this.listenForNameChanges();
-    this.casoName = template.casoName;
-    this.casoId = template.casoId;
-
-    this.auditComponent = template.auditScheduleList || [];
-    this.rows = [];
-    this.auditComponent = this.auditComponent.map((schedule, index) => ({ ...schedule, index: index + 1 }));
-    console.log("Editing Template:", this.auditComponent);
-    console.log("Editing Template Form12:", this.rows);
-    template.auditScheduleList.forEach((schedule, index) => {
-      this.rows.push({ index: index+1, categoryId: schedule.category, templateId: schedule.template, templateOptions: [] });
-      this.onCategoryChange(index);
-    });
-    
-    console.log("Editing Template Form21:", this.rows);
-
-    this.btnName = "Update";
-    this.tempStatus = "EDITED";
-
-    // OPEN MODAL FIRST
-    this.modalRef = this.modalService.open(content, {
-      size: 'xl',
-      backdrop: 'static',
-      keyboard: false
-    });
-
-    // THEN PATCH THE FORM
-    this.auditTemplateForm.patchValue({
-      id: template.id,
-      unitName: template.unitName, // ensures category selection works
-      name: template.name,
-      auditType: template.auditType,
-      status: template.status,
-      auditMonth:template.auditMonth,
-      auditDescription: template.auditDescription
-    });
-  }
-listenForNameChanges() {
-
-  this.auditTemplateForm.get('unitId')?.valueChanges.subscribe(() => {
-    this.generateAuditName();
-  });
-
-  this.auditTemplateForm.get('auditMonth')?.valueChanges.subscribe(() => {
-    this.generateAuditName();
-  });
-
-  this.auditTemplateForm.get('auditType')?.valueChanges.subscribe(() => {
-    this.generateAuditName();
-  });
-
-}
-  openModal(content: any, templateId: number, templateName: string) {
-    this.templateName = templateName;
-    this.templateId = templateId;
-
-    this.modalRef = this.modalService.open(content, { centered: true });
-  }
-
+  
   deleteTemplate(id: number, modalId: string) {
       console.log('Deleting Template', id);
       this.deleteAuditTemplate(id);
@@ -607,15 +334,7 @@ listenForNameChanges() {
     this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
   }
 
-  createObservation(content: any, id: number) {
-    console.log(":::::::::::::::");    
-    this.auditObservationReset();
-    this.getAuditObservationComponent(id);
-    this.templateId = id;
-    this.btnName = "Create";
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
-  }
-
+  
   audittemplateReset() {
     this.auditTemplateForm.reset();
     this.tempStatus = "SAVED";
@@ -629,16 +348,7 @@ listenForNameChanges() {
     { index: 2,categoryId: null, templateId: null, templateOptions: [] }];
   }
 
-  auditObservationReset() {
-    this.observationTemplateForm.reset();
-    this.tempStatus = "SAVED";
-    this.btnName = "Create";
-    this.auditObservationComponent = [
-     {
-        id: 0, index: 1, auditObservationId: 0, templateId: 0, templateName: '', createdBy: '', entryDate: '', complianceStatus: '', remarks: '', typeCriticality: '', observation: '', letterNo: '', letterDate: '', entryTime: '', status: '', auditObservationComponentMessageList: [] },
-      { id: 0, index: 2, auditObservationId: 0, templateId: 0, templateName: '', createdBy: '', entryDate: '', complianceStatus: '', remarks: '', typeCriticality: '', observation: '', letterNo: '', letterDate: '', entryTime: '', status: '', auditObservationComponentMessageList: [] }
-    ]; 
-  }
+  
 
   addAudit() {
     const newComponent: AuditSchedule = {
@@ -1231,7 +941,7 @@ loadQuestions() {
       console.log("response Questions:", data);
       this.auditorQuestions = data;
       console.log("Loaded Questions:", this.auditorQuestions);
-    })
+    })  
 }
   viewAuditorResponse(content: any, id: number) {
       this.selectedTemplateId = id;

@@ -1,9 +1,15 @@
 <div class="audit-page">
 
   <!-- Top Navigation -->
+   
   <div class="top-nav">
-    <button class="back-btn" routerLink="/dashboard"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+    <a href="/dashboard" class="back-btn">
+    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+  </a>
   </div>
+ 
+  
+
 
   <!-- Page Title -->
   <h2 class="page-title"><i class="fa fa-user-check me-2"></i>Audit Schedule</h2>
@@ -46,12 +52,7 @@
   </div>
   
   <br/>
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5>All Audits</h5>
-    <button class="btn btn-primary" (click)="createModal(createAuditTemplate)">
-      <i class="bi bi-plus-lg"></i> Schedule Audit
-    </button>
-  </div>
+  
 
   <!-- Table Section -->
   <!-- Search Box -->
@@ -79,8 +80,8 @@
           <th>Created By</th>
           <th>Audit Type</th>
           <th>Status</th>
-          <th class="actions-col">Actions</th>
-          <th>Summary | Edit | Delete</th>
+         
+          <th>Summary</th>
         </tr>
       </thead>
 
@@ -148,24 +149,18 @@
             </span>
           </td>
 
-          <td>
-            <select class="action-dropdown" [(ngModel)]="row.auditStatus" (change)="updateAuditStatus(row.id)" [disabled]="row.auditStatus === 'Planned'">      
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Action Required">Action Required</option>
-              <option value="Observation APS">Observation APS</option>
-              <option value="Observation CASO">Observation CASO</option>
-            </select>
-          </td>
+          
           <td>
             <div class="d-flex align-items-center gap-2 flex-wrap">
             <div *ngIf="row.auditStatus === 'Observation APS'">
-              <button type="button" class="btn btn-success btn-sm" (click)="createObservation(createObservationTemplate,row.id)" style="width: 150px;">
-              Observation <i class="fa-solid fa-reply me-1"></i></button>
+             
+              <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
+                  Audit Details <i class="fa fa-eye ms-1 pointer"></i>
+              </button>
             </div>           
             <div *ngIf="row.auditStatus === 'Completed'">
                 <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
-                  Audit Summary <i class="fa fa-eye ms-1 pointer"></i>
+                  Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
             </div>
             <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed'">
@@ -174,13 +169,9 @@
                   <i class="fa fa-eye action-icon"></i>
                 </button>
 
-                <button class="action-btn edit" title="Edit" (click)="editTemplate(createAuditTemplate,row.id)">
-                  <i class="bi bi-pencil"></i>
-                </button>
+                
 
-                <button class="action-btn delete" title="Delete" (click)="openModal(deleteModal, row.id, row.name)">
-                  <i class="bi bi-trash"></i>
-                </button>
+                
               </div>
             </div>
           </div></td>
@@ -211,151 +202,7 @@
     </nav>
 </div>
 
-<ng-template #createAuditTemplate let-modal>
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-user-check me-2"></i> Schedule New Audit</h5>
-        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-      </div>
-      <div class="modal-body">  
-        <p>Add a new audit to the schedule</p>
-          
-        <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
-        <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
 
-        <form [formGroup]="auditTemplateForm" (ngSubmit)="addAuditTemplate(auditTemplateForm.value)" class="was-validated">
-            <div class="row g-4">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                    <label class="form-label">Audit Name</label>
-                    <input type="text" class="form-control" formControlName="name" readonly />
- 
-                    <ul class="hint-text">
-                        <li>Auto-generated based on Unit, Date & Type</li>
-                        <li>This helps organize audits by name</li>
-                    </ul>
-                    </div>
-                    
-
-                    <div class="col-md-3">
-                    <label class="form-label">Unit Details</label>
-                    <select class="form-select" formControlName="unitId" (change)="onUnitChange()">
-                        <option value="" disabled selected>Select Unit</option>
-                        <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
-                    </select>
-                    <ul class="hint-text">
-                        <li>Provide unit details</li>
-                        <li>This helps organize audits by unit</li>
-                    </ul>
-                    </div>
-                    
-                    <div class="col-md-3">
-                    <label class="form-label">Audit Month</label>
-                    <input type="month" class="form-control" formControlName="auditMonth" placeholder="Select Audit Month"/>
-                    <ul class="hint-text">
-                        <li>Provide audit Month</li>
-                        <li>This helps organize audits by Month Year</li>
-                    </ul>
-                    </div>
-                    
-                    <div class="col-md-3">
-                    <label class="form-label">Type of Audits</label>
-                    <select class="form-select" formControlName="auditType">
-                        <option value="" disabled selected>Select Audit Type</option>
-                        <option value="IQCU">IQCU</option>
-                        <option value="CISF Internal">CISF Internal</option>
-                        <option value="BCAS">BCAS</option>
-                        <option value="ICAO">ICAO</option>                        
-                    </select>
-                    <ul class="hint-text">
-                        <li>Provide audit type</li>
-                        <li>This helps organize audits by type</li>
-                    </ul>
-                    </div>   
-                    
-                    <div class="col-md-3">
-                    <label class="form-label">Auditor Name</label>
-                     <select class="form-select" formControlName="auditorId">
-                        <option value="" disabled selected>Select Auditor</option>
-                        <option *ngFor="let auditor of auditorList" [value]="auditor.id">{{ auditor.cisfno }}&nbsp;{{ auditor.rank }}&nbsp;{{ auditor.name }}</option>
-                    </select>
-                    <ul class="hint-text">
-                        <li>Provide auditor name</li>
-                        <li>This helps organize audits by auditor</li>
-                    </ul>
-                    </div>
-
-                    <div class="col-md-9">
-                    <label for="auditDescription">Audit (Short Description)</label>
-                    <input id="auditDescription" class="form-control" formControlName="auditDescription" placeholder="Provide audit short description"/>
-                    <ul class="hint-text">
-                        <li>Provide audit short description</li>
-                        <li>This helps organize audits by description</li>
-                    </ul>
-                    </div>
-                </div>
-            </div>
-           
-            <div class="d-flex justify-content-end align-items-center mb-2">
-              <small class="text-muted me-2">Get templates based on selected audit type</small>
-                <button [disabled]="!auditTemplateForm.value.auditType" type="button" class="btn btn-outline-primary btn-sm" (click)="getAllTemplateByAuditType()">
-                  Get Templates
-                </button>
-            </div>
-            <table class="table table-bordered table-hover">
-                <thead class="table-dark">
-                    <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 30%;">Category</th>
-                    <th style="width: 30%;">Template</th>
-                    <th style="width: 25%;">Description for Auditor, if Any</th>
-                    <th style="width: 10%;"><button type="button" class="btn btn-sm btn-success" (click)="addAudit()"><i class="bi bi-plus-lg"> </i>Add</button></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let component of auditComponent; let i = index">
-                    <td>{{ i + 1 }}</td>
-                    <td>
-                        <select class="form-select" [(ngModel)]="component.category" [ngModelOptions]="{standalone: true}" (change)="onCategoryChange(i)">
-                            <option value="" disabled selected>Select Category</option>
-                            <option *ngFor="let category of categories" [value]="category.id">{{ category.categoryName }}</option>
-                        </select>
-                    </td>
-                    <td>
-                        <select class="form-select" [(ngModel)]="component.template" [ngModelOptions]="{standalone: true}">
-                            <option value="" disabled selected>Select Template</option>
-                            <option *ngFor="let t of rows[i].templateOptions" [value]="t.id">{{ t.name }}</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="text" class="form-control" [(ngModel)]="component.information" [ngModelOptions]="{standalone: true}" novalidate/>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger" (click)="removeAudit(deleteModalAudit, component.id, component.index)">
-                        <i class="fal bi-trash-fill"></i>
-                        </button>
-                    </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- Buttons -->
-             <hr/>
-            <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary me-4" [disabled]="auditTemplateForm.invalid">{{btnName}}</button>
-            <button type="reset" class="btn btn-warning" (click)="audittemplateReset()">Reset</button>
-            </div>
-        </form>
-        <br/>
-        <div class="info-message">
-            <ul>
-                <li>Create audit schedules for different units and departments.</li>
-                <li>Use audit date to plan and track audit timelines.</li>
-                <li>Audit information will be displayed to auditors during execution.</li>
-                <li>Use audit type to categorize audits as Planned, In Progress, Completed, or Action Required.</li>
-            </ul>
-        </div>
-      </div>
-</ng-template>
 
 <ng-template #deleteModal let-modal>
     <div class="modal-header border-0 pb-0">
@@ -491,232 +338,7 @@
     </div>
 </ng-template>
 
-<ng-template #createObservationTemplate let-modal>
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-          <div *ngIf="auditObservation?.id"><i class="fa-solid fa-clipboard-check me-2"></i> Audit Observation Summary</div>
-          <div *ngIf="!auditObservation?.id"><i class="fa fa-user-check me-2"></i> Create Observation</div>
-        </h5>
-        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-      </div>
-      <div class="modal-body">  
-      <hr/>
-        <div *ngIf="auditObservation?.id">
-            <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
-              <div class="card-body px-4">
 
-                <!-- AUDIT DETAILS SECTION -->
-                <h5 class="fw-semibold text-dark mb-3 mt-2">
-                  <i class="fa-solid fa-file-alt me-2 text-primary"></i> Observation Details
-                </h5>
-
-                <div class="row g-3 mb-4">
-            <div class="col-md-4"
-                *ngFor="let field of [
-                  {label:'Letter No', val:auditObservation?.letterNo},
-                  {label:'Letter Date', val:(auditObservation?.letterDate | date:'dd-MMM-yyyy')},
-                  {label:'Created Date', val:(auditObservation?.creationDate | date:'dd-MMM-yyyy')},
-                ]">
-
-              <div class="detail-tile p-3 rounded-3 shadow-sm">
-                <!-- LABEL + EYE BUTTON -->
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="detail-label mb-0">{{ field.label }}</label>
-                </div>
-                <!-- VALUE -->
-                <div class="detail-value">{{ field.val }}</div>
-
-              </div>
-            </div>
-          </div>
-          <div class="obs-header">
-              <!-- LEFT -->
-              <div class="obs-title">
-                <h5 class="fw-semibold text-dark mb-3">
-                  <i class="fa-solid fa-reply me-2 text-primary"></i> Observation's
-                </h5>
-              </div>
-              <!-- RIGHT -->
-              <div class="obs-controls">
-                <div class="legend">
-                  <span class="lg critical">Critical</span>
-                  <span class="lg moderate">Moderate</span>
-                  <span class="lg noncritical">Non Critical</span>
-                </div>
-                &nbsp;|&nbsp;
-                <!-- Tabs -->
-                <div class="tabs">
-                  <span [class.active]="selectedTab==='active'"
-                        (click)="selectedTab='active'">
-                    Active ({{activeList?.length}})
-                  </span>
-
-                  <span [class.active]="selectedTab==='dropped'"
-                        (click)="selectedTab='dropped'">
-                    Dropped ({{droppedList?.length}})
-                  </span>
-                </div>               
-              </div>
-            </div>
-
-          
-            <!-- ================= Filters ================= -->
-             <!-- Search Box -->
-            <div class="row mb-3">
-              <div class="col-md-9">
-                <input type="text" class="form-control" name="search" placeholder="Search observation..." [(ngModel)]="searchText" />
-              </div>
-              <div class="col-md-3">
-                <select class="form-select" [(ngModel)]="filterCriticality">
-                  <option value="">All Criticality</option>
-                  <option>Critical</option>
-                  <option>Moderate</option>
-                  <option>Non Critical</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- ================= Table ================= -->
-            <div class="table-responsive">
-              <table class="table table-hover align-middle shadow-sm table-bordered">
-                <thead class="table-primary text-dark">
-                  <tr>
-                    <th width="5%">#</th>
-                    <th width="35%">Observation</th>
-                    <th width="20%">Remarks</th>
-                    <th width="15%">Type Criticality</th>
-                    <th width="15%">Compliance Status</th>
-                    <th width="10%" class="text-center">View</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let row of filteredList; let i = index">
-                    <td class="fw-bold" [ngClass]="{'row-apshqrs': row.status === 'APSHQrs' && row.complianceStatus !== 'Dropped' && row.complianceStatus !== 'Compliant','row-caso': row.status === 'CASO' && row.complianceStatus !== 'Dropped' && row.complianceStatus !== 'Compliant'}">{{ i + 1 }}</td>
-                    <td [ngClass]="{'row-apshqrs': row.status === 'APSHQrs' && row.complianceStatus !== 'Dropped' && row.complianceStatus !== 'Compliant','row-caso': row.status === 'CASO' && row.complianceStatus !== 'Dropped' && row.complianceStatus !== 'Compliant'}">{{ row.observation}}</td>
-                    <td>{{ row.remarks }}</td>
-                    <td>
-                      <div class="criticality-badge" [ngClass]="row.typeCriticality.replace(' ','')">
-                        {{ row.typeCriticality }}
-                      </div>
-                    </td>
-                    <td>
-                      <div class="status-badge" [ngClass]="formatStatusClass(row.complianceStatus)">
-                        {{ row.complianceStatus }}
-                      </div>
-                    </td>
-                    <td class="text-center">
-                      <a class="btn btn-sm btn-outline-primary px-3" (click)="viewObservation(viewObservationDetails,row.id)">
-                        <i class="fa fa-eye action-icon"></i>&nbsp;View
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-            </table>
-          </div>
-
-          </div>
-          <!-- FOOTER -->
-          <div class="modal-footer border-0 mt-2">
-            <button type="submit" class="btn btn-success me-2" (click)="droppedObservation(auditObservation?.auditTemplateId)"><i class="fa fa-times-circle ms-1 pointer"></i> Dropped</button>
-            <button type="submit" class="btn btn-primary me-2" (click)="submitObservationPopupToCASO(submitObservationCASO, auditObservation?.auditTemplateId)" [disabled]="!activeList?.length"><i class="fa fa-user ms-1 pointer"></i> Send to CASO</button>
-            <button class="btn btn-light border px-4" (click)="modal.dismiss()">
-              Close
-            </button>
-          </div>
-        </div>
-
-        <div *ngIf="!auditObservation?.id">
-        <p>Add a new observation to the audit</p>
-          
-        <form [formGroup]="observationTemplateForm" (ngSubmit)="addObservationTemplate(observationTemplateForm.value)" class="was-validated">
-            <div class="row g-4">
-                    <div class="col-md-6">
-                    <label class="form-label">Letter No</label>
-                    <input type="text" class="form-control" formControlName="letterNo" placeholder="Enter Letter No"/>
-                    <ul class="hint-text">
-                        <li>Provide letter no</li>
-                        <li>This helps organize observations by letter no</li>
-                    </ul>
-                    </div>
-                    
-
-                   <div class="col-md-6">
-                    <label class="form-label">Letter Date</label>
-                    <input type="date" class="form-control" formControlName="letterDate" placeholder="Enter Letter Date"/>
-                    <ul class="hint-text">
-                        <li>Provide letter date</li>
-                        <li>This helps organize observations by letter date</li>
-                    </ul>
-                    </div>  
-                    <br/>
-            </div>
-            <br/>
-            <table class="table table-bordered table-hover">
-                <thead class="table-dark">
-                    <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 30%;">Observation</th>
-                    <th style="width: 15%;">Remark</th>
-                    <th style="width: 20%;">Type Criticality</th>
-                    <th style="width: 20%;">Compliance Status</th>
-                    <th style="width: 10%;"><button type="button" class="btn btn-sm btn-success" (click)="addObservation()"><i class="bi bi-plus-lg"> </i>Add</button></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let component of auditObservationComponent; let i = index">
-                    <td>{{ i + 1 }}</td>
-                    <td>
-                        <input type="text" class="form-control" [(ngModel)]="component.observation" [ngModelOptions]="{standalone: true}" novalidate/>
-                    </td>
-                    <td>
-                        <input type="text" class="form-control" [(ngModel)]="component.remarks" [ngModelOptions]="{standalone: true}" novalidate/>
-                    </td>
-                    <td>
-                       <select class="form-select" [(ngModel)]="component.typeCriticality" [ngModelOptions]="{standalone: true}">
-                          <option value="" disabled selected>-- Select --</option>
-                          <option value="Non Critical">Non Critical</option>
-                          <option value="Critical">Critical</option>
-                          <option value="Moderate">Moderate</option>                     
-                      </select>
-                    </td>
-                    <td>
-                       <select class="form-select" [(ngModel)]="component.complianceStatus" [ngModelOptions]="{standalone: true}">
-                          <option value="" disabled selected>-- Select --</option>
-                          <option value="Compliant">Compliant</option>
-                          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>  
-                          <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>                        
-                          <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
-                          <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
-                          <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
-                       </select>                        
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger" (click)="removeObservation(deleteModalObservation, component.id, component.index)">
-                        <i class="fal bi-trash-fill"></i>
-                        </button>
-                    </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- Buttons -->
-             <hr/>
-            <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary me-4" [disabled]="observationTemplateForm.invalid">{{btnName}}</button>
-            <button type="reset" class="btn btn-warning" (click)="auditObservationReset()">Reset</button>
-            </div>
-        </form>
-        <br/>
-        <div class="info-message">
-            <ul>
-                <li>Create multiple observations for entire audit.</li>
-                <li>Use observation date to plan and track observation timelines.</li>
-                <li>Observation information will be displayed to CASO during execution.</li>
-            </ul>
-        </div>
-      </div>
-      </div>
-</ng-template>
 
 <ng-template #deleteModalObservation let-modal>
     <div class="modal-header border-0 pb-0">
@@ -1243,37 +865,4 @@
 </ng-template>
 
 
-<ng-template #submitObservationCASO let-modal>
-  <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa-solid fa-clipboard-check me-2"></i> Compliance Status Form
-    </h5>
-    <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-  </div>
-  <!-- BODY -->
-  <div class="modal-body pt-2">
-    <div class="compliance-wrapper">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label>Letter No</label>
-          <input type="text" class="form-control" placeholder="Enter Details" [(ngModel)]="letterNo" [ngModelOptions]="{standalone: true}" novalidate/>
-        </div>
 
-        <div class="col-md-6 mb-3">
-          <label>Letter Date</label>
-          <input type="date" class="form-control" placeholder="Enter Details" [(ngModel)]="letterDate" [ngModelOptions]="{standalone: true}" novalidate/>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- FOOTER -->
-  <div class="modal-footer border-0 mt-2">
-    <button type="submit" class="btn btn-primary me-2" (click)="submitObservationToCASO()"><i class="fa fa-user ms-1 pointer me-2"></i> Submit</button>
-    <button class="btn btn-light border px-4" (click)="modal.dismiss()">
-      <i class="fa-solid fa-xmark"></i> Close
-    </button>
-  </div>
-
-</ng-template>
