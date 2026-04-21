@@ -26,6 +26,7 @@ export class UsermanagementService {
   private updateuserprofile = '/v1/qcmt/auth/updateuserprofile';
   isLoggedIn: boolean = false;
 
+  private loginuserdetail = '/v1/qcmt/master/loginuserdetail';
   private userDetailList = '/v1/qcmt/master/userdetaillist';
   private user = '/v1/qcmt/master/user';
   private userManagementUrl = '/v1/qcmt/master/usermanagement';
@@ -66,6 +67,11 @@ export class UsermanagementService {
   getUserDetailList(): Observable<User[]> {
     return this.http.get<User[]>(this.userDetailList);
   }
+
+   getLoggedUserDetailList(): Observable<User[]> {
+    return this.http.get<User[]>(this.loginuserdetail);
+  }
+
 
   getUserAuditDetailList(): Observable<UserRoleDetails[]> {
     return this.http.get<UserRoleDetails[]>(this.userAuditDetails);

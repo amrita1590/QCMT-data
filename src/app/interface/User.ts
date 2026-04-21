@@ -18,6 +18,7 @@ export interface User {
     rank?: string;
     zone?: string;
     cisfno?:string;
+    unitid?: number;
     userscopelevel?: string; 
     unitmaster?: UnitDetails;
     userRolesList: UserRoles[];

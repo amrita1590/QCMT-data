@@ -12,8 +12,8 @@
 
 
   <!-- Page Title -->
-  <h2 class="page-title"><i class="fa fa-user-check me-2"></i>Audit Schedule</h2>
-  <p class="page-subtitle">Manage and track all audit schedules</p>
+  <h2 class="page-title"><i class="fa fa-user-check me-2"></i>IQCU Audit Details</h2>
+  <p class="page-subtitle">Track all audit schedules status</p>
 
   <!-- Status Cards -->
   <div class="status-grid">
@@ -163,15 +163,16 @@
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
             </div>
-            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed'">
-              <div class="action-group">
-                <button type="button" class="action-btn view" (click)="viewTemplate(viewAuditTemplate,row.id)" >
-                  <i class="fa fa-eye action-icon"></i>
+            <div *ngIf="row.auditStatus === 'Action Required'">
+                <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
+                  Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
-
-                
-
-                
+            </div>
+            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Action Required'">
+              <div class="action-group">
+                <button class="btn btn-warning btn-sm" (click)="viewTemplate(viewAuditTemplate,row.id)" style="width: 150px;">
+                  Audit Details <i class="fa fa-eye ms-1 pointer"></i>
+                </button>   
               </div>
             </div>
           </div></td>
@@ -284,16 +285,16 @@
             <thead>              
             <tr>
                   <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
-                  <th width="25%">Details</th>
-                  <th width="30%">Observation</th>
+                  <th width="68%">Description</th>
+                 
+                  <th width="30%">Answer</th>
             </tr>            
           </thead>
             <tbody>
                 <tr *ngFor="let question of item.questionsList; let i = index">
                     <td>{{ i + 1 }}</td>
                     <td [innerHTML]="question.question"></td>
-                    <td [innerHTML]="question.benchmark"></td>
+                    
                     <td></td>
                 </tr>
             </tbody>
@@ -314,9 +315,9 @@
             <thead>             
             <tr>
                   <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
+                  <th width="68%">Description</th>
                   <th width="25%">Relevant Benchmark</th>
-                  <th width="30%">Observation</th>
+                  <th width="30%">Answer</th>
             </tr>            
           </thead>
             <tbody>
@@ -654,7 +655,7 @@
                   <th width="7%">Sl No</th>
                   <th width="43%">Description</th>
                   <th width="25%">Details</th>
-                  <th width="30%">Compliance/Present Status</th>
+                  <th width="30%">Answer</th>
             </tr>            
           </thead>
             <tbody>
@@ -682,16 +683,16 @@
             <thead>              
             <tr>
                   <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
-                  <th width="25%">Details</th>
-                  <th width="30%">Compliance/Present Status</th>
+                  <th width="68%">Description</th>
+               
+                  <th width="30%">Answer</th>
             </tr>            
           </thead>
             <tbody>
                 <tr *ngFor="let question of item.auditBoardQuestionsList; let i = index">
                     <td>{{ i + 1 }}</td>
                     <td [innerHTML]="question.question"></td>
-                    <td [innerHTML]="question.details"></td>
+                   
                     <td [innerHTML]="question.observation"></td>
                 </tr>
             </tbody>
@@ -714,7 +715,7 @@
                   <th width="7%">Sl No</th>
                   <th width="43%">Description</th>
                   <th width="25%">Relevant Benchmark</th>
-                  <th width="30%">Compliance/Present Status</th>
+                  <th width="30%">Answer</th>
             </tr>            
           </thead>
             <tbody>

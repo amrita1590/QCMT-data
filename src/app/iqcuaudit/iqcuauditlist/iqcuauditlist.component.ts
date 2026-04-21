@@ -28,11 +28,12 @@ import { UsermanagementService } from '../../service/usermanagement.service';
 import { QuestionsService } from '../../service/questions.service';
 import { ToastService } from '../../service/toast.service';
 import { RefreshService } from '../../service/refresh.service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, map, switchMap } from 'rxjs';
 import { HttpEventType } from '@angular/common/http';
 import { AuditBoardScheduleTemplate } from '../../interface/AuditBoardScheduleTemplate';
 import { AuditBoardTemplateGen } from '../../interface/AuditBoardTemplateGen';
 import { RouterModule } from '@angular/router';
+import { User } from '../../interface/User';
 
 @Component({
   selector: 'app-iqcuauditlist',
@@ -89,7 +90,8 @@ constants = APP_CONSTANTS;
   categories: CategoryDetails[] = [];
   units: UnitDetails[] = [];
   auditStatus: string = 'Planned';
-
+loggedUserDetails: User[] = [];  
+loggedUser:User | null = null;
 
   templates: AuditScheduleTemplate[] = [];
   auditScheduleTemplate: AuditScheduleTemplate | null = null;
@@ -151,33 +153,125 @@ constants = APP_CONSTANTS;
         id: 0, index: 1, auditObservationId: 0, templateId: 0, templateName: '', createdBy: '', entryDate: '', complianceStatus: '', remarks: '', typeCriticality: '', observation: '', letterNo: '', letterDate: '', entryTime: '', status: '', auditObservationComponentMessageList: [] },
       { id: 0, index: 2, auditObservationId: 0, templateId: 0, templateName: '', createdBy: '', entryDate: '', complianceStatus: '', remarks: '', typeCriticality: '', observation: '', letterNo: '', letterDate: '', entryTime: '', status: '', auditObservationComponentMessageList: [] }
     ];
+    
     this.getAuditDetails(); // Initial load
     this.getQuestionsDetails(); // Initial load 
     this.getCategoryDetails(); // Initial load 
-    this.getUnitDetails(); // Initial load  
-    this.getAuditorDetails(); // Initial load  
+    // Initial load  
+   
     
 
 
-  } openModal(content: any, templateId: number, templateName: string) {
+  } 
+  
+  openModal(content: any, templateId: number, templateName: string) {
     this.templateName = templateName;
     this.templateId = templateId;
 
     this.modalRef = this.modalService.open(content, { centered: true });
   }
 
-  getAuditDetails() {
+
+getAuditDetails() {
+
+  this.umService.getLoggedUserDetailList().pipe(
+
+    map((loggedUserData) => {
+      this.loggedUserDetails = loggedUserData;
+
+      if (this.loggedUserDetails.length > 0) {
+        this.loggedUser = this.loggedUserDetails[0];
+      }
+
+      return this.loggedUser;
+    }),
+
+    switchMap((user) => {
+      return this.unitDetails.getUnitDetails().pipe(
+
+        map((data) => {
+
+          let allUnits = data.sort((a, b) =>
+            a.unitName.localeCompare(b.unitName)
+          );
+
+          if (user && user.userscopelevel) {
+
+            const scope = user.userscopelevel;
+
+            if (scope === 'ADG') {
+              this.units = allUnits;
+
+            } else if (scope === 'Sector') {
+              this.units = allUnits.filter(
+                u => u.sector === user?.sector
+              );
+
+            } else if (scope === 'Zone') {
+              this.units = allUnits.filter(
+                u => u.zone === user?.zone
+              );
+
+            } else {
+              this.units = allUnits.filter(
+                u => u.id === user?.unitid
+              );
+            }
+          }
+
+          console.log("Units READY:", this.units);
+
+          return this.units; // 🔥 MUST RETURN
+        })
+      );
+    }),
+
+    switchMap((units) => {
+      console.log("Calling audit API...");
+
+      return this.auditService.getAuditDetails();
+    })
+
+  ).subscribe({
+    next: (data) => {
+
+      console.log("Audit Data:", data);
+
+      const unitSet = new Set(this.units.map(u => Number(u.id)));
+
+      this.templates = data.filter(t =>
+        unitSet.has(Number(t.unitId))
+      );
+
+      console.log("Filtered Templates:", this.templates);
+    },
+
+    error: (err) => {
+      console.error("ERROR:", err);
+      this.toast.show('Failed to fetch data ' + err, 'error');
+    }
+  });
+}
+ /*  <!--getAuditDetails() {
+     this.getUserDetails(); // Initial load
+    this.getUnitDetails();
     this.auditService.getAuditDetails().subscribe({
       next: (data) => {
-        this.templates = data.sort((a, b) => a.name.localeCompare(b.name));
-        console.log('Templates:', this.templates);
+         console.log('Templateslistttt:', data);
+          console.log('unitss:', this.units);
+        const allowedUnitIds = this.units.map(u => u.id);
+        console.log('allowedUnitIds:', allowedUnitIds);
+         this.templates = data.filter(t =>
+        allowedUnitIds.includes(t.unitId)
+      );
+       console.log('Templateslistttttt:', this.templates);
       },
       error: (err) => {
          this.toast.show('Failed to fetch templates'+ err, 'error');
         console.error('Failed to fetch templates', err);
       }
     });
-  }
+  }--> */
   
   getQuestionsDetails() {
     this.questionsService.getQuestionDetails().subscribe({
@@ -208,8 +302,46 @@ constants = APP_CONSTANTS;
   getUnitDetails() {
     this.unitDetails.getUnitDetails().subscribe({
       next: (data) => {
-        this.units = data.sort((a, b) => a.unitName.localeCompare(b.unitName));
-        console.log('Units:', this.units);
+         // Step 1: sort all units
+      let allUnits = data.sort((a, b) =>
+        a.unitName.localeCompare(b.unitName)
+      );
+
+      console.log('All Units:', allUnits);
+console.log('loggedUser:', this.loggedUser);
+          // Step 2: apply filtering based on user scope
+      if (this.loggedUser && this.loggedUser.userscopelevel) {
+
+        const scope = this.loggedUser.userscopelevel;
+console.log('scope:', scope);
+        if (scope === 'ADG') {
+          // 👉 All units
+          this.units = allUnits;
+          console.log('ADG:',  this.units);
+
+        } else if (scope === 'Sector') {
+          // 👉 Filter by sector
+          this.units = allUnits.filter(
+            u => u.sector === this.loggedUser?.sector
+          );
+console.log('sector:',  this.units);
+        } else if (scope === 'Zone') {
+          // 👉 Filter by zone
+          this.units = allUnits.filter(
+            u => u.zone === this.loggedUser?.zone
+          );
+console.log('zone:',  this.units);
+        } else {
+          // 👉 Only own unit
+          this.units = allUnits.filter(
+            u => u.id === this.loggedUser?.unitmaster?.id
+          );
+          console.log('unit:',  this.units);
+        }
+console.error(' units after filtering:', this.units);
+      }else{
+        console.error('Failed to fetch units',this.loggedUser);
+      }
       },
       error: (err) => {
          this.toast.show('Failed to fetch units'+ err, 'error');
@@ -217,7 +349,7 @@ constants = APP_CONSTANTS;
       }
     });
   }
-  
+ 
   getAuditorDetails() {
     this.umService.getUserAuditDetailList().subscribe({
       next: (data) => {
