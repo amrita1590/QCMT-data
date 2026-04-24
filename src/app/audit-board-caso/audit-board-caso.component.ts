@@ -542,7 +542,6 @@ export class AuditBoardCasoComponent {
     for (let t of this.sectionList) {
       if(t.type === 'Basic') {
         for(let q of t.auditBoardQuestionsList) {
-          if (!q.details || q.details.trim() === '') isValid = false;
           if (!q.observation || q.observation.trim() === '') isValid = false;
         }  
       } else {
@@ -585,7 +584,7 @@ export class AuditBoardCasoComponent {
       // ---------------------------
       // 2. FILE SIZE VALIDATION
       // ---------------------------
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 5MB
       const oversizedFiles: string[] = [];
 
       this.auditorResponseFilesTemp.forEach(fileObj => {

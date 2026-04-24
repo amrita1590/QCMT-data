@@ -81,7 +81,7 @@
           <th>Audit Type</th>
           <th>Status</th>
          
-          <th>Summary</th>
+          <th>View</th>
         </tr>
       </thead>
 
@@ -116,35 +116,29 @@
               <div *ngIf="row.auditStatus === 'In Progress'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" >
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>
                 </div>
-                <div class="ms-2">
-                  <i class="fa fa-eye action-icon"></i>
-                </div>
+                
               </div>
               <div *ngIf="row.auditStatus === 'Completed'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">APS HQRs Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" >
                 <div>
                   {{ row.auditStatus }}<br/>
                   <span class="badge-subtitle">APS HQRs Bucket</span>
                 </div>
 
-                <div class="ms-2">
-                  <i class="fa fa-eye action-icon"></i>
-                </div>
+                
 
               </div>
-              <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" >
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
                 </div>
-                <div class="ms-2">
-                  <i class="fa fa-eye action-icon"></i>
-                </div>
+               
               </div>
             </span>
           </td>
@@ -163,12 +157,12 @@
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
             </div>
-            <div *ngIf="row.auditStatus === 'Action Required'">
+            <div *ngIf="row.auditStatus === 'Action Required' || row.auditStatus === 'Observation CASO'">
                 <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
             </div>
-            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Action Required'">
+            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Action Required' && row.auditStatus !== 'Observation CASO'">
               <div class="action-group">
                 <button class="btn btn-warning btn-sm" (click)="viewTemplate(viewAuditTemplate,row.id)" style="width: 150px;">
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>

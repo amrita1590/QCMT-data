@@ -58,6 +58,13 @@
           <label class="form-label fw-bold">Created By</label>
           <div class="static-field">{{ auditBoardTemplateGen?.auditBoardScheduleTemplate?.createdBy }}</div>
         </div>
+        
+    <div class="col-md-4">
+          <label class="form-label fw-bold">Audit Date Proposed By Auditor:</label>
+          <div class="static-field">{{auditScheduledateinfo}}</div>
+        </div>
+
+        
       </div>
 
     </div>
@@ -67,7 +74,7 @@
   <!-- REVIEW FORM CARD -->
   <div class="card shadow-sm">
     <div class="card-header bg-secondary text-white">
-      <strong>Audit Review Form</strong>
+      <strong>Auditor Form</strong>
     </div>
 
     <div class="card-body">
@@ -76,17 +83,30 @@
 
         <!-- Letter Inputs -->
          <div class="row mb-3">
+          <div class="mb-3">
+           <div class="d-flex align-items-center">
+          <i class="fa fa-calendar-alt text-primary me-2" style="font-size:22px;"></i>
+          <h6 class="mb-0 fw-semibold">
+           Actual Audit Conducted Duration:
+          </h6>
+        </div></div>
           <div class="col-md-6">
-            <label class="form-label fw-bold">Audit From Date</label>
+            <label class="form-label fw-bold">From Date</label>
             <input type="date" class="form-control" formControlName="auditFromDate">
           </div>
 
           <div class="col-md-6">
-            <label class="form-label fw-bold">Audit To Date</label>
-            <input type="date" class="form-control" formControlName="auditToDate">
+            <label class="form-label fw-bold">To Date</label>
+            <input type="date" class="form-control" [min]="reviewForm.get('auditFromDate')?.value" formControlName="auditToDate">
           </div>
         </div>
         <div class="row mb-3">
+          <div class="d-flex align-items-center mb-3">
+          <i class="fa fa-file-lines text-primary me-2" style="font-size:22px;"></i>
+          <h6 class="mb-0 fw-semibold">
+         Audit Report information
+          </h6>
+        </div>
           <div class="col-md-6">
             <label class="form-label fw-bold">Letter No</label>
             <input type="text" class="form-control" formControlName="letterNumber">
@@ -97,7 +117,12 @@
             <input type="date" class="form-control" formControlName="letterDate">
           </div>
         </div>
-
+      <div class="d-flex align-items-center mb-3">
+          <i class="fa fa-folder-open text-primary me-2" style="font-size:22px;"></i>
+          <h6 class="mb-0 fw-semibold">
+         Audit Report & Relevant Documents (if any)
+          </h6>
+        </div>
         <p *ngIf="uploadProgress">Uploading: {{ uploadProgress }}%</p>
         <p *ngIf="uploadedFilePath">Uploaded path: {{ uploadedFilePath }}</p>
         <!-- Table -->
@@ -199,7 +224,7 @@
     </h5> 
     <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Audit Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor follow on queries Remarks/Message</h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>

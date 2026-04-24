@@ -2,9 +2,10 @@
 
   <!-- Top Navigation -->
   <div class="top-nav">
-    <button class="back-btn" routerLink="/dashboard"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+    <a href="/dashboard" class="back-btn">
+    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+  </a>
   </div>
-
   <!-- Page Title -->
   <h2 class="page-title"><i class="fa fa-user-check me-2"></i>Audit Schedule</h2>
   <p class="page-subtitle">Manage and track all audit schedules</p>
@@ -80,7 +81,7 @@
           <th>Audit Type</th>
           <th>Status</th>
           <th class="actions-col">Actions</th>
-          <th>Summary | Edit | Delete</th>
+          <th>Summary</th>
         </tr>
       </thead>
 
@@ -162,7 +163,12 @@
             <div *ngIf="row.auditStatus === 'Observation APS'">
               <button type="button" class="btn btn-success btn-sm" (click)="createObservation(createObservationTemplate,row.id)" style="width: 150px;">
               Observation <i class="fa-solid fa-reply me-1"></i></button>
-            </div>           
+            </div>       
+            <div *ngIf="row.auditStatus === 'Observation CASO'">
+                <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
+                  Audit Summary <i class="fa fa-eye ms-1 pointer"></i>
+                </button>
+            </div>    
             <div *ngIf="row.auditStatus === 'Completed'">
                 <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
                   Audit Summary <i class="fa fa-eye ms-1 pointer"></i>
@@ -183,13 +189,11 @@
                 </button>
               </div>
             </div>
-            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Planned'">
+            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Planned' && row.auditStatus !== 'Observation CASO'">
               <div class="action-group">
-                <button type="button" class="action-btn view" (click)="viewTemplate(viewAuditTemplate,row.id)" >
-                  <i class="fa fa-eye action-icon"></i>
-                </button>
-
-                
+                 <button class="btn btn-warning btn-sm" (click)="viewTemplate(viewAuditTemplate,row.id)" style="width: 150px;">
+                  Audit Summary <i class="fa fa-eye ms-1 pointer"></i>
+                </button>                
               </div>
             </div>
           </div></td>
@@ -510,7 +514,8 @@
       </div>
       <div class="modal-body">  
       <hr/>
-        <div *ngIf="auditObservation?.id">
+        <div *ngIf="auditObservation?.id && auditObservation?.observationStatus === 'submitted'">
+
             <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
               <div class="card-body px-4">
 
@@ -626,7 +631,7 @@
           </div>
           <!-- FOOTER -->
           <div class="modal-footer border-0 mt-2">
-            <button type="submit" class="btn btn-success me-2" (click)="droppedObservation(auditObservation?.auditTemplateId)"><i class="fa fa-times-circle ms-1 pointer"></i> Dropped</button>
+            <!-- <button type="submit" class="btn btn-success me-2" (click)="droppedObservation(auditObservation?.auditTemplateId)"><i class="fa fa-times-circle ms-1 pointer"></i> Dropped</button> -->
             <button type="submit" class="btn btn-primary me-2" (click)="submitObservationPopupToCASO(submitObservationCASO, auditObservation?.auditTemplateId)" [disabled]="!activeList?.length"><i class="fa fa-user ms-1 pointer"></i> Send to CASO</button>
             <button class="btn btn-light border px-4" (click)="modal.dismiss()">
               Close
@@ -634,7 +639,7 @@
           </div>
         </div>
 
-        <div *ngIf="!auditObservation?.id">
+        <div *ngIf="!auditObservation?.id || auditObservation?.observationStatus !== 'submitted'">
         <p>Add a new observation to the audit</p>
           
         <form [formGroup]="observationTemplateForm" (ngSubmit)="addObservationTemplate(observationTemplateForm.value)" class="was-validated">
@@ -711,7 +716,8 @@
             <!-- Buttons -->
              <hr/>
             <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary me-4" [disabled]="observationTemplateForm.invalid">{{btnName}}</button>
+            <button type="button" class="btn btn-success me-4" [disabled]="observationTemplateForm.invalid" (click)="saveObservationTemplate(observationTemplateForm.value)">{{btnName}}</button>
+            <button type="submit" class="btn btn-primary me-4" [disabled]="observationTemplateForm.invalid">Send To CASO</button>
             <button type="reset" class="btn btn-warning" (click)="auditObservationReset()">Reset</button>
             </div>
         </form>
@@ -781,7 +787,7 @@
           <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
           <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
         </select>    
-        <button class="btn btn-success me-2" (click)="updateStatus(chatObservationStatus, auditObservationComponentBean?.id)">Change&nbsp;Status</button>    
+        <button class="btn btn-success me-2" (click)="updateStatus(chatObservationStatus, auditObservationComponentBean?.id)">&nbsp;OK</button>    
       </div>
     </div>
   </div>
@@ -791,7 +797,7 @@
     </div>
     <!-- FOOTER -->
     <div class="modal-footer border-0 mt-2">
-      <button type="submit" class="btn btn-primary me-2" (click)="complianceStatusForm(complianceStatusModel,auditObservationComponentBean)" *ngIf="auditObservationComponentBean?.status === 'CASO' && auditObservationComponentBean?.complianceStatus !== 'Dropped' && auditObservationComponentBean?.complianceStatus !== 'Compliant'"><i class="fa fa-user ms-1 pointer me-2"></i> Enter Compliance Status</button>
+      <button type="submit" class="btn btn-primary me-2" (click)="complianceStatusForm(complianceStatusModel,auditObservationComponentBean)" *ngIf="auditObservationComponentBean?.status === 'CASO' && auditObservationComponentBean?.complianceStatus !== 'Dropped' && auditObservationComponentBean?.complianceStatus !== 'Compliant'"><i class="fa fa-user ms-1 pointer me-2"></i> Enter Compliance Remarks</button>
       <button class="btn btn-light border px-4" (click)="modal.dismiss()">
         Close
       </button>
@@ -802,7 +808,7 @@
   <!-- HEADER -->
   <div class="modal-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa-solid fa-clipboard-check me-2"></i> Compliance Status Form
+      <i class="fa-solid fa-clipboard-check me-2"></i> Compliance Remarks Form
     </h5>
     <!-- CLOSE BUTTON -->
      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
@@ -811,7 +817,7 @@
   <div class="modal-body pt-2">
     <div class="compliance-wrapper">
       <div class="mb-3">
-        <label>Compliance Status by APS HQRs</label>
+        <label>Compliance Remarks by APS HQRs</label>
         <textarea class="form-control" rows="4" [(ngModel)]="auditObservationComponentMessage.complianceMessage" [ngModelOptions]="{standalone: true}" novalidate></textarea>
       </div>
     </div>
@@ -932,7 +938,7 @@
       <!-- ATTACHED FILES SECTION -->
       <div *ngIf="auditBoardTemplateGen.auditiorResponse.auditorResponseFiles && auditBoardTemplateGen.auditiorResponse.auditorResponseFiles.length > 0">
       <h5 class="fw-semibold text-dark mb-3">
-        <i class="fa-solid fa-paperclip me-2 text-primary"></i> Auditor Report (Attached Files)
+        <i class="fa-solid fa-paperclip me-2 text-primary"></i> Audit Report & Relevant Documents (Attached Files)
       </h5>
 
       <div class="table-responsive">

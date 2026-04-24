@@ -1,11 +1,10 @@
 <div class="audit-page">
 
   <!-- Top Navigation -->
-  <div class="top-nav mb-3">
-    <button class="back-btn d-flex align-items-center" routerLink="/dashboard">
-      <i class="fa-solid fa-arrow-left me-2"></i>
-      Back to Dashboard
-    </button>
+ <div class="top-nav">
+    <a href="/dashboard" class="back-btn">
+    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+  </a>
   </div>
 
   <!-- Page Title -->
@@ -148,7 +147,7 @@
 
               <button *ngSwitchCase="'Action Required'"
                 class="btn btn-primary btn-sm"
-                (click)="showReviewResponseAuditor(reviewResponseAudit,row.id)" style="width: 160px;">
+                (click)="showReviewResponseAuditor(reviewResponseAudit,row.id,row?.auditScheduleFromDate || '' ,row?.auditScheduleToDate || '')" style="width: 160px;">
                 Review & Respond<i class="fa-solid fa-reply ms-1 pointer"></i>
               </button>
 
@@ -326,7 +325,7 @@
     </p>
 
     <div class="p-3 border rounded bg-light">
-      <app-auditorresponseform #childRef></app-auditorresponseform>
+      <app-auditorresponseform #childRef [auditScheduledateinfo]="auditScheduledate"></app-auditorresponseform>
     </div>
   </div>
 
@@ -337,11 +336,11 @@
     </button>
 
     <button class="btn btn-success shadow-sm px-4" (click)="showSendBackToCasoPopup(auditorRemarksCasoPopup)">
-      Send Back to CASO
+      Queries to CASO
     </button>
 
     <button class="btn btn-primary shadow-sm px-4" (click)="submitFromPopup()">
-      Send to APS HQRs
+      Submit to APS HQRs
     </button>
   </div>
 
@@ -353,7 +352,7 @@
   <div class="modal-header border-0 pb-2">
     <h5 class="modal-title fw-semibold text-primary d-flex align-items-center">
       <i class="fa-solid fa-reply me-2"></i>
-      Audit Send Back to CASO
+      Follow on queries with CASO
     </h5>
 
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
@@ -364,7 +363,7 @@
 
     <div class="mb-3">
       <label class="form-label fw-semibold mb-2">
-        Remarks / Description
+        Remarks for CASO
       </label>
 
       <textarea
@@ -459,7 +458,7 @@
      <div class="auditor-section p-3 rounded-3 mb-4">
 
   <h5 class="fw-semibold text-dark mb-3">
-    <i class="fa-solid fa-reply me-2 text-primary"></i> Report received from Auditor
+    <i class="fa-solid fa-reply me-2 text-primary"></i> Report Submitted to APS HQRs.
   </h5>
 
       <div class="row g-3 mb-4">
@@ -575,7 +574,7 @@
     </h5>
     <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Audit Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor follow on queries Remarks/Message</h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>
@@ -793,9 +792,9 @@
       </tr>
     </tbody>
   </table>
- <hr/>
+ <hr/>//"[disabled]="questionForm.invalid
             <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary me-4" [disabled]="questionForm.invalid"> Save All Questions</button>
+            <button type="submit" class="btn btn-primary me-4" > Save All Questions</button>
             <button type="reset" class="btn btn-warning" >Reset</button>
             </div>
   
@@ -862,12 +861,12 @@
       <div class="row">
         <div class="col-md-6 mb-3">
           <label>Schedule From Date</label>
-          <input type="date" class="form-control" placeholder="Select Date" [(ngModel)]="scheduleFromDate" [ngModelOptions]="{standalone: true}" novalidate/>
+          <input type="date" class="form-control" placeholder="Select Date" [(ngModel)]="scheduleFromDate"   (change)="onFromDateChange()" [min]="today" [ngModelOptions]="{standalone: true}" novalidate/>
         </div>
 
         <div class="col-md-6 mb-3">
           <label>Schedule To Date</label>
-          <input type="date" class="form-control" placeholder="Select Date" [(ngModel)]="scheduleToDate" [ngModelOptions]="{standalone: true}" novalidate/>
+          <input type="date" class="form-control" placeholder="Select Date" [(ngModel)]="scheduleToDate"   [min]="scheduleFromDate" [ngModelOptions]="{standalone: true}" novalidate/>
         </div>
       </div>
     

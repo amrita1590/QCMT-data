@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { NgbModal, NgbModalRef, NgbTooltip } from '@ng-bootstrap/ng-bootstrap';
 import { AuditscheduleserviceService } from '../service/auditscheduleservice.service';
 import { AuditBoardTemplateGen } from '../interface/AuditBoardTemplateGen';
@@ -26,7 +26,7 @@ import { UsermanagementService } from '../service/usermanagement.service';
   styleUrl: './auditorresponseform.component.css'
 })
 export class AuditorresponseformComponent {
-  
+  @Input() auditScheduledateinfo: string='';
   constants = APP_CONSTANTS;
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
   
@@ -64,7 +64,7 @@ export class AuditorresponseformComponent {
   }
 
   ngOnInit() {
-   
+   console.log('Received date:', this.auditScheduledateinfo);
     this.auditService.getAuditReviewData().subscribe({
       next: (data) => {
         console.log(">>>>>>>>>>>>>>>>>>", data);
@@ -74,13 +74,25 @@ export class AuditorresponseformComponent {
         console.error("Error loading review data:", err);
       }
     });
+if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
 
+}
     this.auditorResponseFilesTemp = [
       { id: 0, index: 1, documentName: '', remarks: '', auditorResponseId: 0, auditTemplateId: 0, uploadDocFile: null as File | null },
       { id: 0, index: 2, documentName: '', remarks: '', auditorResponseId: 0, auditTemplateId: 0, uploadDocFile: null as File | null }
     ]; 
 
     this.loadAuditDetails();
+
+   this.reviewForm.get('auditFromDate')?.valueChanges.subscribe(fromDate => {
+      const toDate = this.reviewForm.get('auditToDate')?.value;
+
+      if (toDate && toDate < fromDate) {
+        this.reviewForm.get('auditToDate')?.setValue('');
+      }
+    });
+  
+
   }
 
   addFilesComponent() {
@@ -215,7 +227,7 @@ export class AuditorresponseformComponent {
       // ---------------------------
       // 2. FILE SIZE VALIDATION
       // ---------------------------
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
       const oversizedFiles: string[] = [];
 
       this.auditorResponseFilesTemp.forEach(fileObj => {

@@ -44,7 +44,7 @@ export class AuditboardComponent {
 
   scheduleFromDate: string = '';
   scheduleToDate: string = '';
-
+auditScheduledate: string = '';
   searchTerm: string = '';
   templateName: string = '';
   templateId: number = 0;
@@ -102,6 +102,7 @@ export class AuditboardComponent {
    auditorQuestions!: AuditorQuestions;
    selectedTemplateId!: number;
    selectedTemplateStatus!: string;
+   today: string = '';
   constructor(private fb: FormBuilder, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService) {        
       
   }   
@@ -115,6 +116,8 @@ export class AuditboardComponent {
         questions: this.fb.array([])   // 👈 FormArray
       });
     this.addRow();
+    const current = new Date();
+  this.today = current.toISOString().split('T')[0]; 
   }
   // Getter
   get questions(): FormArray {
@@ -429,7 +432,14 @@ viewTemplate(content: any, id: number) {
   this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
 }
 
-showReviewResponseAuditor(content: any, id: number) {
+showReviewResponseAuditor(content: any, id: number, auditScheduleFromDate?: string, auditScheduleToDate?: string) {
+    
+  if(auditScheduleFromDate && auditScheduleToDate){
+this.auditScheduledate = auditScheduleFromDate+" to "+auditScheduleToDate;
+  }else {
+    this.auditScheduledate = 'Not Available';
+  }
+  console.log("Audit Schedule Date Info ::", this.auditScheduledate);
     this.selectedTemplateId = id;
     this.loadQuestions();
     this.auditService.getAuditorResponseDetails(id).subscribe({
@@ -492,12 +502,13 @@ showReviewResponseAuditor(content: any, id: number) {
               }             
             });
             this.auditService.setAuditReviewData(this.auditBoardTemplateGen);
+            setTimeout(() => {
             // Open modal
             this.modalRef = this.modalService.open(content, {
               size: "xl",
               backdrop: "static",
               keyboard: false
-            });
+            });}, 100);
           },
 
           error: (err) => {
@@ -789,6 +800,12 @@ printPDF() {
     this.templateId = id;
     this.modalRef = this.modalService.open(content, { backdrop: 'static', keyboard: false});
   }
+  onFromDateChange() {
+  // Reset To Date if it is before From Date
+  if (this.scheduleToDate && this.scheduleToDate < this.scheduleFromDate) {
+    this.scheduleToDate = '';
+  }
+}
 
   saveAuditScheduleFromToDate(){
     if(this.scheduleFromDate.trim() === '' || this.scheduleFromDate === null || this.scheduleFromDate === undefined) {

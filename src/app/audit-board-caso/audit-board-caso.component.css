@@ -1082,3 +1082,14 @@ input[readonly] {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
+.n-btn {
+  width: 180px;              /* consistent width */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;                 /* spacing between icon & text */
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;      /* prevents breaking text */
+}

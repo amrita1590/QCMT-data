@@ -11,6 +11,7 @@ export interface AuditObservation {
   creationDate: string;
   status: string;
 
+  observationStatus: string;
   auditObservationComponent: AuditObservationComponent[];
   
 }

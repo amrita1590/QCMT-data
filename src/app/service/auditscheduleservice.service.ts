@@ -25,6 +25,7 @@ export class AuditscheduleserviceService {
   private deleteAuditTemplateUrl ='/v1/qcmt/master/deleteaudittemplates';
 
   private deleteAuditUrl ='/v1/qcmt/master/deleteaudit';
+  private deleteObservationUrl ='/v1/qcmt/master/deleteobservation';
    //Auditor add Questions
     private saveAuditorQuestionsUrl ='/v1/qcmt/master/saveauditorquestions';
     private getQuestionsUrl ='/v1/qcmt/master/getauditquestionsbyaudittempid';
@@ -135,6 +136,11 @@ deleteQuestion(questionId: number) {
    deleteAudit(id: number):Observable<any> {
      console.log("Inside Audit Details Service ::");
      return this.http.delete(this.deleteAuditUrl+"/"+id, { responseType: 'text' });
+   }
+
+   deleteObservation(id: number):Observable<any> {
+     console.log("Inside Audit Details Service ::");
+     return this.http.delete(this.deleteObservationUrl+"/"+id, { responseType: 'text' });
    }
 
    //Audit board

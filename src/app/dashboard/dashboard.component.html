@@ -57,9 +57,13 @@
 
     <div class="card-content">
       <div>
-        <h4>Total Airports</h4>
-        <h2>{{dashboardBean?.totalAirport || 0}}</h2>
-        <p class="sub">Under CISF security</p>
+        @if (dashboardBean?.totalAirport === '1') {
+    <h2>{{ dashboardBean?.asgname }}</h2>
+  } @else {
+    <h4>Total Airports</h4>
+    <h2>{{ dashboardBean?.totalAirport || 0 }}</h2>
+    <p class="sub">Under CISF security</p>
+  }
       </div>
 
       <div class="icon-box">
@@ -220,11 +224,11 @@
     <!--Add popup to this button-->
     <!-- <div class="view-more">View all Upcoming Audit's →</div> -->
 
-    <div class="view-more-link" (click)="createModal(statusAuditTemplate)">
-  📊 View All Unit IQCU Audit Status for the Current Year →
-</div><br>
-<div class="view-more-link">
- <a href="/iqcuauditlist">
+    <div class="view-more-link obs-item" (click)="createModal(statusAuditTemplate)">
+      📊 View All Unit IQCU Audit Status for the Current Year →
+    </div><br/>
+<div class="view-more-link obs-item">
+ <a href="/iqcuauditlist" style="text-decoration: none;">
     📊 View All Unit IQCU Audit details →
   </a>
 </div> 

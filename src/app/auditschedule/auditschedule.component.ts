@@ -221,7 +221,8 @@ console.log("Generated Audit Name:", auditName);
   getQuestionsDetails() {
     this.questionsService.getQuestionDetails().subscribe({
       next: (data) => {
-        this.questionTemplates = data.sort((a, b) => a.name.localeCompare(b.name));
+       // this.questionTemplates = data.sort((a, b) => a.name.localeCompare(b.name));
+       this.questionTemplates = data.sort((a, b) => a.id - b.id);
         console.log('Templates:', this.questionTemplates);
       },
       error: (err) => {
@@ -342,6 +343,58 @@ console.log("Generated Audit Name:", auditName);
         auditTemplateName: '',
         createdBy: '',
         status: 'APSHQrs',
+        observationStatus: 'submitted',
+        creationDate: new Date().toISOString(),
+        auditObservationComponent: this.auditObservationComponent
+      };
+      console.log("Audit Observation Data:", this.auditObservation);
+      console.log(this.auditScheduleTemplate);
+
+      this.auditService.saveAuditObservationDetails(this.auditObservation).subscribe(response => {
+        console.log("Audit Observation Details saved successfully!", response);
+        this.toast.show('Audit Observation Details added successfully!', 'success');
+        this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
+        if(this.auditScheduleTemplate) {
+          const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
+            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+              next: (data) => {
+                console.log('Notification sent successfully', data);
+              }
+            });
+        }
+        this.auditObservationReset();
+        this.getAuditDetails(); // Refresh the list
+        
+        this.modalService.dismissAll();
+      }, error => {
+        this.toast.show("Error saving audit observation details: " + error, 'error');
+      });    
+  }
+
+  saveObservationTemplate(auditObservation: AuditObservation) {
+      
+      if (!this.observationTemplateForm.value.letterNo) {
+        this.toast.show("Please Enter Observation Letter Number.", 'error');
+        return;
+      }
+      if (!this.observationTemplateForm.value.letterDate) {
+        this.toast.show("Please Enter Observation Letter Date.", 'error');
+        return;
+      }
+      if (this.auditObservationComponent.some(fc => !fc.observation || fc.observation === null || !fc.complianceStatus || fc.complianceStatus === null || !fc.typeCriticality || fc.typeCriticality === null)) {
+        this.toast.show("Please fill all observation fields.", 'error');
+        return;
+      }
+      // Prepare the observation data
+      this.auditObservation = {
+        id: this.observationTemplateForm.value.id,
+        letterDate: this.observationTemplateForm.value.letterDate,
+        letterNo: this.observationTemplateForm.value.letterNo,
+        auditTemplateId: this.templateId,
+        auditTemplateName: '',
+        createdBy: '',
+        status: 'APSHQrs',
+        observationStatus: 'saved',
         creationDate: new Date().toISOString(),
         auditObservationComponent: this.auditObservationComponent
       };
@@ -476,6 +529,7 @@ console.log("Generated Audit Name:", auditName);
       // Populate template names in auditScheduleList
       template.auditScheduleList.forEach(schedule => {
           this.questionsService.getQuestionDetails().subscribe(questions => {
+            
           const matchedTemplate = questions.find(q => q.id === schedule.template);
           if (matchedTemplate) {
             this.auditTemplateGen?.questionTemplateList.push(matchedTemplate);
@@ -611,10 +665,8 @@ listenForNameChanges() {
 
   createObservation(content: any, id: number) {
     console.log(":::::::::::::::");    
-    this.auditObservationReset();
     this.getAuditObservationComponent(id);
-    this.templateId = id;
-    this.btnName = "Create";
+    this.templateId = id;    
     this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
   }
 
@@ -722,12 +774,26 @@ listenForNameChanges() {
   }
 
   deleteObservation(id: number, index: number, content: any) {
-      console.log("ID :::::::::::::::::"+id);
-      console.log("Audit not saved yet, removing locally.");
-      this.auditObservationComponent = this.auditObservationComponent.filter(component => component.index !== index);
-      this.rows = this.rows.filter(row => row.index !== index);
-    
-      this.modalRef?.close();
+      if(id !== 0) {
+        this.auditService.deleteObservation(id).subscribe({
+          next: (data) => {
+            console.log('Response ::', data);
+             this.toast.show('Observation deleted successfully.', 'success')
+             this.auditObservationComponent = this.auditObservationComponent.filter(component => component.index !== index);
+             this.rows = this.rows.filter(row => row.index !== index);
+          },
+          error: (err) => {
+            console.error('Unable to delete observation ::', err);
+            this.toast.show('Failed to delete observation.'+err, 'error');
+          }
+        });
+    } else {
+        this.auditObservationComponent = this.auditObservationComponent.filter(component => component.index !== index);
+        this.rows = this.rows.filter(row => row.index !== index);
+        console.log("ID :::::::::::::::::"+id);
+        console.log("Observation not saved yet, removing locally.");
+    }
+    this.modalRef?.close();
   }
 
 
@@ -972,9 +1038,25 @@ listenForNameChanges() {
   }
 
   getAuditObservationComponent(id: number) {
+    this.auditObservationReset();    
      this.auditService.getAuditObservationDetails(id).subscribe({
       next: (data) => {
         this.auditObservation = data;
+        if(this.auditObservation?.observationStatus === 'saved') {
+            this.btnName = "Update";
+            this.observationTemplateForm.patchValue({
+              id: this.auditObservation.id,
+              letterNo: this.auditObservation.letterNo,
+              letterDate: this.auditObservation.letterDate
+            });
+            this.auditObservationComponent = [];
+            this.auditObservation.auditObservationComponent.forEach(component => {
+              component.index = this.auditObservationComponent.length + 1;
+              this.auditObservationComponent.push(component);
+            });
+        } else {
+            this.btnName = "Create";
+        }    
         console.log('Audit Observation Details:', this.auditObservation);
       },
       error: (err) => {

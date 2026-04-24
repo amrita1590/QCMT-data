@@ -9,7 +9,7 @@ export interface DashboardBean {
     totalDropped: string;
     totalCompliance: string;
     auditType: string;
-
+    asgname?: string;
     totalAirport: string;
 	totalObservation: string;
 	openObservation: string;

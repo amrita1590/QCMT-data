@@ -2,7 +2,9 @@
 
   <!-- Top Navigation -->
   <div class="top-nav">
-    <button class="back-btn" routerLink="/dashboard"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+    <a href="/dashboard" class="back-btn">
+    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+  </a>
   </div>
 
   <!-- Page Title -->
@@ -90,7 +92,7 @@
                 {{ row.name }}&nbsp;<i class="fa fa-eye action-icon" (click)="viewTemplate(viewAuditTemplate,row.id)"></i>
               </div>
               <!-- Right corner -->
-              <i *ngIf="row.auditStatus === 'Action Required'" class="fa fa-exclamation-triangle text-danger" title="Audit assigned - Requires attention"></i>
+              <i *ngIf="row.auditStatus === 'Observation CASO'" class="fa fa-exclamation-triangle text-danger" title="Audit Observation - Requires attention"></i>
             </div>
           </td>
           <td>{{ row.auditMonth + '-01' | date: 'MMM yyyy' }}</td>
@@ -138,21 +140,21 @@
           <!--<td><i class="fa fa-eye action-icon" (click)="viewBoardTemplate(viewAuditBoardTemplate,row.id)"></i></td>
         --><td>
             <div *ngIf="row.auditStatus === 'Observation CASO'">
-              <button type="button" class="btn btn-success btn-sm" style="width: 165px;" (click)="submitObservation(submitObservationTemplate,row.id)"><i class="fa-solid fa-reply me-1"></i>
-              Observation</button>
+              <button type="button" class="btn n-btn btn-success" style="width: 165px;" (click)="submitObservation(submitObservationTemplate,row.id)"><i class="fa-solid fa-reply me-1"></i>
+              Respond to Observation</button>
             </div>
             <div *ngIf="row.auditStatus === 'Observation APS'">
-              <button type="button" class="btn btn-success btn-sm" style="width: 165px;" [disabled]="true"><i class="fa-solid fa-reply me-1"></i>
-              Observation</button>
+              <button type="button" class="btn n-btn btn-success " style="width: 165px;" [disabled]="true"><i class="fa-solid fa-reply me-1"></i>
+               Respond to Observation</button>
             </div>
             <div *ngIf="row.auditStatus === 'Action Required'">
-              <button type="button" class="btn btn-success btn-sm" (click)="showAuditTemplate(auditResponseTemplate,row.id)" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Review & Respond</button>
+              <button type="button" class="btn n-btn btn-success" (click)="showAuditTemplate(auditResponseTemplate,row.id)" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Respond to Pre-Ques</button>
             </div>
             <div *ngIf="row.auditStatus === 'In Progress'">
-              <button type="button" class="btn btn-success btn-sm" [disabled]="row.auditStatus === 'In Progress'" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Review & Respond</button>
+              <button type="button" class="btn n-btn btn-success" [disabled]="row.auditStatus === 'In Progress'" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Respond to Pre-Ques</button>
             </div>
             <div *ngIf="row.auditStatus === 'Completed'">
-              <button type="button" class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 165px;"><i class="fa fa-eye action-icon"></i> Audit Summary</button>
+              <button type="button" class="btn n-btn btn-warning" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 165px;"><i class="fa fa-eye action-icon"></i> Audit Summary</button>
             </div>
           </td>
         </tr>
@@ -243,7 +245,7 @@
      <div class="auditor-section p-3 rounded-3 mb-4">
 
   <h5 class="fw-semibold text-dark mb-3">
-    <i class="fa-solid fa-reply me-2 text-primary"></i> Report received from Auditor
+    <i class="fa-solid fa-reply me-2 text-primary"></i> Report submitted to APS HQRs by Auditor
   </h5>
 
       <div class="row g-3 mb-4">
@@ -285,7 +287,7 @@
 
       <!-- ATTACHED FILES SECTION -->
       <h5 class="fw-semibold text-dark mb-3">
-        <i class="fa-solid fa-paperclip me-2 text-primary"></i> Auditor Report (Attached Files)
+        <i class="fa-solid fa-paperclip me-2 text-primary"></i> Audit Report (Attached Files)
       </h5>
 
       <div class="table-responsive">
@@ -474,7 +476,7 @@
         </h3>
             <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Audit Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor follow on queries Remarks/Message</h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>
@@ -695,7 +697,7 @@
           <thead class="table-secondary">
             <tr>
               <th width="7%">Sl No</th>
-              <th width="43%">Description</th>
+              <th width="63%">Description</th>
              
               <th width="30%">Answer</th>
             </tr>
@@ -840,8 +842,8 @@
               <thead class="table-dark">
                 <tr>
                   <th width="5%">Sl No</th>
-                  <th width="35%">Description</th>
-                  <th width="30%">Details</th>
+                  <th width="65%">Description</th>
+                  
                   <th width="30%">Answer</th>
                 </tr>
               </thead>
@@ -852,13 +854,14 @@
 
                   <td>{{ question.question }}
                      <span *ngIf="question.information" class="info-circle" [ngbTooltip]="question.information">i</span>
+                     <input type="hidden" class="form-control" placeholder="Enter Details" [(ngModel)]="question.details" [ngModelOptions]="{standalone: true}" novalidate/>
                   </td>
-                  <td>
-                    <input type="text" class="form-control" placeholder="Enter Details" [(ngModel)]="question.details" [ngModelOptions]="{standalone: true}" novalidate/>
-                  </td>
+                  
+                    
+                  
 
                   <td>
-                    <input type="text" class="form-control" placeholder="Enter Observation" [(ngModel)]="question.observation" [ngModelOptions]="{standalone: true}" novalidate/>
+                    <input type="text" class="form-control" placeholder="Enter Details" [(ngModel)]="question.observation" [ngModelOptions]="{standalone: true}" novalidate/>
                   </td>
                 </tr>
               </tbody>
@@ -890,7 +893,7 @@
                   <td>{{ question.benchmark }}</td>
 
                   <td>
-                    <textarea type="text" class="form-control" placeholder="Enter Observation" [(ngModel)]="question.observation" [ngModelOptions]="{standalone: true}" novalidate style="width: 100%; height: 100%;"></textarea>
+                    <textarea type="text" class="form-control" placeholder="Enter Details" [(ngModel)]="question.observation" [ngModelOptions]="{standalone: true}" novalidate style="width: 100%; height: 100%;"></textarea>
                   </td>
                 </tr>
               </tbody>
@@ -922,7 +925,7 @@
                   <td>{{ question.benchmark }}</td>
 
                   <td>
-                    <textarea type="text" class="form-control" placeholder="Enter Observation" [(ngModel)]="question.observation" [ngModelOptions]="{standalone: true}" novalidate style="width: 100%; height: 100%;"></textarea>
+                    <textarea type="text" class="form-control" placeholder="Enter Details" [(ngModel)]="question.observation" [ngModelOptions]="{standalone: true}" novalidate style="width: 100%; height: 100%;"></textarea>
                   </td>
                 </tr>
               </tbody>

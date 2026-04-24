@@ -19,12 +19,12 @@ export const APP_CONSTANTS = {
     NOTIFICATION: {
         PRE_QUESTIONNAIRE: 'Pre-questionnaire for {auditname} has been received from auditor : {auditorName}.',
         SEND_TO_CASO: 'Pre-questionnaire for {auditname} has been received from auditor - {casoName}.',        
-        SENT_TO_AUDITOR: 'Audit - {auditname} has been submited by CASO - {casoName} for review.',        
-        NEW_AUDIT_CREATED: 'A new audit created {auditname} and has been assigned to you.',        
+        SENT_TO_AUDITOR: 'Pre-questionnaire Answers for {auditname} has been submitted by CASO - {casoName} for review.',        
+        NEW_AUDIT_CREATED: 'A new audit created {auditname} and has been assigned to Auditor.',        
         AUDIT_COMPLETED: 'Audit - {auditname} process completed and closed successfully by APS.',        
-        CASO_OBSERVATION_REQUIRED: 'Observation for {auditname} has been received from APS - {userName}.',        
+        CASO_OBSERVATION_REQUIRED: 'Observation for {auditname} has been received from APS HQRs- {userName}.',        
         APS_OBSERVATION_REVIEW_REQUIRED: 'Observation submited for {auditname} for APS review and approval by CASO - {casoName}.',        
-        APS_TO_AUDITOR: 'Audit - {auditname} has been sent back by APS for correction and resubmission.',
+        APS_TO_AUDITOR: 'Audit - {auditname} has been sent back by APS HQRs for correction and resubmission.',
         AUDITOR_TO_APS: 'Audit final report submitted for {auditname} has been received from auditor - {auditorName}.'
     }
 };
