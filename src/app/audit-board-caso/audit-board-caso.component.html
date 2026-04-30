@@ -73,9 +73,10 @@
           <th>Audit Month</th>
           <th>Unit Name</th>
           <th>Auditor Name</th>
-          <th>Created By</th>
+          
           <th>CASO Name</th>
           <th>Audit Type</th>
+          <th>Scheduled Date By Auditor</th>
           <th>Status</th>
           <!--<th>View</th>-->
           <th class="actions-col">Actions</th>
@@ -98,10 +99,12 @@
           <td>{{ row.auditMonth + '-01' | date: 'MMM yyyy' }}</td>
           <td>{{ row.unitName }}</td>
           <td>{{ row.auditorName }}</td>          
-          <td>{{ row.createdBy }}</td>
+          <!-- <td>{{ row.createdBy }}</td> -->
           <td>{{ row.casoName }}</td>
           <td><span class="type-badge">{{ row.auditType }}</span></td>
-
+<td >{{ row.auditScheduleFromDate && row.auditScheduleToDate 
+      ? (row.auditScheduleFromDate + ' to ' + row.auditScheduleToDate) 
+      : 'Not available' }}</td>
           <td>
               <div *ngIf="row.auditStatus === 'Planned'" class="status-badge"  class="status-badge Planned">
                   Planned<br/><span class="badge-subtitle">Auditor Bucket</span>
@@ -148,10 +151,10 @@
                Respond to Observation</button>
             </div>
             <div *ngIf="row.auditStatus === 'Action Required'">
-              <button type="button" class="btn n-btn btn-success" (click)="showAuditTemplate(auditResponseTemplate,row.id)" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Respond to Pre-Ques</button>
+              <button type="button" class="btn n-btn btn-success" (click)="showAuditTemplate(auditResponseTemplate,row.id)" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Respond to PQ</button>
             </div>
             <div *ngIf="row.auditStatus === 'In Progress'">
-              <button type="button" class="btn n-btn btn-success" [disabled]="row.auditStatus === 'In Progress'" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Respond to Pre-Ques</button>
+              <button type="button" class="btn n-btn btn-success" [disabled]="row.auditStatus === 'In Progress'" style="width: 165px;"><i class="fa-solid fa-reply ms-1 pointer"></i> Respond to PQ</button>
             </div>
             <div *ngIf="row.auditStatus === 'Completed'">
               <button type="button" class="btn n-btn btn-warning" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 165px;"><i class="fa fa-eye action-icon"></i> Audit Summary</button>
@@ -630,7 +633,7 @@
     </h5>
     <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Audit Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor Pre-Questionnaire Remarks/Message</h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>
@@ -802,7 +805,7 @@
         <div *ngIf="currentSectionIndex === 0">    
           <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
             <div class="remarks-header d-flex justify-content-between align-items-center">
-              <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Audit Remarks/Message</h6>
+              <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor Pre-questionnaire Remarks/Message</h6>
 
                <button class="toggle-badge" (click)="toggleRemarks()">
                 <span>Remarks</span>

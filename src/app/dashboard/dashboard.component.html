@@ -57,13 +57,15 @@
 
     <div class="card-content">
       <div>
-        @if (dashboardBean?.totalAirport === '1') {
-    <h2>{{ dashboardBean?.asgname }}</h2>
+  
+  @if (dashboardBean?.totalAirport === '1') {
+    <h5>{{ dashboardBean?.asgname }}</h5>
   } @else {
     <h4>Total Airports</h4>
-    <h2>{{ dashboardBean?.totalAirport || 0 }}</h2>
+    <h2>{{ dashboardBean?.totalAirport ?? '0' }}</h2>
     <p class="sub">Under CISF security</p>
   }
+
       </div>
 
       <div class="icon-box">
@@ -183,7 +185,7 @@
   <!-- LEFT SIDE : Recent Observations -->
   <div class="recent-box">
 
-    <h3 class="title">Upcoming Audit</h3>
+    <h3 class="title"><b>Upcoming Audit</b></h3>
     <p class="subtitle">upcoming audit findings across airports</p>
 
     <div class="obs-item" *ngFor="let obs of dashboardBean?.upcomingAuditTemplate">

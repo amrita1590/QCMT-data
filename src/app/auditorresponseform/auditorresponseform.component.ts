@@ -229,7 +229,13 @@ if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
       // ---------------------------
       const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
       const oversizedFiles: string[] = [];
-
+if (!this.auditorResponseFilesTemp||this.auditorResponseFilesTemp.length === 0) {
+        this.toast.show(
+          `Please upload an Audit Report file`,
+          "error"
+        );
+        return;
+      }
       this.auditorResponseFilesTemp.forEach(fileObj => {
         if (fileObj.uploadDocFile && fileObj.uploadDocFile.size > MAX_FILE_SIZE) {
           oversizedFiles.push(`${fileObj.uploadDocFile.name} (${(fileObj.uploadDocFile.size / (1024*1024)).toFixed(2)} MB)`);

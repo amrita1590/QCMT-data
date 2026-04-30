@@ -18,7 +18,7 @@
         <div class="d-flex align-items-center gap-2">
           <span class="text-success fw-semibold">
             <i class="fa fa-check-circle me-1"></i>
-            Report Submitted by CASO
+            PQ Submitted by CASO
           </span>
 
           <button class="btn btn-outline-secondary btn-sm"
@@ -381,7 +381,9 @@
     <button class="btn btn-light border px-4" (click)="modal.dismiss()">
       Close
     </button>
-
+  <button class="btn btn-success shadow-sm px-4" (click)="showSendBackToCasoPopup(auditorRemarksCasoPopup)">
+      Queries to CASO
+    </button>
     <button class="btn btn-primary shadow-sm px-4"
             (click)="printPDF()">
       Print / Save PDF
