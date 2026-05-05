@@ -518,4 +518,15 @@ if (!this.auditorResponseFilesTemp||this.auditorResponseFilesTemp.length === 0) 
         .replace('{casoName}', data.casoName)
         .replace('{auditorName}', data.auditorName);
   }
+showSendBackToCasoPopup(content: any) {
+  this.modalRef = this.modalService.open(content, {
+      size: "ssm",
+      backdrop: "static",
+      keyboard: false
+    });  
+}
+showSendBackToCaso() {
+  
+ 
+}
 }
