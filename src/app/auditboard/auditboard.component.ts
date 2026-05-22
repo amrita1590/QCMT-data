@@ -124,6 +124,7 @@ auditScheduledate: string = '';
     return this.questionForm.get('questions') as FormArray;
   }
   addRow() {
+
   const questionGroup = this.fb.group({
     question: ['', Validators.required],
     benchmark: [''] // optional
@@ -161,10 +162,12 @@ saveAllQuestions() {
   if (this.questionForm.invalid) {
     return;
   }
-
+const id=this.questionForm.get('auditTemplateId')?.value;
+const auditorId=this.questionForm.get('auditorId')?.value;
+const unitId=this.questionForm.get('unitId')?.value;
   const payload = this.questionForm.value;
 
-  console.log("Final Payload:", payload);
+  console.log(id+" "+auditorId+"  "+unitId+" Final Payload:", payload);
   // Call service
   this.auditService.saveBulkQuestions(payload).subscribe({
     next: (data:any) => {
@@ -180,6 +183,13 @@ saveAllQuestions() {
       this.toast.show('Failed to save questions: ' + error.message, 'error');
     } 
   });
+   console.log(id+" "+auditorId+"  "+unitId+" Payload:");
+ this.questionForm.patchValue({
+      auditTemplateId: id,
+      auditorId: auditorId,
+      unitId: unitId,
+      
+    });
 }
 loadAuditDetails() {
     this.auditService.getAuditDetailsData().subscribe({
@@ -239,8 +249,8 @@ showSendBackToCaso() {
         console.log('>>>>>>>>>>>>>>>>>>>', this.templates);
         this.auditScheduleTemplate = this.templates.find(t => t.id === this.selectedTemplateId) || null;
         if (this.auditScheduleTemplate) {
-            const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.PRE_QUESTIONNAIRE, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+            const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.PRE_QUESTIONNAIRE_FollowUp, this.auditScheduleTemplate);
+            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.casoId).subscribe({
               next: (data) => {
                 console.log('Notification sent successfully', data);
               }
@@ -265,7 +275,7 @@ sendToCaso(rowId: number) {
           this.auditScheduleTemplate = this.templates.find(t => t.id === rowId) || null;
           if (this.auditScheduleTemplate) {
             const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.PRE_QUESTIONNAIRE, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.casoId).subscribe({
               next: (data) => {
                 console.log('Notification sent successfully', data);
               }

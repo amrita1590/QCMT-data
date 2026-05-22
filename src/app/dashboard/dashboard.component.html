@@ -93,7 +93,7 @@
   </div>
 
   <!-- CARD 3 -->
-  <div class="stat-card">
+  <!-- <div class="stat-card">
     <div class="card-top-border"></div>
 
     <div class="card-content">
@@ -107,7 +107,7 @@
         <i class="fa-solid fa-circle-exclamation"></i>
       </div>
     </div>
-  </div>
+  </div> -->
 
   <!-- CARD 4 -->
   <div class="stat-card">
@@ -127,16 +127,13 @@
     </div>
   </div>
 
-  </div>
-
-  <!-- Audit Types Overview -->
+  
+  <!-- Audit Types Overview 
   <h3 class="title mb-4">Audit Types Overview</h3>
   
-  <div class="audit-grid">
-  <div *ngFor="let item of auditCards" 
-       class="audit-card"
-       [ngStyle]="{'border-top-color': item.color}">
-
+  <div class="audit-grid">-->
+  <div *ngFor="let item of auditCards">
+<div *ngIf="item.title === 'IQCU'"  [ngStyle]="{'border-top-color': item.color}" class="audit-card">
     <!-- Title + Badge -->
     <div class="card-header">
       <h3 [ngStyle]="{'color': item.color}">{{ item.title }}</h3>
@@ -174,10 +171,11 @@
     <div class="footer-row">
       <span class="audit-date">Last Audit: {{ item.lastAudit }}</span>
       <a class="view-link" (click)="openObservationDetails(showObservationDetails,item.title,item.subtitle)">View Details →</a>
-    </div>
+    </div></div>
 
-  </div>
-  </div>
+  </div></div>
+
+  <!--</div>-->
 
   <!-- Recent Observations + Donut Chart -->
   <div class="dashboard-bottom">

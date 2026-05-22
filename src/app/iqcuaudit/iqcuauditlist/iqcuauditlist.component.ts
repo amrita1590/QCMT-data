@@ -645,28 +645,28 @@ console.error(' units after filtering:', this.units);
 
         if (this.auditScheduleTemplate?.auditStatus === 'Action Required') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.APS_TO_AUDITOR, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
           });
         } else if(this.auditScheduleTemplate?.auditStatus === 'Completed') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.AUDIT_COMPLETED, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
           });
         } else if(this.auditScheduleTemplate?.auditStatus === 'Observation CASO') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
           });
         } else if(this.auditScheduleTemplate?.auditStatus === 'In Progress') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.PRE_QUESTIONNAIRE, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
@@ -920,7 +920,7 @@ console.error(' units after filtering:', this.units);
               this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
               if(this.auditScheduleTemplate) {
                 const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-                this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+                this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId,).subscribe({
                   next: (data) => {
                     console.log('Notification sent successfully', data);
                   }
@@ -963,7 +963,7 @@ console.error(' units after filtering:', this.units);
     this.auditScheduleTemplate = this.templates.find(t => t.id === id) || null;
     if(this.auditScheduleTemplate) {
       const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.AUDIT_COMPLETED, this.auditScheduleTemplate);
-      this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+      this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
         next: (data) => {
           console.log('Notification sent successfully', data);
         }

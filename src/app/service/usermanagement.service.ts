@@ -156,7 +156,7 @@ export class UsermanagementService {
 
 
   // Notification related methods
-  saveNotification(title: String, toUserId: number, toUserName: string): Observable<string> {
+  saveNotification(title: String, toUserId: number, toUserName: string, auditorId: number, CasoId: number): Observable<string> {
       const notificationBean = {
         id: 0,
         title: title,
@@ -166,7 +166,9 @@ export class UsermanagementService {
         toUserId: toUserId,
         toUserName: toUserName,
         fromUserId: Number(this.globalUserId.getValue()), 
-        fromUserName: this.globalUsername.getValue()
+        fromUserName: this.globalUsername.getValue(),
+        auditorId: auditorId,
+	      CasoId: CasoId
       };
       return this.http.post(this.saveNotificationUrl, notificationBean, { responseType: 'text' });
   }

@@ -11,12 +11,14 @@
             <div class="col-md-6 col-lg-7 d-flex align-items-center">
               <div class="card-body p-4 p-lg-5 text-black">
                 <form [formGroup]="loginDetailsForm" (ngSubmit)="onLogin(loginDetailsForm.value)">
-                  
-                  <div class="d-flex align-items-center mb-3 pb-1">
-                    <img src="images/attendo_icon.png" alt="Attendo Logo" height="40">
-                    <span class="h3 fw-bold mb-0">Quality Control Monitoring Tool</span>
-                  </div>
-
+         <h1 class="display-6 fw-bolder mb-4">
+    <img 
+        src="images/attendo_icon.png" 
+        alt="Attendo Logo" 
+        height="40"
+        class="me-2"
+    ><span class="text-gradient d-inline" >ई-समीक्षा | e SamikSha</span></h1>
+ 
                   <h5 class="fw-normal mb-3 pb-3" style="letter-spacing: 1px;">Sign into your account</h5>
                   @if (status) {
                     <div class="alert alert-danger">Invalid Email or Password</div>

@@ -10,4 +10,8 @@ export interface NotificationBean {
     toUserName: string;
     fromUserId: number,
     fromUserName: string;
+    auditorId?: number;
+	CasoId?: number;
+	Casoname?: string;
+	auditorName?: string;
 }

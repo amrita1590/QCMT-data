@@ -94,6 +94,7 @@ export class AdminauditscheduleComponent {
   auditScheduleTemplate: AuditScheduleTemplate | null = null;
   questionTemplates: QuestionTemplate[] = [];
   auditorList: UserRoleDetails[] = [];
+   casoList: UserRoleDetails[] = [];
   auditTemplateGen: AuditTemplateGen | null = null;
 
   notificationBean: NotificationBean | null = null;
@@ -174,7 +175,7 @@ export class AdminauditscheduleComponent {
     this.auditTemplateForm.valueChanges.subscribe(value => {
       this.generateAuditName();
     });
-
+console.log('ngOnInit admin schedule called');
 
   }
 generateAuditName() {
@@ -210,7 +211,7 @@ console.log("Generated Audit Name:", auditName);
     this.auditService.getAuditDetails().subscribe({
       next: (data) => {
         this.templates = data.sort((a, b) => a.name.localeCompare(b.name));
-        console.log('Templates:', this.templates);
+        console.log('Templatess:', this.templates);
       },
       error: (err) => {
          this.toast.show('Failed to fetch templates'+ err, 'error');
@@ -250,7 +251,7 @@ console.log("Generated Audit Name:", auditName);
     this.unitDetails.getUnitDetails().subscribe({
       next: (data) => {
         this.units = data.sort((a, b) => a.unitName.localeCompare(b.unitName));
-        console.log('Units:', this.units);
+        console.log('Unitss:', this.units);
       },
       error: (err) => {
          this.toast.show('Failed to fetch units'+ err, 'error');
@@ -260,12 +261,17 @@ console.log("Generated Audit Name:", auditName);
   }
   
   getAuditorDetails() {
+    console.log('getAuditorDetails called');
     this.umService.getUserAuditDetailList().subscribe({
       next: (data) => {
-        console.log(":::::::::::::::"+data);
+        console.log(":::::::::::::::"+data);  
         this.auditorList = data.filter(user => user.rolename === 'Auditor');        
         this.auditorList = this.auditorList.sort((a, b) => a.name.localeCompare(b.name));
-        console.log('Auditors:', this.auditorList);
+          console.log('dataa:', this.auditorList);
+        console.log('Auditorsa:', this.auditorList);
+         console.log('dataa:', this.auditorList);
+        this.casoList = data.filter(user => user.rolename === 'CASO');
+        console.log('CASOs:', this.casoList);
       },
       error: (err) => {
          this.toast.show('Failed to fetch auditors'+ err, 'error');
@@ -280,10 +286,19 @@ console.log("Generated Audit Name:", auditName);
 
       const selectedId = Number(this.auditTemplateForm.value.unitId);
       const unitDetails = this.units.find(u => u.id === selectedId);
-    
-      this.casoName = unitDetails ? (unitDetails.casoName) : '';
-      this.casoId = unitDetails ? (unitDetails.casoId ?? 0) : 0;
+      console.log("Caso Details ::::", this.casoList);
+      if(this.casoList&&this.casoList.length>0) {    
+    for (const caso of this.casoList) {
+      if (caso.id === unitDetails?.casoId) {
+        this.casoName = caso.name+'  '+caso.rank;
+        break;
+      }
+    }}else{
 
+      this.casoName = unitDetails ? (unitDetails.casoName) : '';
+    }
+      this.casoId = unitDetails ? (unitDetails.casoId ?? 0) : 0;
+console.log("CASO Name::::");
       console.log("CASO Name::::" + this.casoName);
       console.log("CASO ID Name::::" + this.casoId);
   }
@@ -357,7 +372,7 @@ console.log("Generated Audit Name:", auditName);
         this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
         if(this.auditScheduleTemplate) {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId,).subscribe({
               next: (data) => {
                 console.log('Notification sent successfully', data);
               }
@@ -408,7 +423,7 @@ console.log("Generated Audit Name:", auditName);
         this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
         if(this.auditScheduleTemplate) {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId,).subscribe({
               next: (data) => {
                 console.log('Notification sent successfully', data);
               }
@@ -424,6 +439,8 @@ console.log("Generated Audit Name:", auditName);
   }
 
   addAuditTemplate(questionTemplate: QuestionTemplate) {
+     console.log("addAuditTemplate" );
+    console.log("Audit formmm value" ,this.auditTemplateForm.value);
     if (!this.auditTemplateForm.value.name) {
       this.toast.show("Please Enter Audit Name.", 'error');
       return;
@@ -467,8 +484,14 @@ console.log("Generated Audit Name:", auditName);
     }
 
     console.log("Audit form value" ,this.auditTemplateForm.value);
+    console.log("Audit form auditorList" ,this.auditorList);
     console.log(this.auditComponent);
-    
+   for (const auditor of this.auditorList) {
+  if (auditor.id === this.auditTemplateForm.value.auditorId) {
+    this.auditTemplateForm.patchValue({ auditorName: auditor.name + '  ' + auditor.rank });
+    break;
+  }
+}
     this.auditScheduleTemplate = {
       id: this.auditTemplateForm.value.id,
       unitId: this.auditTemplateForm.value.unitId,
@@ -500,7 +523,7 @@ console.log("Generated Audit Name:", auditName);
         this.toast.show('Audit Schedule Template added successfully!', 'success');       
         if (this.auditScheduleTemplate) {
             const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.NEW_AUDIT_CREATED, this.auditScheduleTemplate);
-            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName).subscribe({
+            this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
               next: (data) => {
                 console.log('Notification sent successfully', data);
               }
@@ -872,28 +895,28 @@ listenForNameChanges() {
 
         if (this.auditScheduleTemplate?.auditStatus === 'Action Required') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.APS_TO_AUDITOR, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
           });
         } else if(this.auditScheduleTemplate?.auditStatus === 'Completed') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.AUDIT_COMPLETED, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
           });
         } else if(this.auditScheduleTemplate?.auditStatus === 'Observation CASO') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
           });
         } else if(this.auditScheduleTemplate?.auditStatus === 'In Progress') {
           const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.PRE_QUESTIONNAIRE, this.auditScheduleTemplate);
-          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+          this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
             next: (data) => {
               console.log('Notification sent successfully', data);
             }
@@ -1163,7 +1186,7 @@ listenForNameChanges() {
               this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
               if(this.auditScheduleTemplate) {
                 const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-                this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+                this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
                   next: (data) => {
                     console.log('Notification sent successfully', data);
                   }
@@ -1206,7 +1229,7 @@ listenForNameChanges() {
     this.auditScheduleTemplate = this.templates.find(t => t.id === id) || null;
     if(this.auditScheduleTemplate) {
       const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.AUDIT_COMPLETED, this.auditScheduleTemplate);
-      this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName).subscribe({
+      this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
         next: (data) => {
           console.log('Notification sent successfully', data);
         }

@@ -319,7 +319,7 @@ if (!this.auditorResponseFilesTemp||this.auditorResponseFilesTemp.length === 0) 
             if (this.auditBoardTemplateGen) { 
               if(this.auditBoardTemplateGen.auditBoardScheduleTemplate) {
                 const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.AUDITOR_TO_APS, this.auditBoardTemplateGen.auditBoardScheduleTemplate);
-                this.umService.saveNotification(notificationMessage, this.auditBoardTemplateGen.auditBoardScheduleTemplate.createdById, this.auditBoardTemplateGen.auditBoardScheduleTemplate.createdBy).subscribe({
+                this.umService.saveNotification(notificationMessage, this.auditBoardTemplateGen.auditBoardScheduleTemplate.createdById, this.auditBoardTemplateGen.auditBoardScheduleTemplate.createdBy, this.auditBoardTemplateGen.auditBoardScheduleTemplate.auditorId, this.auditBoardTemplateGen.auditBoardScheduleTemplate.casoId).subscribe({
                   next: (data) => {
                     console.log('Notification sent successfully', data);
                   }

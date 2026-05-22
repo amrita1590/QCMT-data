@@ -14,17 +14,18 @@ export const APP_CONSTANTS = {
     },
 
     FILES: {
-        BASE_URL: "http://localhost:8060/"
+        BASE_URL: "http://192.168.11.8:8060/"
     },
     NOTIFICATION: {
-        PRE_QUESTIONNAIRE: 'Pre-questionnaire for {auditname} has been received from auditor : {auditorName} to CASO.',
+        PRE_QUESTIONNAIRE: 'Auditor: {auditorName} has sent PQs of {auditname}  to CASO:  {casoName}.',
+        PRE_QUESTIONNAIRE_FollowUp: 'Auditor: {auditorName} has sent follow up queries on PQs of {auditname}  to CASO:  {casoName}.',
         SEND_TO_CASO: 'Pre-questionnaire for {auditname} has been received from auditor- {casoName} to CASO.',        
-        SENT_TO_AUDITOR: 'Pre-questionnaire Answers for {auditname} has been submitted by CASO - {casoName} to Auditor for review.',        
-        NEW_AUDIT_CREATED: 'A new audit has been created by APS HQRs and has been assigned to Auditor -{auditname} .',        
-        AUDIT_COMPLETED: 'Audit - {auditname} process completed and closed successfully by APS HQRs.',        
-        CASO_OBSERVATION_REQUIRED: 'Observation for {auditname} has been raised for compliance status from APS HQRs- {userName} to CASO.',        
-        APS_OBSERVATION_REVIEW_REQUIRED: 'Observation compliance status submitted by CASO - {casoName} to APS HQRs for {auditname} .',        
+        SENT_TO_AUDITOR: 'CASO: {casoName} has forwarded response to PQs of {auditname} to Auditor: {auditorName} for review.',        
+        NEW_AUDIT_CREATED: 'A new audit {auditname} has been created by APS HQRs. CASO: {casoName} & Auditor : {auditorName}.',        
+        AUDIT_COMPLETED: 'Audit - {auditname} process completed and closed successfully by APS HQRs {userName}.',        
+        CASO_OBSERVATION_REQUIRED: ' {userName} APS HQrs has sent the observations raised during audit of  {auditname}  to CASO: {casoName}.',        
+        APS_OBSERVATION_REVIEW_REQUIRED: 'Observation compliance status submitted by CASO - {casoName} to APS HQRs for {auditname} , Auditor: {auditorName}.',        
         APS_TO_AUDITOR: 'Audit - {auditname} has been sent back by APS HQRs for correction and resubmission.',
-        AUDITOR_TO_APS: 'Final audit report submitted by auditor to APS HQRs for {auditname} Auditor - {auditorName}.'
+        AUDITOR_TO_APS: 'Auditor: {auditorName} has submitted the final audit report for {auditname} (CASO: {casoName} ) to APS HQRs.'
     }
 };

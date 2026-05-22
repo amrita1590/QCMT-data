@@ -569,7 +569,7 @@ export class AuditBoardCasoComponent {
       this.auditScheduleTemplate = this.templates.find(t => t.id === this.auditBoardTemplateGen.auditBoardScheduleTemplate.auditTemplateId) || null;
       if(this.auditScheduleTemplate) {
         const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.SENT_TO_AUDITOR, this.auditScheduleTemplate);
-        this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName).subscribe({
+        this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName,this.auditScheduleTemplate.auditorId,this.auditScheduleTemplate.casoId).subscribe({
           next: (data) => {
             console.log('Notification sent successfully', data);
           }
@@ -905,7 +905,7 @@ export class AuditBoardCasoComponent {
               this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
               if(this.auditScheduleTemplate) {
                 const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.APS_OBSERVATION_REVIEW_REQUIRED, this.auditScheduleTemplate);
-                this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.createdById, this.auditScheduleTemplate.createdBy).subscribe({
+                this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.createdById, this.auditScheduleTemplate.createdBy, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.casoId).subscribe({
                   next: (data) => {
                     console.log('Notification sent successfully', data);
                   }
