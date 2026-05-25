@@ -145,12 +145,19 @@ handleScopeChange(scope: any) {
       
     }
 
-    addUserDetails(user:User) {
+    addUserDetails() {
+      this.userDetailsForm.markAllAsTouched();
+      this.userDetailsForm.updateValueAndValidity();
+      console.log("add user print",this.userDetailsForm.valid);
+
       if (this.userDetailsForm.valid) {
+        const user =this.userDetailsForm.getRawValue();
+        console.log("value:", JSON.stringify(this.userDetailsForm.value));
         console.log(this.userDetailsForm.value);
+       
         this.umService.addRegisterUserDetails(user).subscribe((data: User) => {
           console.log(this.users);
-
+console.log("User added successfully!", data);
           this.status = true;
           setTimeout(() => {
             this.status = false; // Hide the div after 10 seconds

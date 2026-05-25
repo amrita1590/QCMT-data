@@ -97,6 +97,7 @@ export class AuditscheduleComponent {
   auditTemplateGen: AuditTemplateGen | null = null;
 
   notificationBean: NotificationBean | null = null;
+  isSubmitting:boolean = false;
 
   auditObservationComponentMessage: AuditObservationComponentMessage = {
       id: 0,
@@ -417,14 +418,14 @@ console.log("Generated Audit Name:", auditName);
         console.log("Audit Observation Details saved successfully!", response);
         this.toast.show('Audit Observation Details added successfully!', 'success');
         this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
-        // if(this.auditScheduleTemplate) {
-        //   const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
-        //     this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,0,0).subscribe({
-        //       next: (data) => {
-        //         console.log('Notification sent successfully', data);
-        //       }
-        //     });
-        // }
+        if(this.auditScheduleTemplate) {
+        const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.CASO_OBSERVATION_REQUIRED, this.auditScheduleTemplate);
+        this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.casoId, this.auditScheduleTemplate.casoName,0,0).subscribe({
+          next: (data) => {
+                console.log('Notification sent successfully', data);
+              }
+            });
+        }
         this.auditObservationReset();
         this.getAuditDetails(); // Refresh the list
         
@@ -435,6 +436,10 @@ console.log("Generated Audit Name:", auditName);
   }
 
   addAuditTemplate(questionTemplate: QuestionTemplate) {
+    
+    if(this.isSubmitting){
+      return;
+    }
     if (!this.auditTemplateForm.value.name) {
       this.toast.show("Please Enter Audit Name.", 'error');
       return;
@@ -520,7 +525,9 @@ if (this.auditorList && this.auditorList.length > 0) {
     };
     
     console.log(this.auditScheduleTemplate);
+    
     if(this.auditScheduleTemplate) {
+      this.isSubmitting = true;
       console.log("Audit month"+this.auditScheduleTemplate.auditMonth);
       this.auditService.saveAuditDetails(this.auditScheduleTemplate).subscribe(response => {
         console.log("Audit Schedule Template saved successfully!", response);
@@ -536,9 +543,11 @@ if (this.auditorList && this.auditorList.length > 0) {
         this.audittemplateReset();
         this.getAuditDetails(); // Refresh the list
         this.modalService.dismissAll();
+        this.isSubmitting = false;
       }, error => {
         this.errorMsg = "Error saving audit schedule template:", error;
         this.errorStatus = true;
+         this.isSubmitting = false;
         setTimeout(() => {
           this.errorStatus = false;
         }, 10000); // 10000 milliseconds = 10 seconds

@@ -174,7 +174,7 @@ const unitId=this.questionForm.get('unitId')?.value;
       this.toast.show('Questions saved successfully', 'success');
       this.auditorQuestionsList=data
         console.log("Final Payload response:", this.auditorQuestionsList);
-      this.questionForm.reset();
+      //this.questionForm.reset();
       this.questions.clear();
       this.addRow();
       this.loadQuestions();
@@ -445,7 +445,22 @@ viewTemplate(content: any, id: number) {
 showReviewResponseAuditor(content: any, id: number, auditScheduleFromDate?: string, auditScheduleToDate?: string) {
     
   if(auditScheduleFromDate && auditScheduleToDate){
-this.auditScheduledate = auditScheduleFromDate+" to "+auditScheduleToDate;
+      const fromDate = new Date(auditScheduleFromDate)
+      .toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+    const toDate = new Date(auditScheduleToDate)
+      .toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+    this.auditScheduledate = fromDate + " to " + toDate;
+
   }else {
     this.auditScheduledate = 'Not Available';
   }

@@ -5,6 +5,7 @@ import { ChangepasswordpageComponent } from '../../changepasswordpage/changepass
 import { ChangePassword } from '../../../interface/ChangePassword';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UsermanagementService } from '../../../service/usermanagement.service';
+import { ToastService } from '../../../service/toast.service';
  
 @Component({
   selector: 'app-chagepasswordchild',
@@ -25,7 +26,7 @@ export class ChagepasswordchildComponent {
 
   settingsComponent: ChangepasswordpageComponent;
 
-  constructor(private fb: FormBuilder, private umService: UsermanagementService, private modalService: NgbModal, settingsComponent: ChangepasswordpageComponent) {
+  constructor(private fb: FormBuilder, private umService: UsermanagementService, private modalService: NgbModal, settingsComponent: ChangepasswordpageComponent,private toast: ToastService) {
     this.settingsComponent = settingsComponent;
     this.changePasswordForm = this.fb.group({
       currentPassword: ['', [Validators.required]],
@@ -103,6 +104,7 @@ export class ChagepasswordchildComponent {
         if (res.status === 'success') {
           console.log('Password change status inside status:', res.status);
           this.settingsComponent.showToastMessage(res.message, 'success');
+           this.toast.show('Password updated successfully', 'success');
           this.changePasswordForm.reset();
           this.settingsComponent.closeModel();
         } else {
@@ -112,6 +114,7 @@ export class ChagepasswordchildComponent {
       },
       error: (err) => {
         console.error('Error occurred while changing password', err);
+          this.toast.show('Failed to update password', 'error');
         if (err.error?.message) {
           this.settingsComponent.showToastMessage(err.error.message, 'error');
         } else {

@@ -13,7 +13,7 @@
         <button class="active">User Details</button>
       </div>
 
-      <form [formGroup]="userDetailsForm" (ngSubmit)="addUserDetails(userDetailsForm.value)">
+      <form [formGroup]="userDetailsForm" (ngSubmit)="addUserDetails()">
       <div class="row">
         <!-- Left Column -->
         <div class="col-md-6 text-start">
@@ -132,7 +132,7 @@
           <div class="mb-3">
             
     <select class="form-select" formControlName="userscopelevel">
-    <option value="" disabled selected>
+    <option value="" disabled >
       -- User Scope Level --
     </option>
 
@@ -166,7 +166,7 @@
   <hr/>
   <div class="d-flex justify-content-center gap-3 mt-3">
     <button type="submit" class="btn btn-register ">Register</button>
-    <button type="reset" class="btn btn-reset ">Reset</button>
+    <button type="button" class="btn btn-reset " (click)="clearFields()">Reset</button>
   </div>
   </div>
   </form>

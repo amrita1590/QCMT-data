@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ChagepasswordchildComponent } from '../childcomponent/chagepasswordchild/chagepasswordchild.component';
 import { CommonModule } from '@angular/common';
+import { ToastService } from '../../service/toast.service';
 @Component({
   selector: 'app-changepasswordpage',
   imports: [ChagepasswordchildComponent, CommonModule],
