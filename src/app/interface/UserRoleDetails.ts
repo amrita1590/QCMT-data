@@ -4,5 +4,6 @@ export interface UserRoleDetails {
     rolename: string,
     name: string,
     cisfno: string,
-    rank: string
+    rank: string,
+    unitid?: number
 }

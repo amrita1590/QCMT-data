@@ -102,7 +102,7 @@
         <div class="alert alert-success" *ngIf="successStatus">{{ successMsg }}</div>
         <div class="row mb-3">
             <div class="col-md-6">
-            <p><b>Name:</b> {{userData?.username}}</p>
+            <p><b>Name:</b> {{userData?.mstr_name}} {{userData?.rank}}</p>
             <p><b>Email:</b> <a href="{{userData?.email}}"> {{userData?.email}}</a></p>
             <p><b>Address:</b> {{userData?.address}}</p>
             <p><b>Created By:</b><i> {{userData?.createdBy}}</i></p>
@@ -113,7 +113,13 @@
             <p><b>Account Status:</b> {{userData?.status}}</p>
             </div>
         </div>
-
+          <div class="d-flex align-items-center mb-3">
+            <label for="roleSelect" class="me-2"><b>Unit Name :{{ selectedUnitname ? selectedUnitname : 'N/A' }}</b></label>
+            <select id="roleSelect" class="form-select w-auto me-2" [(ngModel)]="selectedUnit">
+            <option *ngFor="let availableUnit of availableUnits" [value]="availableUnit.id">{{ availableUnit.unitName }}</option>
+            </select>
+            <button class="btn btn-success btn-sm" (click)="assignUnit()"><i class="bi bi-person-plus"></i> Change</button>
+        </div>
         <div class="d-flex align-items-center mb-3">
             <label for="roleSelect" class="me-2"><b>Role Name :</b></label>
             <select id="roleSelect" class="form-select w-auto me-2" [(ngModel)]="selectedRole">

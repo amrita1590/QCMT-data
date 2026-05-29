@@ -1,33 +1,187 @@
-<div class="container-fluid mt-3">
+<div class="audit-page">
 
-  <!-- HEADER -->
-  <div class="card shadow-sm mb-3">
-    <div class="card-body d-flex justify-content-between align-items-center">
-      <h4 class="mb-0">BCAS Audit Management</h4>
-      <span class="badge bg-success">Quality Control & Compliance</span>
+  <!-- Top Navigation -->
+  <div class="top-nav">
+    <a href="/dashboard" class="back-btn">
+    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+  </a>
+  </div>
+  <!-- Page Title -->
+  <h2 class="page-title"><i class="fa fa-user-check me-2"></i>BCAS Audit Tracking Management</h2>
+  <p class="page-subtitle">Airport audit tracking from BCAS audit details to CASO compliance closure Aviatio</p>
+
+  <!-- Status Cards -->
+  <div class="status-grid">
+
+
+    <div class="status-card yellow">
+      <h4>In Progress</h4>
+      <div class="value-section">
+        <span class="value">{{ totalInProgress }}</span>
+        <i class="fa-regular fa-calendar"></i>
+      </div>
+    </div>
+
+    <div class="status-card green">
+      <h4>Completed</h4>
+      <div class="value-section">
+        <span class="value">{{ totalCompleted }}</span>
+        <i class="fa-regular fa-calendar-check"></i>
+      </div>
+    </div>
+
+    <div class="status-card red">
+      <h4>Action Required</h4>
+      <div class="value-section">
+        <span class="value">{{ totalActionRequired }}</span>
+        <i class="fa-regular fa-calendar-xmark"></i>
+      </div>
+    </div>
+       <div class="status-card red">
+      <h4>Compliance %</h4>
+      <div class="value-section">
+        <span class="value">{{ compliancePercentage }}</span>
+        <i class="fa-regular fa-calendar-xmark"></i>
+      </div>
     </div>
   </div>
+  
+  <br/>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>All Audits</h5>
+    <button class="btn btn-primary" (click)="createModal(createAuditTemplate)">
+      <i class="bi bi-plus-lg"></i> Schedule Audit
+    </button>
+  </div>
+    <ng-template #createAuditTemplate let-modal>
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-user-check me-2"></i> Schedule New Audit</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+      </div>
+      <div class="modal-body">  
+        <p>Add a new audit to the schedule</p>
+          
+        <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
+        <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
 
-  <!-- TABS -->
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item" *ngFor="let tab of [
-      ['schedule','Audit Schedule'],
-      ['auditor','Auditor Master'],
-      ['category','Question Categories'],
-      ['questionnaire','Questionnaire'],
-      ['observation','Observations'],
-      ['compliance','Compliance']
-    ]">
-      <a class="nav-link"
-         [class.active]="activeTab === tab[0]"
-         (click)="setTab(tab[0])">
-        {{tab[1]}}
-      </a>
-    </li>
-  </ul>
+        <form [formGroup]="auditTemplateForm" (ngSubmit)="addAuditTemplate(auditTemplateForm.value)" class="was-validated">
+            <div class="row g-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                    <label class="form-label">Audit Name</label>
+                    <input type="text" class="form-control" formControlName="name" readonly />
+ 
+                    <ul class="hint-text">
+                        <li>Auto-generated based on Unit, Date & Type</li>
+                        <li>This helps organize audits by name</li>
+                    </ul>
+                    </div>
+                    
 
-  <!-- AUDIT SCHEDULE -->
-  <div *ngIf="activeTab==='schedule'" class="card shadow-sm">
-    <div class="card-header fw-bold">Manage and track all audit schedules</div>
-    <div class="card-body">
-      <div class="page-container">  </div></div></div></div>
+                    <div class="col-md-3">
+                    <label class="form-label">Unit Details</label>
+                  
+                      <input type="month" class="form-control" formControlName="auditMonth" placeholder="Select Audit Month"/>
+                    <ul class="hint-text">
+                        <li>Provide unit details</li>
+                        <li>This helps organize audits by unit</li>
+                    </ul>
+                    </div>
+                    
+                    <div class="col-md-3">
+                    <label class="form-label">Audit (Begin Month)</label>
+                    <input type="month" class="form-control" formControlName="auditMonth" placeholder="Select Audit Month"/>
+                    <ul class="hint-text">
+                        <li>Provide audit Month</li>
+                        <li>This helps organize audits by Month Year</li>
+                    </ul>
+                    </div>
+                    
+                    <div class="col-md-3">
+                    <label class="form-label">Type of Audits</label>
+                    <select class="form-select" formControlName="auditType">
+                        <option value="" disabled selected>Select Audit Type</option>
+                        <option value="CISF Internal">CISF Internal</option>
+                        <option value="BCAS">BCAS</option> 
+                                              
+                    </select>
+                    <ul class="hint-text">
+                        <li>Provide audit type</li>
+                        <li>This helps organize audits by type</li>
+                    </ul>
+                    </div>   
+                    
+                    <div class="col-md-3">
+                    <label class="form-label">Auditor Name</label>
+                     <select class="form-select" formControlName="auditorId">
+                        <option value="" disabled selected>Select Auditor</option>
+                        <option *ngFor="let auditor of auditorList" [value]="auditor.id">{{ auditor.cisfno }}&nbsp;{{ auditor.rank }}&nbsp;{{ auditor.name }}</option>
+                    </select>
+                    <ul class="hint-text">
+                        <li>Provide auditor name</li>
+                        <li>This helps organize audits by auditor</li>
+                    </ul>
+                    </div>
+
+                    <div class="col-md-9">
+                    <label for="auditDescription">Audit (Short Description)</label>
+                    <input id="auditDescription" class="form-control" formControlName="auditDescription" placeholder="Provide audit short description"/>
+                    <ul class="hint-text">
+                        <li>Provide audit short description</li>
+                        <li>This helps organize audits by description</li>
+                    </ul>
+                    </div>
+                </div>
+            </div>
+           
+            
+
+            <!-- Buttons -->
+             <hr/>
+            <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-primary me-4" [disabled]="auditTemplateForm.invalid">{{btnName}}</button>
+            <button type="reset" class="btn btn-warning" (click)="audittemplateReset()">Reset</button>
+            </div>
+        </form>
+        <br/>
+        <div class="info-message">
+            <ul>
+                <li>Create audit schedules for different units and departments.</li>
+                <li>Use audit date to plan and track audit timelines.</li>
+                <li>Audit information will be displayed to auditors during execution.</li>
+                <li>Use audit type to categorize audits as Planned, In Progress, Completed, or Action Required.</li>
+            </ul>
+        </div>
+      </div>
+</ng-template>
+
+<ng-template #deleteModal let-modal>
+    <div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold text-danger">
+      <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <p class="text-muted mb-3">
+      You are about to delete this item. Please confirm before proceeding.
+    </p>
+    <div class="border rounded p-2 bg-light text-danger small">
+      <i class="fa fa-exclamation-circle me-1"></i>
+      This operation is irreversible.
+    </div>
+  </div>
+  <div class="modal-footer border-0">
+    <button class="btn btn-light border" (click)="modal.dismiss()">
+      Cancel
+    </button>
+    <button class="btn btn-danger shadow-sm" (click)="deleteTemplate(templateId, 'deleteModal')"> Delete Permanently </button>
+  </div>
+</ng-template>
+  
+  
+  
+  
+  
+  
+  </div>

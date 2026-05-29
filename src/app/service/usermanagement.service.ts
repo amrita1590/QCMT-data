@@ -168,7 +168,7 @@ export class UsermanagementService {
         fromUserId: Number(this.globalUserId.getValue()), 
         fromUserName: this.globalUsername.getValue(),
         auditorId: auditorId,
-	      CasoId: CasoId
+	      casoId: CasoId
       };
       return this.http.post(this.saveNotificationUrl, notificationBean, { responseType: 'text' });
   }

@@ -7,6 +7,9 @@ import { FormsModule } from '@angular/forms';
 import { Role } from '../../interface/Role';
 import { RbacService } from '../../service/rbac.service';
 import { UserRoles } from '../../interface/UserRoles';
+import { UnitDetails } from '../../interface/UnitDetails';
+import { UnitService } from '../../service/unit.service';
+
 
 @Component({
   selector: 'app-userdetails',
@@ -25,6 +28,9 @@ export class UserdetailsComponent {
 
   selectedRole: number = 0;
   availableRoles: Role[] = [];
+  selectedUnit: number = 0;
+  selectedUnitname: string = '';
+  availableUnits: UnitDetails[] = [];
 
   roles: Role[] = [];
   userRoles: UserRoles[] = [];
@@ -34,20 +40,27 @@ export class UserdetailsComponent {
   successMsg: string | null = null;
   successStatus: boolean = false;
   
-  constructor(private umService: UsermanagementService, private rbacService: RbacService, private modalService: NgbModal) {
+  constructor(private umService: UsermanagementService, private rbacService: RbacService, private modalService: NgbModal, private unitService: UnitService) {
       
   }
 
   ngOnInit() {
     //Fetch user profile from backend if needed
     this.umService.getUserDetailList().subscribe(userData => {
-      console.log("User Profile Data:", userData);
+      console.log("User Profiles Data:", userData);
       this.userDetailsList = userData;
     });
 
     this.rbacService.getRoleDetails().subscribe(roles => {
       this.availableRoles = roles;
     });   
+
+    this.unitService.getUnitDetails().subscribe(units => {
+      this.availableUnits = units;
+      
+       console.log(" Units Dataa:", this.availableUnits);
+   
+    });
   }
 
   openModal(content: any, userId: number | undefined) {
@@ -59,12 +72,63 @@ export class UserdetailsComponent {
       this.userRoles = userData.userRolesList || [];
       console.log("User Roles:", this.userRoles);
     });
+    if (this.availableUnits != null && this.availableUnits.length > 0) {
+
+    for (let unit of this.availableUnits) {
+
+      if (unit.id === this.userData?.unitid) {
+
+        this.selectedUnit = unit.id;
+        this.selectedUnitname = unit.unitName;
+
+      }
+    }
+  
+}
     this.modalRef = this.modalService.open(content, { size : 'lg' });
   }
 
   openDeleteModel(content: any, userId: number | undefined) {
     this.userId = userId;
     this.modalRef = this.modalService.open(content);
+  }
+  assignUnit() {
+    if (this.selectedUnit === 0) {
+     
+      return;
+    }else{
+      const unitToAdd = this.availableUnits.find(u => Number(u.id) === Number(this.selectedUnit));
+      if (unitToAdd) {
+        const alreadyAssigned = this.userData?.unitid === unitToAdd.id;
+        if (alreadyAssigned) {
+          this.errorMsg = 'Unit already assigned to the user.';
+          this.errorStatus = true;
+          setTimeout(() => {
+            this.errorStatus = false;
+          }, 3000);
+          return;
+        }else{
+          this.userData!.unitid = this.selectedUnit;
+          this.umService.updateUserProfileDetails(this.userData!).subscribe({
+            next: (response: any) => {
+              console.log('Unit assigned successfully:', response);
+              this.successMsg = 'Unit assigned successfully.'; // backend message
+              this.successStatus = true;
+              this.selectedUnitname = unitToAdd.unitName;
+            },
+            error: (error) => {
+              console.error('Error assigning unit:', error);
+              this.errorMsg = 'Error assigning unit.';
+              this.errorStatus = true;
+            }
+          });
+          setTimeout(() => {
+            this.successStatus = false;
+          }, 3000);
+        }
+      }
+
+    }
   }
   
   assignRole() {
