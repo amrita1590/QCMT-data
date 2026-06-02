@@ -1,0 +1,37 @@
+<div class="card shadow-sm">
+  <div class="card-header fw-bold">Unit Response</div>
+  <div class="card-body">
+    <div class="alert alert-light border" *ngIf="audit">
+      Unit response for <strong>{{ audit.unit.unitName }}</strong>
+    </div>
+    <form [formGroup]="responseForm" (ngSubmit)="submitResponse.emit()">
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Question</th>
+              <th>Response</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="responses">
+            <tr *ngFor="let response of responses.controls; let i = index" [formGroupName]="i">
+              <td>{{ audit?.questions?.[i]?.question || 'Question ' + (i + 1) }}</td>
+              <td>
+                <select class="form-select" formControlName="response">
+                  <option>Yes</option>
+                  <option>No</option>
+                  <option>NA</option>
+                </select>
+              </td>
+              <td><textarea class="form-control" rows="2" formControlName="remarks"></textarea></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-success" [disabled]="responseForm.invalid || !audit">Submit Unit Response</button>
+      </div>
+    </form>
+  </div>
+</div>

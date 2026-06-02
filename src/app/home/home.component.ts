@@ -1,15 +1,14 @@
-import { Component, ViewEncapsulation } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { UsermanagementService } from '../service/usermanagement.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, RouterLinkActive,CommonModule],
+  imports: [RouterLink, CommonModule],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css',
-  encapsulation: ViewEncapsulation.ShadowDom // Disable encapsulation
+  styleUrl: './home.component.css'
 })
 export class HomeComponent {
   

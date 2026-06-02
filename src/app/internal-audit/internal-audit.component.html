@@ -1,168 +1,135 @@
 <div class="container-fluid mt-3">
 
-
-  <!-- HEADER -->
   <div class="card shadow-sm mb-3">
-    <div class="card-body d-flex justify-content-between align-items-center">
-      <h4 class="mb-0">Internal Audit Management</h4>
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h4 class="mb-0">Internal Audit Management</h4>
+        <small class="text-muted">Schedule, questionnaire, report, observation and compliance tracking</small>
+      </div>
       <span class="badge bg-primary">Quality Control & Compliance</span>
     </div>
   </div>
 
-  <!-- TAB HEADERS -->
+  <div class="alert alert-success" *ngIf="internalAuditFacade.status">
+    {{ internalAuditFacade.statusMsg }}
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md" *ngFor="let card of internalAuditFacade.stageCards">
+      <div class="card status-card h-100" [ngClass]="card.border">
+        <div class="card-body py-3">
+          <small class="text-muted">{{ card.label }}</small>
+          <h3 class="mb-0">{{ internalAuditFacade.countByStatus(card.status) }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='schedule'" (click)="setTab('schedule')">
-        Audit Schedule
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='auditor'" (click)="setTab('auditor')">
-        Auditor Details
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='category'" (click)="setTab('category')">
-        Question Category
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='questionnaire'" (click)="setTab('questionnaire')">
-        Questionnaire
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='send'" (click)="setTab('send')">
-        Send Questionnaire
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='response'" (click)="setTab('response')">
-        Unit Response
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='report'" (click)="setTab('report')">
-        Audit Report
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='observation'" (click)="setTab('observation')">
-        Observation
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" [class.active]="activeTab==='compliance'" (click)="setTab('compliance')">
-        Compliance
-      </a>
+    <li class="nav-item" *ngFor="let tab of internalAuditFacade.tabs">
+      <button type="button"
+        class="nav-link"
+        [class.active]="internalAuditFacade.activeTab === tab[0]"
+        (click)="internalAuditFacade.setTab(tab[0])">
+        {{ tab[1] }}
+      </button>
     </li>
   </ul>
 
-  <!-- TAB CONTENT -->
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold">Internal Audit List</div>
+        <div class="card-body">
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <input class="form-control"
+                placeholder="Search ref / unit / auditor"
+                [(ngModel)]="internalAuditFacade.searchText">
+            </div>
+            <div class="col-12">
+              <select class="form-select" [(ngModel)]="internalAuditFacade.selectedStatus">
+                <option value="">All Status</option>
+                <option>Planned</option>
+                <option>In Progress</option>
+                <option>Completed</option>
+                <option>Action Required</option>
+                <option>Closed</option>
+              </select>
+            </div>
+          </div>
 
-  <!-- A) AUDIT SCHEDULE -->
-  <div *ngIf="activeTab==='schedule'" class="card p-3">
-    <h5>Audit Schedule</h5>
-    <div class="row g-2">
-      <input class="form-control col" placeholder="Auditor Name" [(ngModel)]="auditSchedule.auditorName">
-      <input class="form-control col" type="date" [(ngModel)]="auditSchedule.auditDate">
-      <input class="form-control col" placeholder="ASG / Airport">
-      <select class="form-control col" [(ngModel)]="auditSchedule.auditType">
-        <option>IG Audit</option>
-        <option>Zonal DIG Audit</option>
-      </select>
-      <select class="form-control col" [(ngModel)]="auditSchedule.status">
-        <option>Planned</option>
-        <option>In Progress</option>
-        <option>Completed</option>
-        <option>Action Required</option>
-      </select>
+          <button type="button"
+            class="audit-list-item"
+            *ngFor="let audit of internalAuditFacade.filteredAudits"
+            [class.active]="internalAuditFacade.selectedAuditId === audit.id"
+            (click)="internalAuditFacade.selectAudit(audit)">
+            <span class="fw-semibold">{{ audit.auditRefNo }}</span>
+            <small>{{ audit.unit.unitName }}</small>
+            <span class="badge mt-2" [ngClass]="internalAuditFacade.statusBadge[audit.status]">
+              {{ audit.status }}
+            </span>
+          </button>
+
+          <div class="text-muted text-center border rounded p-3" *ngIf="internalAuditFacade.filteredAudits.length === 0">
+            No internal audit found.
+          </div>
+        </div>
+      </div>
     </div>
-    <button class="btn btn-primary mt-3" (click)="save('Audit Schedule')">Save</button>
-  </div>
 
-  <!-- B) AUDITOR DETAILS -->
-  <div *ngIf="activeTab==='auditor'" class="card p-3">
-    <h5>Auditor Details</h5>
-    <input class="form-control mb-2" placeholder="Rank" [(ngModel)]="auditor.rank">
-    <input class="form-control mb-2" placeholder="Name" [(ngModel)]="auditor.name">
-    <input class="form-control mb-2" placeholder="ID">
-    <input class="form-control mb-2" placeholder="Current Posting Unit">
-    <button class="btn btn-success" (click)="save('Auditor Details')">Save</button>
-  </div>
+    <div class="col-lg-8">
+      <app-internal-audit-schedule
+        *ngIf="internalAuditFacade.activeTab === 'schedule'"
+        [auditForm]="internalAuditFacade.auditForm"
+        [units]="internalAuditFacade.units"
+        (saveAudit)="internalAuditFacade.saveAudit()">
+      </app-internal-audit-schedule>
 
-  <!-- C) QUESTION CATEGORY -->
-  <div *ngIf="activeTab==='category'" class="card p-3">
-    <h5>Question Category Master</h5>
-    <input class="form-control mb-2" placeholder="Category Name">
-    <input class="form-control mb-2" placeholder="Added By">
-    <select class="form-control mb-2">
-      <option>Active</option>
-      <option>Inactive</option>
-    </select>
-    <button class="btn btn-info" (click)="save('Question Category')">Save</button>
-  </div>
+      <app-internal-audit-questionnaire
+        *ngIf="internalAuditFacade.activeTab === 'questionnaire'"
+        [audit]="internalAuditFacade.selectedAudit"
+        [questionnaireForm]="internalAuditFacade.questionnaireForm"
+        (saveQuestionnaire)="internalAuditFacade.saveQuestionnaire()">
+      </app-internal-audit-questionnaire>
 
-  <!-- D) QUESTIONNAIRE -->
-  <div *ngIf="activeTab==='questionnaire'" class="card p-3">
-    <h5>Pre-Questionnaire Template</h5>
-    <input class="form-control mb-2" placeholder="Category">
-    <textarea class="form-control mb-2" placeholder="Question Details"></textarea>
-    <input class="form-control mb-2" placeholder="Benchmark (Optional)">
-    <button class="btn btn-warning" (click)="save('Questionnaire Template')">Save</button>
-  </div>
+      <app-internal-audit-unit-response
+        *ngIf="internalAuditFacade.activeTab === 'response'"
+        [audit]="internalAuditFacade.selectedAudit"
+        [responseForm]="internalAuditFacade.responseForm"
+        (submitResponse)="internalAuditFacade.submitUnitResponse()">
+      </app-internal-audit-unit-response>
 
-  <!-- E) SEND QUESTIONNAIRE -->
-  <div *ngIf="activeTab==='send'" class="card p-3">
-    <h5>Send Questionnaire</h5>
-    <input class="form-control mb-2" placeholder="Select Template">
-    <input class="form-control mb-2" placeholder="Select Unit">
-    <input class="form-control mb-2" placeholder="Unit Operator">
-    <button class="btn btn-primary">Send</button>
-  </div>
+      <app-internal-audit-report
+        *ngIf="internalAuditFacade.activeTab === 'report'"
+        [audit]="internalAuditFacade.selectedAudit"
+        [reportForm]="internalAuditFacade.reportForm"
+        (reportFilesSelected)="internalAuditFacade.onReportFilesSelected($event)"
+        (submitReport)="internalAuditFacade.submitReport()">
+      </app-internal-audit-report>
 
-  <!-- F) UNIT RESPONSE -->
-  <div *ngIf="activeTab==='response'" class="card p-3">
-    <h5>Unit Operator Response</h5>
-    <select class="form-control mb-2">
-      <option>Yes</option>
-      <option>No</option>
-    </select>
-    <textarea class="form-control mb-2" placeholder="Observation Details"></textarea>
-    <button class="btn btn-success">Submit</button>
-  </div>
+      <app-internal-audit-observation
+        *ngIf="internalAuditFacade.activeTab === 'observation'"
+        [audit]="internalAuditFacade.selectedAudit"
+        [observationForm]="internalAuditFacade.observationForm"
+        (saveObservations)="internalAuditFacade.saveObservations()">
+      </app-internal-audit-observation>
 
-  <!-- G) AUDIT REPORT -->
-  <div *ngIf="activeTab==='report'" class="card p-3">
-    <h5>Audit Report Submission</h5>
-    <input class="form-control mb-2" placeholder="Auditor Name">
-    <input class="form-control mb-2" placeholder="Audited Unit">
-    <input class="form-control mb-2" type="file" multiple>
-    <button class="btn btn-dark">Upload</button>
-  </div>
+      <app-internal-audit-compliance
+        *ngIf="internalAuditFacade.activeTab === 'compliance'"
+        [audit]="internalAuditFacade.selectedAudit"
+        [selectedObservation]="internalAuditFacade.selectedObservation"
+        [selectedObservationId]="internalAuditFacade.selectedObservationId"
+        [complianceForm]="internalAuditFacade.complianceForm"
+        (observationSelected)="internalAuditFacade.selectObservation($event)"
+        (submitCompliance)="internalAuditFacade.submitCompliance()">
+      </app-internal-audit-compliance>
 
-  <!-- H) OBSERVATION -->
-  <div *ngIf="activeTab==='observation'" class="card p-3">
-    <h5>Observation Creation</h5>
-    <select class="form-control mb-2" [(ngModel)]="observation.criticality">
-      <option>High</option>
-      <option>Medium</option>
-      <option>Low</option>
-    </select>
-    <select class="form-control mb-2" [(ngModel)]="observation.complianceStatus">
-      <option>Compliant</option>
-      <option>Non-Compliant</option>
-      <option>In-Progress</option>
-    </select>
-    <button class="btn btn-danger">Create</button>
+      <app-internal-audit-summary
+        *ngIf="internalAuditFacade.activeTab === 'summary'"
+        [audit]="internalAuditFacade.selectedAudit"
+        [statusBadge]="internalAuditFacade.statusBadge">
+      </app-internal-audit-summary>
+    </div>
   </div>
-
-  <!-- I) COMPLIANCE -->
-  <div *ngIf="activeTab==='compliance'" class="card p-3">
-    <h5>Compliance Submission</h5>
-    <textarea class="form-control mb-2" placeholder="Compliance Details"></textarea>
-    <input class="form-control mb-2" type="file" multiple>
-    <button class="btn btn-secondary">Submit</button>
-  </div>
-
 </div>

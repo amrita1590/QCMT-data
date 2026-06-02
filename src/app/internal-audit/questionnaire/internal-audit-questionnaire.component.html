@@ -1,0 +1,43 @@
+<div class="card shadow-sm">
+  <div class="card-header fw-bold">Internal Audit Questionnaire</div>
+  <div class="card-body">
+    <div class="alert alert-light border" *ngIf="audit">
+      Selected audit: <strong>{{ audit.auditRefNo }}</strong> - {{ audit.unit.unitName }}
+    </div>
+
+    <form [formGroup]="questionnaireForm" (ngSubmit)="saveQuestionnaire.emit()">
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Category</th>
+              <th>Question</th>
+              <th>Benchmark</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="questions">
+            <tr *ngFor="let question of questions.controls; let i = index" [formGroupName]="i">
+              <td><input class="form-control" formControlName="category"></td>
+              <td><textarea class="form-control" rows="2" formControlName="question"></textarea></td>
+              <td><input class="form-control" formControlName="benchmark"></td>
+              <td>
+                <select class="form-select" formControlName="status">
+                  <option>Active</option>
+                  <option>Inactive</option>
+                </select>
+              </td>
+              <td><button type="button" class="btn btn-outline-danger btn-sm" (click)="removeQuestion(i)">Remove</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="addQuestion()">+ Add Question</button>
+        <button type="submit" class="btn btn-warning" [disabled]="questionnaireForm.invalid || !audit">Save Questionnaire</button>
+      </div>
+    </form>
+  </div>
+</div>

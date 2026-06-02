@@ -1,40 +1,106 @@
-/* Footer */
-.footer {
-    position: fixed; /* Fix the footer to the bottom */
-    left: 0;
-    bottom: 0;
-    width: 100%; /* Full width */
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center; /* Centered text */
-    padding: 10px; /* Padding for spacing */
+:host {
+  display: block;
+  font-family: Arial, Helvetica, sans-serif;
 }
-  
-  .footer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+
+* {
+  box-sizing: border-box;
+}
+
+.footer-container {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.footer-top {
+  padding: 26px 0;
+  background: #082f58;
+}
+
+.footer-grid,
+.footer-grid > div,
+.footer-grid nav,
+.footer-bottom .footer-container {
+  display: flex;
+  align-items: center;
+}
+
+.footer-grid {
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.footer-grid > div {
+  gap: 13px;
+}
+
+img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+p {
+  margin: 0;
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+p span {
+  color: rgba(255, 255, 255, .7);
+  font-family: Arial, sans-serif;
+  font-size: .7rem;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+
+.footer-grid nav {
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+a {
+  color: rgba(255, 255, 255, .82);
+  font-size: .78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #ffc25c;
+}
+
+.footer-bottom {
+  padding: 12px 0;
+  background: #052441;
+  color: rgba(255, 255, 255, .68);
+  font-size: .7rem;
+}
+
+.footer-bottom .footer-container {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+@media (max-width: 680px) {
+  .footer-container {
+    width: min(100% - 28px, 1180px);
   }
-  
-  .footer-links a {
-    margin: 0 10px;
-    text-decoration: none;
-    color: #5f6368;
-    transition: color 0.2s;
+
+  .footer-grid,
+  .footer-bottom .footer-container {
+    display: block;
   }
-  
-  .footer-links a:hover {
-    color: #1a73e8;
+
+  .footer-grid nav {
+    gap: 12px 18px;
+    margin-top: 20px;
   }
-  
-  /* Optional Responsive Footer Layout */
-  @media (min-width: 600px) {
-    .footer-content {
-      flex-direction: row;
-      justify-content: space-between;
-      max-width: 800px;
-      margin: 0 auto;
-      width: 100%;
-    }
+
+  .footer-bottom span {
+    display: block;
+    margin-top: 4px;
   }
+}

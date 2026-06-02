@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import { User } from '../interface/User';
@@ -72,32 +72,34 @@ this.userDetailsForm.get('userscopelevel')?.valueChanges.subscribe(scope => {
         }
       });
     }
-  handleScopeChange(scope: any) {
-    // Disable all first
-    this.userDetailsForm.get('sector')?.disable({ emitEvent: false });
-    this.userDetailsForm.get('zone')?.disable({ emitEvent: false });
+handleScopeChange(scope: any) {
 
-    // Reset values
-    this.userDetailsForm.get('sector')?.reset(null, { emitEvent: false });
-    this.userDetailsForm.get('zone')?.reset(null, { emitEvent: false });
+  // Disable all first
+  this.userDetailsForm.get('sector')?.disable();
+  this.userDetailsForm.get('zone')?.disable();
 
-    if (!scope) return;
 
-    // Unit enabled in ALL scope cases
-    this.userDetailsForm.get('unitmaster.id')?.enable({ emitEvent: false });
+  // Reset values
+  this.userDetailsForm.get('sector')?.reset();
+  this.userDetailsForm.get('zone')?.reset();
 
-    if (scope == 'Sector') {
-      this.userDetailsForm.get('sector')?.enable({ emitEvent: false });
-    }
 
-    if (scope == 'Zone') {
-      this.userDetailsForm.get('zone')?.enable({ emitEvent: false });
-    }
-    
-    // Update form validity after all changes
-    this.userDetailsForm.updateValueAndValidity({ emitEvent: false });
+  if (!scope) return;
+
+  // Unit enabled in ALL scope cases
+  this.userDetailsForm.get('unitmaster.id')?.enable();
+
+  if (scope == 'Sector') {          // Sector scope
+    this.userDetailsForm.get('sector')?.enable();
   }
-    constructor(private fb: FormBuilder, private umService: UsermanagementService, private unitService: UnitService, private cdr: ChangeDetectorRef) {
+
+  if (scope == 'Zone') {          // Zone scope
+    this.userDetailsForm.get('zone')?.enable();
+  }
+
+  // scope 1 (HQ) → only unit enabled
+}
+    constructor(private fb: FormBuilder, private umService: UsermanagementService, private unitService: UnitService) {
      this.userDetailsForm = this.fb.group(
     {
       username: ['', [Validators.required, Validators.minLength(4)]],
@@ -146,26 +148,24 @@ this.userDetailsForm.get('userscopelevel')?.valueChanges.subscribe(scope => {
     addUserDetails() {
       this.userDetailsForm.markAllAsTouched();
       this.userDetailsForm.updateValueAndValidity();
-      this.cdr.detectChanges(); // 🔥 Force change detection immediately
-      
-      console.log("add user print", this.userDetailsForm.valid);
+      console.log("add user print",this.userDetailsForm.valid);
 
       if (this.userDetailsForm.valid) {
-        const user = this.userDetailsForm.getRawValue(); // ✅ Use getRawValue() to include disabled fields
-        console.log("value:", JSON.stringify(user));
-        console.log(user);
+        const user =this.userDetailsForm.getRawValue();
+        console.log("value:", JSON.stringify(this.userDetailsForm.value));
+        console.log(this.userDetailsForm.value);
        
         this.umService.addRegisterUserDetails(user).subscribe((data: User) => {
           console.log(this.users);
-          console.log("User added successfully!", data);
+console.log("User added successfully!", data);
           this.status = true;
           setTimeout(() => {
-            this.status = false;
-          }, 10000);
-          this.clearFields();
-        }, error => {
-          console.error('Error occurred while submitting form', error);
-        })     
+            this.status = false; // Hide the div after 10 seconds
+          }, 10000); // 10000 milliseconds = 10 seconds
+            this.clearFields();
+          }, error => {
+            console.error('Error occurred while submitting form', error);
+          })     
       }   
     }
 

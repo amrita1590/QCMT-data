@@ -2,6 +2,36 @@
   cursor: pointer;
   font-weight: 500;
 }
-.card {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+.status-card {
+  border-left-width: 5px;
+}
+
+.status-card h3 {
+  color: #172033;
+  font-weight: 700;
+}
+
+.audit-list-item {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  color: #243244;
+  display: block;
+  margin-bottom: 10px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.audit-list-item:hover,
+.audit-list-item.active {
+  background: #eef5ff;
+  border-color: #0d6efd;
+}
+
+.audit-list-item small {
+  color: #6c757d;
+  display: block;
+  margin-top: 2px;
 }

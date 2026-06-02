@@ -1,16 +1,41 @@
-<header class="header">
-    <div class="logo">
-        <img src="images/logo1.png" alt="QCMT Aviation Logo" height="100">
+<header>
+  <div class="government-bar">
+    <div class="header-container utility-content">
+      <span>भारत सरकार</span>
+      <span class="divider"></span>
+      <span>Government of India</span>
+      <span class="utility-right">Ministry of Home Affairs</span>
     </div>
-    <button class="hamburger" aria-label="Toggle navigation" (click)="openMenu()">
-        &#9776; 
-    </button>
-    <nav class="nav" [class.mobile_menu]="menuValue">
+  </div>
+
+  <div class="identity-bar">
+    <div class="header-container identity-content">
+      <a class="brand" href="https://aps.cisf.gov.in/AIS/accountLogin" aria-label="CISF e-SamikSha home" target="_blank">
+        <img src="images/attendo_icon.png" alt="CISF emblem">
+        <div>
+          <h1>Airport Sector</h1>
+          <p class="hindi-name">केंद्रीय औद्योगिक सुरक्षा बल</p>
+          <span>Central Industrial Security Force | Ministry of Home Affairs</span>
+        </div>
+      </a>
+     
+      
+    </div>
+  </div>
+
+  <div class="navigation-bar">
+    <div class="header-container nav-content">
+      <button class="hamburger" type="button" aria-label="Toggle navigation" [attr.aria-expanded]="menuValue" (click)="openMenu()">
+        <i [class]="menu_icon"></i>
+      </button>
+      <nav class="nav" [class.mobile_menu]="menuValue" aria-label="Main navigation">
         <ul>
-            <li><a routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" routerLink="/">Home</a></li>
-            <li><a routerLinkActive="active" routerLink="/about">About</a></li>
-          
-            <li><a routerLinkActive="active" routerLink="/contact">Contact</a></li>
+          <li><a routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" routerLink="/" (click)="closeMenu()"><i class="bi bi-house-door-fill"></i> Home</a></li>
+          <li><a routerLinkActive="active" routerLink="/about" (click)="closeMenu()">About Portal</a></li>
+          <li><a routerLinkActive="active" routerLink="/contact" (click)="closeMenu()">Contact Us</a></li>
         </ul>
-    </nav>
+      </nav>
+      <a class="login-link" routerLink="/login"><i class="bi bi-person-lock"></i> User Login</a>
+    </div>
+  </div>
 </header>
