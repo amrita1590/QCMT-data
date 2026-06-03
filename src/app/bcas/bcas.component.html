@@ -50,28 +50,132 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h5>All Audits</h5>
     <button class="btn btn-primary" (click)="createModal(createAuditTemplate)">
-      <i class="bi bi-plus-lg"></i> Schedule Audit
+      <i class="bi bi-plus-lg"></i> Add Audit
     </button>
   </div>
+
+  <div class="table-responsive bcas-schedule-table" *ngIf="bcasSchedules.length > 0; else noBcasSchedule">
+    <table class="table table-hover table-bordered align-middle modern-table">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Audit Name</th>
+          <th>Unit Name</th>
+          <th>Audit Month</th>
+          <th>From Date</th>
+          <th>To Date</th>
+          <th>Auditor Name</th>
+          <th>Gist</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let schedule of bcasSchedules; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ schedule.name }}</td>
+          <td>{{ schedule.unitName }}</td>
+          <td>{{ schedule.auditMonth ? (schedule.auditMonth + '-01' | date: 'MMM yyyy') : '-' }}</td>
+          <td>{{ schedule.auditScheduleFromDate || '-' }}</td>
+          <td>{{ schedule.auditScheduleToDate || '-' }}</td>
+          <td>{{ schedule.auditorName }}</td>
+          <td>{{ schedule.auditDescription }}</td>
+          <td><span class="status-badge" [ngClass]="schedule.auditStatus.replace(' ','')">{{ schedule.auditStatus }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #noBcasSchedule>
+    <div class="empty-state">
+      <i class="fa-regular fa-calendar-plus"></i>
+      <span>No BCAS audit schedule found. Use Schedule Audit to add one.</span>
+    </div>
+  </ng-template>
+
     <ng-template #createAuditTemplate let-modal>
       <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-user-check me-2"></i> Schedule New Audit</h5>
+        <h5 class="modal-title"><i class="fa fa-user-check me-2"></i> Add New Audit</h5>
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
       <div class="modal-body">  
-        <p>Add a new audit to the schedule</p>
+        <p>Add a new BCAS audit detils</p>
           
         <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
         <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
 
-        
+        <form [formGroup]="auditTemplateForm" (ngSubmit)="addAuditTemplate()" class="bcas-schedule-form">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Audit Name</label>
+              <input type="text" class="form-control" formControlName="name" readonly>
+              <small class="text-muted">Auto-generated from unit, audit type and audit month.</small>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Unit Name</label>
+              <select class="form-select" formControlName="unitId" (change)="onUnitChange()">
+                <option value="" disabled>Select Unit</option>
+                <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Audit Month</label>
+              <input type="month" class="form-control" formControlName="auditMonth">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">From Date</label>
+              <input type="date" class="form-control" formControlName="auditScheduleFromDate">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">To Date</label>
+              <input type="date" class="form-control" formControlName="auditScheduleToDate">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Audit PQ File Upload</label>
+              <input type="file" class="form-control" formControlName="pqFile" accept=".pdf,.doc,.docx,.xls,.xlsx" (change)="onPqFileSelected($event)">
+              <small class="text-muted" *ngIf="selectedPqFileName">Selected: {{ selectedPqFileName }}</small>
+              <small class="text-muted" *ngIf="!selectedPqFileName">Attach PQ document, if available.</small>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Auditor Name</label>
+              <select class="form-select" formControlName="auditorId">
+                <option value="" disabled>Select Auditor</option>
+                <option *ngFor="let auditor of auditorList" [value]="auditor.id">
+                  {{ auditor.cisfno }} {{ auditor.rank }} {{ auditor.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Gist</label>
+              <textarea class="form-control" rows="4" formControlName="auditDescription" placeholder="Enter brief gist of BCAS audit schedule"></textarea>
+              <small class="text-muted">Minimum 10 and maximum 400 characters.</small>
+            </div>
+          </div>
+
+          <input type="hidden" formControlName="auditType">
+
+          <div class="modal-footer px-0 pb-0 mt-3">
+            <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+            <button type="reset" class="btn btn-warning" (click)="audittemplateReset()">Reset</button>
+            <button type="submit" class="btn btn-primary" [disabled]="auditTemplateForm.invalid || isSubmitting">
+              {{ isSubmitting ? 'Saving...' : btnName }}
+            </button>
+          </div>
+        </form>
+
         <br/>
         <div class="info-message">
             <ul>
-                <li>Create audit schedules for different units and departments.</li>
-                <li>Use audit date to plan and track audit timelines.</li>
-                <li>Audit information will be displayed to auditors during execution.</li>
-                <li>Use audit type to categorize audits as Planned, In Progress, Completed, or Action Required.</li>
+                <li>Create BCAS audit schedules for airport units.</li>
+                <li>Use from and to date to plan audit timelines.</li>
+                <li>Audit name is generated automatically from unit and month.</li>
+                <li>PQ file selection is captured in the schedule form.</li>
             </ul>
         </div>
       </div>
