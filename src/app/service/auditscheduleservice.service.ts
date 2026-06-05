@@ -209,5 +209,9 @@ deleteQuestion(questionId: number) {
    submitLetterNoDateAPS(auditObservationComponentMessage: any):Observable<any> {
       return this.http.post(this.submitLetterNoDateAPSUrl, auditObservationComponentMessage , {reportProgress: true, observe: 'events', responseType: 'text' });
    }
-   
+
+   uploadIcaoFiles(formData: FormData): Observable<any> {
+     return this.http.post('/v1/qcmt/master/auditoresponsefileupload', formData, { responseType: 'text' });
+   }
+
 }

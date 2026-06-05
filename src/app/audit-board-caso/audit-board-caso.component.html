@@ -986,7 +986,7 @@
                       </a>
                       </div>
                       <div *ngIf="component.id === 0">                   
-                      <input type="file" class="form-control" (change)="onFileSelected($event, component.index)">
+                      <input type="file" class="form-control" accept=".pdf,.doc,.docx" (change)="onFileSelected($event, component.index)">
                       </div>
                   </td>
                   <td class="text-center">
@@ -1234,7 +1234,7 @@
 
       <div class="mb-3">
         <label>Document</label>
-        <input type="file" class="form-control" (change)="handleFileInput($event)" />
+        <input type="file" class="form-control" accept=".pdf,.doc,.docx" (change)="handleFileInput($event)" />
       </div>
     </div>
   </div>

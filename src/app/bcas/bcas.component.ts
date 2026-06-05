@@ -12,14 +12,22 @@ import { UnitService } from '../service/unit.service';
 import { UnitDetails } from '../interface/UnitDetails';
 import { UserRoleDetails } from '../interface/UserRoleDetails';
 import { QuestionTemplate } from '../interface/QuestionTemplate';
+import { BcasInternalComponent } from './bcas-internal/bcas-internal.component';
+import { BcasIcaoComponent } from './bcas-icao/bcas-icao.component';
 
 @Component({
   selector: 'app-bcas',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, BcasInternalComponent, BcasIcaoComponent],
   templateUrl: './bcas.component.html',
   styleUrl: './bcas.component.css'
 })
 export class BcasComponent {
+
+  activeTab: 'BCAS' | 'Internal' | 'ICAO' = 'BCAS';
+
+  setTab(tab: 'BCAS' | 'Internal' | 'ICAO') {
+    this.activeTab = tab;
+  }
 
  templates: AuditScheduleTemplate[] = [];
  bcasSchedules: AuditScheduleTemplate[] = [];

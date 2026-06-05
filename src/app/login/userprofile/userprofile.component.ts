@@ -3,6 +3,8 @@ import { Component } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UsermanagementService } from '../../service/usermanagement.service';
 import { User } from '../../interface/User';
+import { UnitService } from '../../service/unit.service';
+import { UnitDetails } from '../../interface/UnitDetails';
 
 @Component({
   selector: 'app-userprofile',
@@ -18,30 +20,73 @@ export class UserprofileComponent {
     successMsg: string | null = null;
     successStatus: boolean = false;
     userDetails: User | null = null;
+
+    cisfRanks = [
+      { code: 'DG', name: 'Director General' },
+      { code: 'ADG', name: 'Additional Director General' },
+      { code: 'IG', name: 'Inspector General' },
+      { code: 'DIG', name: 'Deputy Inspector General' },
+      { code: 'SR CMDT', name: 'Senior Commandant' },
+      { code: 'CMDT', name: 'Commandant' },
+      { code: 'DC', name: 'Deputy Commandant' },
+      { code: 'AC', name: 'Assistant Commandant' },
+      { code: 'INSP', name: 'Inspector' },
+      { code: 'SI', name: 'Sub Inspector' },
+      { code: 'ASI', name: 'Assistant Sub Inspector' },
+      { code: 'HC', name: 'Head Constable' },
+      { code: 'CONST', name: 'Constable' }
+    ];
+
+    units: UnitDetails[] = [];
+    zones: string[] = [];
+    sectors: string[] = [];
+    scopeLevels = [
+      { id: 'ADG', name: 'ADG Level' },
+      { id: 'Sector', name: 'Sector Level' },
+      { id: 'Zone', name: 'Zone Level' },
+      { id: 'Unit', name: 'Unit Level' }
+    ];
+
     user = {
       fullName: '',
       email: '',
       mobile: '',
       address: '',
-      instituteName: ''
+      instituteName: '',
+      unitid: null as number | null,
+      userscopelevel: '',
+      zone: '',
+      sector: '',
+      rank: ''
     };
-    constructor(private umService: UsermanagementService) {
-      
-    }
+
+    constructor(private umService: UsermanagementService, private unitService: UnitService) {}
 
     ngOnInit() {
-      //Fetch user profile from backend if needed
+      this.unitService.getUnitDetails().subscribe({
+        next: (data) => {
+          this.units = data.sort((a, b) =>
+            a.unitName?.toLowerCase().localeCompare(b.unitName?.toLowerCase())
+          );
+          this.zones = [...new Set(this.units.map(u => u.zone).filter(z => z))];
+          this.sectors = [...new Set(this.units.map(u => u.sector).filter(s => s))];
+        },
+        error: (err) => console.error('Failed to fetch units', err)
+      });
+
       this.umService.getUserProfileDetails().subscribe(userData => {
-        console.log("User Profile Data:", userData);
         this.userDetails = userData;
         this.user.fullName = userData?.mstr_name || '';
         this.user.email = userData?.email || '';
         this.user.mobile = userData?.mobileNo.toString() || '';
         this.user.address = userData?.address || '';
         this.user.instituteName = userData?.organizationName || '';
-        console.log("User Details:", this.user);
+        this.user.unitid = userData?.unitid ?? null;
+        this.user.userscopelevel = userData?.userscopelevel || '';
+        this.user.zone = userData?.zone || '';
+        this.user.sector = userData?.sector || '';
+        this.user.rank = userData?.rank || '';
       });
-      
     }
 
     // Image upload preview
@@ -89,9 +134,14 @@ export class UserprofileComponent {
         mobileNo: Number(mobile),
         address: address,
         organizationName: institute,
-        createdBy: this.userDetails?.createdBy || 'system', // Fallback to 'system' if createdBy is missing
-        userRolesList: this.userDetails?.userRolesList || [], // Preserve existing roles or set to empty array
-        status: this.userDetails?.status || 'ACTIVE' // Preserve existing status or set to 'ACTIVE'
+        unitid: this.user.unitid ?? undefined,
+        userscopelevel: this.user.userscopelevel || undefined,
+        zone: this.user.zone || undefined,
+        sector: this.user.sector || undefined,
+        rank: this.user.rank || undefined,
+        createdBy: this.userDetails?.createdBy || 'system',
+        userRolesList: this.userDetails?.userRolesList || [],
+        status: this.userDetails?.status || 'ACTIVE'
       };
 
       // Call API with success + error handling

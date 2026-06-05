@@ -34,7 +34,46 @@
       <label>Address</label>
       <textarea [(ngModel)]="user.address" name="address"></textarea>
     </div>
-    
+
+    <div class="form-group">
+      <label>Rank</label>
+      <select [(ngModel)]="user.rank" name="rank">
+        <option value="">-- Select Rank --</option>
+        <option *ngFor="let r of cisfRanks" [value]="r.code">{{ r.name }} ({{ r.code }})</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Scope Level</label>
+      <select [(ngModel)]="user.userscopelevel" name="userscopelevel">
+        <option value="">-- Select Scope Level --</option>
+        <option *ngFor="let s of scopeLevels" [value]="s.id">{{ s.name }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Unit</label>
+      <select [(ngModel)]="user.unitid" name="unitid">
+        <option [ngValue]="null">-- Select Unit --</option>
+        <option *ngFor="let u of units" [ngValue]="u.id">{{ u.unitName }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="user.userscopelevel === 'Zone'">
+      <label>Zone</label>
+      <select [(ngModel)]="user.zone" name="zone">
+        <option value="">-- Select Zone --</option>
+        <option *ngFor="let z of zones" [value]="z">{{ z }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="user.userscopelevel === 'Sector'">
+      <label>Sector</label>
+      <select [(ngModel)]="user.sector" name="sector">
+        <option value="">-- Select Sector --</option>
+        <option *ngFor="let s of sectors" [value]="s">{{ s }}</option>
+      </select>
+    </div>
 
     <!-- Buttons -->
     <div class="btn-group">

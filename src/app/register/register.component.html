@@ -5,7 +5,7 @@
     <div class="register-card">
         @if (status) {
         <div class="alert alert-info text-start">
-            Data submitted successfully. Please check your email for verification.
+            e-SamikSha Account created successfully..
         </div>
         }
       <!-- Tabs -->
@@ -165,7 +165,9 @@
   </div>
   <hr/>
   <div class="d-flex justify-content-center gap-3 mt-3">
-    <button type="submit" class="btn btn-register ">Register</button>
+    <button type="submit" class="btn btn-register" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Registering...' : 'Register' }}
+    </button>
     <button type="button" class="btn btn-reset " (click)="clearFields()">Reset</button>
   </div>
   </div>

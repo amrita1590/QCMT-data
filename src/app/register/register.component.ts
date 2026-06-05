@@ -40,6 +40,7 @@ sectors:string[]=[];
 zones:string[]=[];
     status = false;
     confirmPasswordError = false;
+    isSubmitting = false;
     users: User[] = [];
     userDetailsForm: FormGroup;
 
@@ -146,27 +147,31 @@ handleScopeChange(scope: any) {
     }
 
     addUserDetails() {
+      if (this.isSubmitting) return;
+
       this.userDetailsForm.markAllAsTouched();
-      this.userDetailsForm.updateValueAndValidity();
-      console.log("add user print",this.userDetailsForm.valid);
 
       if (this.userDetailsForm.valid) {
-        const user =this.userDetailsForm.getRawValue();
-        console.log("value:", JSON.stringify(this.userDetailsForm.value));
-        console.log(this.userDetailsForm.value);
-       
-        this.umService.addRegisterUserDetails(user).subscribe((data: User) => {
-          console.log(this.users);
-console.log("User added successfully!", data);
-          this.status = true;
-          setTimeout(() => {
-            this.status = false; // Hide the div after 10 seconds
-          }, 10000); // 10000 milliseconds = 10 seconds
+        const raw = this.userDetailsForm.getRawValue();
+        const user = {
+          ...raw,
+          unitmaster: { id: raw.unitmaster?.id ? Number(raw.unitmaster.id) : 0 }
+        };
+        this.isSubmitting = true;
+
+        this.umService.addRegisterUserDetails(user).subscribe({
+          next: (data: User) => {
+            this.status = true;
+            this.isSubmitting = false;
+            setTimeout(() => { this.status = false; }, 10000);
             this.clearFields();
-          }, error => {
+          },
+          error: (error) => {
             console.error('Error occurred while submitting form', error);
-          })     
-      }   
+            this.isSubmitting = false;
+          }
+        });
+      }
     }
 
   clearFields(): void {
