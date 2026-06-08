@@ -1,80 +1,149 @@
 <div class="audit-page">
 
-  <!-- Status Cards -->
-  <div class="status-grid">
+  <!-- Section Header -->
+  <h2 class="page-title"><i class="fa fa-globe me-2"></i>ICAO Audit Details</h2>
+  <p class="page-subtitle">Track all ICAO audit records and uploaded documents</p>
 
+  <!-- Status Cards (IQCU style) -->
+  <div class="status-grid">
     <div class="status-card blue">
-      <div>
-        <p class="stat-label">Total ICAO Audits</p>
-        <h3 class="stat-value">{{ totalAudits }}</h3>
-      </div>
-      <div class="stat-icon-box blue-icon">
+      <h4>Total ICAO Audits</h4>
+      <div class="value-section">
+        <span class="value">{{ totalAudits }}</span>
         <i class="fa fa-globe"></i>
       </div>
     </div>
-
+    <div class="status-card green">
+      <h4>This Month</h4>
+      <div class="value-section">
+        <span class="value">{{ thisMonthAudits }}</span>
+        <i class="fa-regular fa-calendar-check"></i>
+      </div>
+    </div>
+    <div class="status-card yellow">
+      <h4>With Documents</h4>
+      <div class="value-section">
+        <span class="value">{{ auditsWithFiles }}</span>
+        <i class="fa fa-paperclip"></i>
+      </div>
+    </div>
   </div>
 
-  <!-- Section Toolbar -->
+  <!-- Toolbar -->
   <div class="section-toolbar">
     <div class="section-title">
       <i class="fa fa-globe"></i>
       ICAO Audit Records
-      <span class="count-pill">{{ totalAudits }}</span>
+      <span class="count-pill">{{ filteredAudits.length }}</span>
     </div>
     <button class="btn btn-primary" (click)="openCreateModal(createIcaoModal)">
       <i class="bi bi-plus-lg me-1"></i> Add ICAO Audit
     </button>
   </div>
 
-  <!-- Table -->
-  <div class="bcas-schedule-table" *ngIf="icaoAudits.length > 0; else noIcaoRecords">
+  <!-- Search + Page Size -->
+  <div class="row mb-3">
+    <div class="col-md-9">
+      <input type="text" class="form-control" placeholder="Search by audit name, unit, CASO or created by…"
+        [(ngModel)]="searchText" (ngModelChange)="page = 1">
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" [(ngModel)]="pageSize" (ngModelChange)="page = 1">
+        <option *ngFor="let s of pageSizeOptions" [value]="s">{{ s }} per page</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Records Table -->
+  <div class="bcas-schedule-table" *ngIf="filteredAudits.length > 0; else noIcaoRecords">
     <table class="table table-hover table-bordered align-middle modern-table mb-0">
-      <thead style="background:#2970ff; color:#fff;">
+      <thead class="table-dark">
         <tr>
           <th>#</th>
           <th>Audit Name</th>
           <th>Unit</th>
-          <th>CASO</th>
+          <th>CASO Name</th>
+          <th>Rank</th>
+          <th>CISF No</th>
           <th>From</th>
           <th>To</th>
-          <th>Brief Gist</th>
-          <th style="width:110px;">Documents</th>
+          <th>Created By</th>
+          <th>Gist</th>
+          <th>Documents</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let audit of icaoAudits; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td class="fw-semibold">{{ audit.name }}</td>
+        <tr *ngFor="let audit of filteredAudits | slice: (page-1)*pageSize : page*pageSize; let i = index">
+          <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+          <td class="fw-semibold">{{ audit.auditName }}</td>
           <td>{{ audit.unitName }}</td>
           <td>{{ audit.casoName }}</td>
-          <td>{{ audit.auditScheduleFromDate || '-' }}</td>
-          <td>{{ audit.auditScheduleToDate || '-' }}</td>
-          <td class="text-muted" style="max-width:180px; white-space:normal;">{{ audit.auditDescription }}</td>
+          <td><span class="type-badge">{{ audit.casoRank || '—' }}</span></td>
+          <td>{{ audit.casoNo || '—' }}</td>
+          <td>{{ audit.fromDate || '—' }}</td>
+          <td>{{ audit.toDate || '—' }}</td>
+          <td>{{ audit.createdBy }}</td>
+          <td class="text-muted" style="max-width:160px; white-space:normal;">{{ audit.gist }}</td>
           <td>
-            <button class="btn btn-sm btn-outline-primary"
-              (click)="openFilesModal(audit, viewFilesModal)" title="View uploaded documents">
-              <i class="fa fa-folder-open me-1"></i> Files
-            </button>
+            <ng-container *ngIf="audit.files && audit.files.length > 0; else noFiles">
+              <div class="doc-list">
+                <button *ngFor="let f of audit.files"
+                  class="doc-btn"
+                  (click)="openFileViewer(f, fileViewerModal)"
+                  [title]="f.fileName">
+                  <i class="fa" [ngClass]="{
+                    'fa-file-pdf': getFileType(f.fileName) === 'pdf',
+                    'fa-file-image': getFileType(f.fileName) === 'image',
+                    'fa-file-alt': getFileType(f.fileName) === 'other'
+                  }" [class.doc-icon-pdf]="getFileType(f.fileName) === 'pdf'"
+                     [class.doc-icon-img]="getFileType(f.fileName) === 'image'"
+                     [class.doc-icon-other]="getFileType(f.fileName) === 'other'"></i>
+                  <span class="doc-name">{{ f.fileName }}</span>
+                  <i class="fa fa-eye doc-eye"></i>
+                </button>
+              </div>
+            </ng-container>
+            <ng-template #noFiles>
+              <span class="text-muted small">—</span>
+            </ng-template>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
+  <!-- Pagination -->
+  <nav *ngIf="totalPages > 1" class="mt-3">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="page === 1">
+        <button class="page-link" (click)="prevPage()">Prev</button>
+      </li>
+      <li class="page-item" *ngFor="let p of visiblePages" [class.active]="p === page">
+        <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
+      </li>
+      <li class="page-item" [class.disabled]="page === totalPages">
+        <button class="page-link" (click)="nextPage()">Next</button>
+      </li>
+    </ul>
+    <p class="text-center text-muted small mt-1">
+      Showing {{ (page - 1) * pageSize + 1 }}–{{ page * pageSize > filteredAudits.length ? filteredAudits.length : page * pageSize }} of {{ filteredAudits.length }} records
+    </p>
+  </nav>
+
   <ng-template #noIcaoRecords>
     <div class="empty-state">
       <i class="fa-regular fa-folder-open"></i>
-      <p>No ICAO audit records found.<br>
+      <p *ngIf="searchText">No results for "<strong>{{ searchText }}</strong>".</p>
+      <p *ngIf="!searchText">No ICAO audit records found.<br>
          Click <strong>Add ICAO Audit</strong> to create one.</p>
     </div>
   </ng-template>
 
 
-  <!-- ── Create ICAO Audit Modal ──────────────────────────────────── -->
+  <!-- ══ CREATE ICAO AUDIT MODAL ══════════════════════════════════════ -->
   <ng-template #createIcaoModal let-modal>
 
-    <div class="modal-header modal-header-blue">
+    <div class="modal-header modal-header-icao">
       <h5 class="modal-title">
         <i class="fa fa-globe me-2"></i> Add ICAO Audit Record
       </h5>
@@ -82,13 +151,11 @@
     </div>
 
     <div class="modal-body pt-3">
-      <p class="text-muted small mb-3">
-        Record an ICAO audit conducted at the airport unit. Upload related documents for HQ reference.
-      </p>
 
       <form [formGroup]="icaoForm" (ngSubmit)="saveAudit()" class="bcas-schedule-form">
         <div class="row g-3">
 
+          <!-- Row 1: Audit Name + Month -->
           <div class="col-md-8">
             <label class="form-label">Audit Name</label>
             <input type="text" class="form-control" formControlName="name" readonly>
@@ -96,145 +163,267 @@
           </div>
 
           <div class="col-md-4">
-            <label class="form-label">Audit Month <span class="text-danger">*</span></label>
+            <label class="form-label">
+              Audit Month <span class="text-danger">*</span>
+            </label>
             <input type="month" class="form-control" formControlName="auditMonth"
               [class.is-invalid]="icaoForm.get('auditMonth')?.invalid && icaoForm.get('auditMonth')?.touched">
-            <div class="invalid-feedback">Required.</div>
+            <div class="invalid-feedback">Audit month is required.</div>
           </div>
 
+          <!-- Row 2: Unit + Created By -->
           <div class="col-md-6">
-            <label class="form-label">Unit Name <span class="text-danger">*</span></label>
+            <label class="form-label">
+              Unit Name <span class="text-danger">*</span>
+            </label>
             <select class="form-select" formControlName="unitId" (change)="onUnitChange()"
               [class.is-invalid]="icaoForm.get('unitId')?.invalid && icaoForm.get('unitId')?.touched">
               <option value="" disabled>Select Unit</option>
               <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
             </select>
+            <small>Pre-filled from your login unit.</small>
             <div class="invalid-feedback">Unit is required.</div>
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">CASO Name</label>
-            <input type="text" class="form-control" [value]="casoName" readonly>
-            <small>Auto-filled from the selected unit.</small>
+            <label class="form-label">Created By</label>
+            <input type="text" class="form-control"
+              [value]="loggedUser?.mstr_name || ''" readonly>
+            <small>Auto-filled from your login profile.</small>
+          </div>
+
+          <!-- Row 3: CASO Details Panel -->
+          <div class="col-12">
+            <div class="caso-panel p-3">
+              <div class="fw-semibold mb-2 caso-panel-title">
+                <i class="fa fa-user-shield me-1"></i> CASO Details (Auto-filled from Unit)
+              </div>
+              <div class="row g-2">
+                <div class="col-md-5">
+                  <label class="form-label small text-muted mb-1">CASO Name</label>
+                  <input type="text" class="form-control form-control-sm"
+                    [value]="casoName || '—'" readonly>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small text-muted mb-1">Rank</label>
+                  <input type="text" class="form-control form-control-sm"
+                    [value]="casoRank || '—'" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small text-muted mb-1">CISF No</label>
+                  <input type="text" class="form-control form-control-sm"
+                    [value]="casoNo || '—'" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: From / To dates -->
+          <div class="col-md-6">
+            <label class="form-label">
+              From Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" class="form-control" formControlName="fromDate"
+              [class.is-invalid]="(icaoForm.get('fromDate')?.invalid && icaoForm.get('fromDate')?.touched)
+                                || (icaoForm.hasError('dateRange') && icaoForm.get('fromDate')?.touched)">
+            <div class="invalid-feedback"
+              *ngIf="icaoForm.get('fromDate')?.hasError('required') && icaoForm.get('fromDate')?.touched">
+              From date is required.
+            </div>
+            <div class="invalid-feedback d-block"
+              *ngIf="icaoForm.hasError('dateRange') && icaoForm.get('fromDate')?.touched && icaoForm.get('toDate')?.touched">
+              From date must be on or before To date.
+            </div>
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">From Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" formControlName="auditScheduleFromDate"
-              [class.is-invalid]="icaoForm.get('auditScheduleFromDate')?.invalid && icaoForm.get('auditScheduleFromDate')?.touched">
-            <div class="invalid-feedback">Required.</div>
+            <label class="form-label">
+              To Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" class="form-control" formControlName="toDate"
+              [class.is-invalid]="(icaoForm.get('toDate')?.invalid && icaoForm.get('toDate')?.touched)
+                                || (icaoForm.hasError('dateRange') && icaoForm.get('toDate')?.touched)">
+            <div class="invalid-feedback"
+              *ngIf="icaoForm.get('toDate')?.hasError('required') && icaoForm.get('toDate')?.touched">
+              To date is required.
+            </div>
+            <div class="invalid-feedback d-block"
+              *ngIf="icaoForm.hasError('dateRange') && icaoForm.get('fromDate')?.touched && icaoForm.get('toDate')?.touched">
+              To date must be on or after From date.
+            </div>
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label">To Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" formControlName="auditScheduleToDate"
-              [class.is-invalid]="icaoForm.get('auditScheduleToDate')?.invalid && icaoForm.get('auditScheduleToDate')?.touched">
-            <div class="invalid-feedback">Required.</div>
+          <!-- Row 5: Gist -->
+          <div class="col-12">
+            <label class="form-label">
+              Brief Gist <span class="text-danger">*</span>
+            </label>
+            <textarea class="form-control" rows="3" formControlName="gist"
+              placeholder="Enter brief gist of the ICAO audit (10–500 characters)"
+              [class.is-invalid]="icaoForm.get('gist')?.invalid && icaoForm.get('gist')?.touched"></textarea>
+            <div class="invalid-feedback">Required — minimum 10, maximum 500 characters.</div>
           </div>
 
-          <div class="col-md-12">
-            <label class="form-label">Brief Gist <span class="text-danger">*</span></label>
-            <textarea class="form-control" rows="3" formControlName="auditDescription"
-              placeholder="Enter brief gist of the ICAO audit"
-              [class.is-invalid]="icaoForm.get('auditDescription')?.invalid && icaoForm.get('auditDescription')?.touched"></textarea>
-            <div class="invalid-feedback">Required (10–500 characters).</div>
-          </div>
+          <!-- Row 6: File Upload -->
+          <div class="col-12">
+            <label class="form-label">
+              Upload Documents
+              <span *ngIf="selectedFiles.length > 0" class="badge bg-primary ms-2">
+                {{ selectedFiles.length }} file{{ selectedFiles.length > 1 ? 's' : '' }} selected
+              </span>
+            </label>
 
-          <div class="col-md-12">
-            <label class="form-label">Upload Documents</label>
-            <input type="file" class="form-control" multiple
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+            <input type="file" #icaoFileInput id="icaoFileInput" class="d-none" multiple
+              accept=".pdf"
               (change)="onFilesSelected($event)">
 
-            <div class="selected-files-list mt-2" *ngIf="selectedFiles.length > 0">
-              <span class="file-chip" *ngFor="let f of selectedFiles">
-                <i class="fa fa-paperclip"></i> {{ f.name }}
-              </span>
+            <div class="file-drop-zone" (click)="icaoFileInput.click()">
+              <i class="fa fa-cloud-upload-alt fa-2x mb-1" style="color:#6b7280;"></i>
+              <div class="fw-semibold" style="color:#374151;">
+                {{ selectedFiles.length === 0 ? 'Click to select files' : 'Click to add more files' }}
+              </div>
+              <small class="text-muted">
+                PDF files only (.pdf) &nbsp;|&nbsp; Open picker multiple times to add more
+              </small>
             </div>
-            <small *ngIf="selectedFiles.length === 0">
-              Attach related audit documents — PDF, Word, Excel or Images.
-            </small>
+
+            <div *ngIf="selectedFiles.length > 0" class="mt-2">
+              <div *ngFor="let f of selectedFiles; let fi = index"
+                   class="d-flex align-items-center gap-2 border rounded px-3 py-2 mb-1 bg-light">
+                <i class="fa fa-paperclip text-secondary flex-shrink-0"></i>
+                <span class="small flex-grow-1 text-truncate" [title]="f.name">{{ f.name }}</span>
+                <span class="badge bg-secondary flex-shrink-0">
+                  {{ f.size >= 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : (f.size / 1024).toFixed(1) + ' KB' }}
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-danger py-0 flex-shrink-0"
+                  (click)="removeFile(fi)" title="Remove this file">
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+
+              <div class="text-end mt-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                  (click)="icaoFileInput.click()">
+                  <i class="fa fa-plus me-1"></i> Add More Files
+                </button>
+              </div>
+            </div>
+
           </div>
 
-        </div>
+        </div><!-- /row -->
 
         <div class="modal-footer border-0 px-0 pb-0 mt-3">
           <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
           <button type="button" class="btn btn-warning"      (click)="resetForm()">Reset</button>
           <button type="submit" class="btn btn-primary"
             [disabled]="icaoForm.invalid || isSubmitting">
-            {{ isSubmitting ? 'Saving...' : 'Save Audit' }}
+            {{ isSubmitting ? 'Saving…' : 'Save Audit' }}
           </button>
         </div>
+
       </form>
 
       <div class="info-message mt-3">
         <ul>
-          <li>ICAO audits are conducted as per existing practice.</li>
-          <li>Observations are received at APS HQrs and uploaded in QCMT.</li>
-          <li>HQ can view all past audits and attached documents at any time.</li>
+          <li>Unit and Created By are pre-filled from your login profile.</li>
+          <li>CASO details (name, rank, CISF no) auto-populate when a unit is selected.</li>
+          <li>Multiple documents can be attached — open the file picker multiple times to add more.</li>
         </ul>
       </div>
+
     </div>
   </ng-template>
 
 
-  <!-- ── View Files Modal ─────────────────────────────────────────── -->
-  <ng-template #viewFilesModal let-modal>
-    <div class="modal-header modal-header-blue">
-      <h5 class="modal-title">
-        <i class="fa fa-folder-open me-2"></i> ICAO Audit Documents
-      </h5>
-      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-    </div>
-    <div class="modal-body">
+  <!-- ══ FILE VIEWER MODAL ════════════════════════════════════════════ -->
+  <ng-template #fileViewerModal let-modal>
 
-      <div *ngIf="loadingFiles" class="text-center py-4">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted small">Loading documents…</p>
+    <!-- Header bar with file info -->
+    <div class="fv-header">
+      <div class="fv-header-left">
+        <div class="fv-file-icon" [ngClass]="'fv-icon-' + getFileType(viewingFile?.fileName)">
+          <i class="fa" [ngClass]="{
+            'fa-file-pdf': getFileType(viewingFile?.fileName) === 'pdf',
+            'fa-file-image': getFileType(viewingFile?.fileName) === 'image',
+            'fa-file-alt': getFileType(viewingFile?.fileName) === 'other'
+          }"></i>
+        </div>
+        <div>
+          <div class="fv-file-name">{{ viewingFile?.fileName }}</div>
+          <div class="fv-file-meta">
+            <span class="fv-badge" [ngClass]="'fv-badge-' + getFileType(viewingFile?.fileName)">
+              {{ getFileType(viewingFile?.fileName) | uppercase }}
+            </span>
+            <span class="fv-dot">·</span>
+            <span class="text-muted small">ICAO Audit Document</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="fv-close" (click)="closeFileViewer(modal)" title="Close">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Viewer area -->
+    <div class="fv-body">
+
+      <!-- Skeleton loader -->
+      <div *ngIf="!viewingFileUrl" class="fv-loader">
+        <div class="fv-spinner">
+          <div class="fv-spin-ring"></div>
+        </div>
+        <p class="fv-loader-text">Loading document…</p>
+        <small class="text-muted">Fetching file from secure storage</small>
       </div>
 
-      <ng-container *ngIf="!loadingFiles">
-
-        <div *ngIf="selectedAuditFiles?.auditorResponseFiles?.length; else noFiles">
-          <table class="table table-bordered table-sm">
-            <thead class="table-light">
-              <tr>
-                <th>#</th>
-                <th>Document Name</th>
-                <th>Remarks</th>
-                <th>Download</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let file of selectedAuditFiles!.auditorResponseFiles; let i = index">
-                <td>{{ i + 1 }}</td>
-                <td>{{ file.documentName }}</td>
-                <td class="text-muted">{{ file.remarks || '—' }}</td>
-                <td>
-                  <a [href]="fileBaseUrl + file.filePath" target="_blank"
-                    class="btn btn-sm btn-outline-success">
-                    <i class="fa fa-download me-1"></i> Download
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- PDF viewer -->
+      <ng-container *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'pdf'">
+        <div class="fv-pdf-wrap">
+          <iframe [src]="viewingFileUrl" class="fv-iframe"></iframe>
         </div>
+      </ng-container>
 
-        <ng-template #noFiles>
-          <div class="text-center text-muted py-4">
-            <i class="fa fa-folder-open fa-2x mb-2 d-block text-secondary"></i>
-            <p class="mb-0">No documents uploaded for this audit.</p>
+      <!-- Image viewer -->
+      <ng-container *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'image'">
+        <div class="fv-image-wrap">
+          <img [src]="viewingFileUrl" class="fv-image" [alt]="viewingFile?.fileName">
+        </div>
+      </ng-container>
+
+      <!-- Other file type -->
+      <ng-container *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'other'">
+        <div class="fv-unsupported">
+          <div class="fv-unsupported-icon">
+            <i class="fa fa-file-alt"></i>
           </div>
-        </ng-template>
-
+          <h6 class="fw-semibold mt-3 mb-1">Preview not available</h6>
+          <p class="text-muted small mb-4">This file type cannot be displayed inline.<br>Use the download button to open it.</p>
+          <a [href]="viewingFileUrl" [download]="viewingFile?.fileName" class="btn btn-primary px-4">
+            <i class="fa fa-download me-2"></i> Download File
+          </a>
+        </div>
       </ng-container>
 
     </div>
-    <div class="modal-footer border-0">
-      <button class="btn btn-light border" (click)="modal.dismiss()">Close</button>
+
+    <!-- Footer actions -->
+    <div class="fv-footer">
+      <div class="fv-footer-left">
+        <i class="fa fa-lock text-muted me-1" style="font-size:11px;"></i>
+        <span class="text-muted" style="font-size:11px;">Secure document — accessed via JWT authentication</span>
+      </div>
+      <div class="fv-footer-right">
+        <a *ngIf="viewingFileUrl" [href]="viewingFileUrl" [download]="viewingFile?.fileName"
+           class="btn btn-sm btn-outline-primary">
+          <i class="fa fa-download me-1"></i> Download
+        </a>
+        <button class="btn btn-sm btn-secondary ms-2" (click)="closeFileViewer(modal)">
+          <i class="fa fa-times me-1"></i> Close
+        </button>
+      </div>
     </div>
+
   </ng-template>
 
 </div>

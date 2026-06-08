@@ -1,0 +1,549 @@
+<div class="audit-page">
+
+  <!-- ── PAGE HEADER ───────────────────────────────────────────────── -->
+  <div class="mb-1">
+    <h4 class="page-title">BCAS Audit Records</h4>
+    <p class="page-subtitle">4-stage workflow: PQ Stage → Audit Stage → Observation → Completed</p>
+  </div>
+
+  <!-- ── STATUS CARDS ──────────────────────────────────────────────── -->
+  <div class="status-grid">
+    <div class="status-card blue">
+      <h4>Total Audits</h4>
+      <div class="value-section">
+        <span class="value">{{ totalAudits }}</span>
+        <i class="fa fa-shield-alt"></i>
+      </div>
+    </div>
+    <div class="status-card yellow">
+      <h4>PQ Stage</h4>
+      <div class="value-section">
+        <span class="value">{{ pqStageCount }}</span>
+        <i class="fa fa-file-alt"></i>
+      </div>
+    </div>
+    <div class="status-card purple">
+      <h4>Audit Stage</h4>
+      <div class="value-section">
+        <span class="value">{{ auditStageCount }}</span>
+        <i class="fa fa-search"></i>
+      </div>
+    </div>
+    <div class="status-card green">
+      <h4>Completed</h4>
+      <div class="value-section">
+        <span class="value">{{ completedCount }}</span>
+        <i class="fa fa-check-circle"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION TOOLBAR ───────────────────────────────────────────── -->
+  <div class="section-toolbar">
+    <div class="section-title">
+      <i class="fa fa-shield-alt"></i>
+      BCAS Audit Records
+      <span class="count-pill">{{ filteredAudits.length }}</span>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <input type="text" class="form-control form-control-sm" placeholder="Search audits..."
+        [(ngModel)]="searchText" (ngModelChange)="page = 1" style="width:200px;">
+      <select class="form-select form-select-sm" [(ngModel)]="pageSize"
+        (ngModelChange)="page = 1" style="width:90px;">
+        <option *ngFor="let s of pageSizeOptions" [value]="s">{{ s }}/pg</option>
+      </select>
+      <button class="btn btn-primary btn-sm" (click)="openCreateModal(createModal)">
+        <i class="bi bi-plus-lg me-1"></i> Add BCAS Audit
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TABLE ─────────────────────────────────────────────────────── -->
+  <div class="bcas-schedule-table" *ngIf="filteredAudits.length > 0; else emptyState">
+    <table class="table table-hover align-middle modern-table mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Audit Name</th>
+          <th>Unit</th>
+          <th>CASO Name</th>
+          <th>Rank</th>
+          <th>CISF No</th>
+          <th>Month</th>
+          <th>Status</th>
+          <th>PQ Documents</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let audit of filteredAudits | slice:(page-1)*pageSize:page*pageSize; let i = index">
+          <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+          <td class="fw-semibold" style="max-width:160px; white-space:normal;">{{ audit.auditName }}</td>
+          <td>{{ audit.unitName }}</td>
+          <td>{{ audit.casoName || '—' }}</td>
+          <td><span class="type-badge">{{ audit.casoRank || '—' }}</span></td>
+          <td>{{ audit.casoNo || '—' }}</td>
+          <td>{{ audit.auditMonth ? (audit.auditMonth + '-01' | date:'MMM yyyy') : '—' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusBadgeClass(audit.status)">
+              {{ getStatusLabel(audit.status) }}
+            </span>
+          </td>
+          <!-- PQ Documents -->
+          <td>
+            <div class="doc-list" *ngIf="audit.files && audit.files.length > 0; else noDocs">
+              <button *ngFor="let file of audit.files"
+                class="doc-btn"
+                (click)="openFileViewer(file, fileViewerModal)">
+                <i class="fa fa-file-pdf doc-icon-pdf" *ngIf="getFileType(file.fileName) === 'pdf'"></i>
+                <i class="fa fa-file-image doc-icon-img" *ngIf="getFileType(file.fileName) === 'image'"></i>
+                <i class="fa fa-file doc-icon-other" *ngIf="getFileType(file.fileName) === 'other'"></i>
+                <span class="doc-name">{{ file.fileName }}</span>
+                <i class="fa fa-eye doc-eye"></i>
+              </button>
+            </div>
+            <ng-template #noDocs>
+              <span class="text-muted small">—</span>
+            </ng-template>
+          </td>
+          <!-- Actions -->
+          <td>
+            <div class="d-flex flex-column gap-1">
+              <!-- Final report button (stage 2+) -->
+              <button *ngIf="audit.finalReportPath"
+                class="btn btn-outline-success btn-xs"
+                (click)="openFinalReportViewer(audit.finalReportPath!, fileViewerModal)">
+                <i class="fa fa-file-pdf me-1"></i> Final Report
+              </button>
+              <!-- PQ_STAGE → Update Audit -->
+              <button *ngIf="audit.status === 'PQ_STAGE'"
+                class="btn btn-outline-primary btn-xs"
+                (click)="openUpdateModal(audit, updateModal)">
+                <i class="fa fa-edit me-1"></i> Update Audit
+              </button>
+              <!-- AUDIT_STAGE → Add Observations -->
+              <button *ngIf="audit.status === 'AUDIT_STAGE'"
+                class="btn btn-obs btn-xs"
+                (click)="openObservationModal(audit, observationModal)">
+                <i class="fa fa-list-ul me-1"></i> Add Observations
+              </button>
+              <!-- OBSERVATION_STAGE / COMPLETED → View Observations -->
+              <button *ngIf="audit.status === 'OBSERVATION_STAGE' || audit.status === 'COMPLETED'"
+                class="btn btn-outline-secondary btn-xs"
+                (click)="openObservationModal(audit, observationModal)">
+                <i class="fa fa-eye me-1"></i> View Observations
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty state -->
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <i class="fa-regular fa-folder-open"></i>
+      <p *ngIf="searchText; else noRecords">No audits match "<strong>{{ searchText }}</strong>".</p>
+      <ng-template #noRecords>
+        <p>No BCAS audit records found.<br>Click <strong>Add BCAS Audit</strong> to create one.</p>
+      </ng-template>
+    </div>
+  </ng-template>
+
+  <!-- Pagination -->
+  <div *ngIf="totalPages > 1" class="d-flex justify-content-between align-items-center mt-3 px-1">
+    <small class="text-muted">
+      Showing {{ (page - 1) * pageSize + 1 }}–{{ page * pageSize > filteredAudits.length ? filteredAudits.length : page * pageSize }}
+      of {{ filteredAudits.length }} records
+    </small>
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" [class.disabled]="page === 1">
+          <a class="page-link" style="cursor:pointer;" (click)="prevPage()">«</a>
+        </li>
+        <li *ngFor="let p of visiblePages" class="page-item" [class.active]="p === page">
+          <a class="page-link" style="cursor:pointer;" (click)="goToPage(p)">{{ p }}</a>
+        </li>
+        <li class="page-item" [class.disabled]="page === totalPages">
+          <a class="page-link" style="cursor:pointer;" (click)="nextPage()">»</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STAGE 1 — CREATE BCAS AUDIT MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<ng-template #createModal let-modal>
+  <div class="modal-header modal-header-icao">
+    <h5 class="modal-title">
+      <i class="fa fa-shield-alt me-2 text-primary"></i> Create BCAS Audit
+      <span class="stage-badge ms-2">Stage 1 — PQ</span>
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body pt-3">
+    <form [formGroup]="createForm" (ngSubmit)="savePqStage()" class="bcas-schedule-form">
+      <div class="row g-3">
+
+        <!-- Audit Name (auto) -->
+        <div class="col-md-12">
+          <label class="form-label">Audit Name</label>
+          <input type="text" class="form-control" formControlName="name" readonly>
+          <small>Auto-generated from unit and month.</small>
+        </div>
+
+        <!-- Unit -->
+        <div class="col-md-6">
+          <label class="form-label">Unit <span class="text-danger">*</span></label>
+          <select class="form-select" formControlName="unitId" (change)="onUnitChange()"
+            [class.is-invalid]="createForm.get('unitId')?.invalid && createForm.get('unitId')?.touched">
+            <option value="" disabled>Select Unit</option>
+            <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
+          </select>
+          <small class="text-muted">Pre-filled from your login unit.</small>
+          <div class="invalid-feedback">Unit is required.</div>
+        </div>
+
+        <!-- Audit Month -->
+        <div class="col-md-6">
+          <label class="form-label">Audit Month <span class="text-danger">*</span></label>
+          <input type="month" class="form-control" formControlName="auditMonth"
+            [class.is-invalid]="createForm.get('auditMonth')?.invalid && createForm.get('auditMonth')?.touched">
+          <div class="invalid-feedback">Required.</div>
+        </div>
+
+        <!-- CASO Panel -->
+        <div class="col-12">
+          <div class="caso-panel p-3">
+            <div class="caso-panel-title fw-bold mb-2">
+              <i class="fa fa-user-shield me-1"></i> CASO Details (auto-filled from unit)
+            </div>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label">CASO Name</label>
+                <input type="text" class="form-control" [value]="casoName" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Rank</label>
+                <input type="text" class="form-control" [value]="casoRank" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">CISF No</label>
+                <input type="text" class="form-control" [value]="casoNo" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Created By -->
+        <div class="col-md-6">
+          <label class="form-label">Created By</label>
+          <input type="text" class="form-control" [value]="loggedUser?.mstr_name || ''" readonly>
+        </div>
+
+        <!-- Gist -->
+        <div class="col-12">
+          <label class="form-label">Gist / Description <span class="text-danger">*</span></label>
+          <textarea class="form-control" rows="3" formControlName="gist"
+            placeholder="Enter brief summary of the BCAS audit..."
+            [class.is-invalid]="createForm.get('gist')?.invalid && createForm.get('gist')?.touched"></textarea>
+          <div class="invalid-feedback">Required (10–1000 characters).</div>
+        </div>
+
+        <!-- PQ Files -->
+        <div class="col-12">
+          <label class="form-label">PQ Question &amp; Answer Files (PDF only)</label>
+          <div class="file-drop-zone" (click)="pqFileInput.click()">
+            <i class="fa fa-cloud-upload-alt fa-2x text-muted mb-1 d-block"></i>
+            <p class="mb-0 text-muted small">Click to select PDF files (multiple allowed)</p>
+          </div>
+          <input #pqFileInput type="file" class="d-none" accept=".pdf" multiple
+            (change)="onPqFilesSelected($event)">
+          <div *ngIf="selectedPqFiles.length > 0" class="mt-2">
+            <div *ngFor="let f of selectedPqFiles; let i = index"
+              class="selected-file-row d-flex align-items-center justify-content-between p-2 border rounded mb-1 bg-light">
+              <span class="small"><i class="fa fa-file-pdf text-danger me-2"></i>{{ f.name }}</span>
+              <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
+                (click)="removePqFile(i)">
+                <i class="fa fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer border-0 px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          <i class="fa fa-save me-1"></i>{{ isSubmitting ? 'Saving...' : 'Create Audit' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STAGE 2 — UPDATE AUDIT MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<ng-template #updateModal let-modal>
+  <div class="modal-header modal-header-icao">
+    <h5 class="modal-title">
+      <i class="fa fa-edit me-2 text-primary"></i> Update Audit
+      <span class="stage-badge stage-audit ms-2">Stage 2 — Audit</span>
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body pt-3">
+    <div class="audit-info-box mb-3">
+      <i class="fa fa-shield-alt me-2 text-primary"></i>
+      <span class="fw-bold">{{ selectedAudit?.auditName }}</span>
+      <span class="ms-3 text-muted small">CASO: {{ selectedAudit?.casoName }}</span>
+    </div>
+    <form [formGroup]="updateForm" (ngSubmit)="saveAuditStage()" class="bcas-schedule-form">
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <label class="form-label">Audit From Date <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" formControlName="fromDate"
+            [class.is-invalid]="updateForm.get('fromDate')?.invalid && updateForm.get('fromDate')?.touched">
+          <div class="invalid-feedback">Required.</div>
+          <div class="invalid-feedback d-block text-danger small"
+            *ngIf="updateForm.hasError('dateRange') && updateForm.get('fromDate')?.touched && updateForm.get('toDate')?.touched">
+            From date must be on or before To date.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Audit To Date <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" formControlName="toDate"
+            [class.is-invalid]="updateForm.get('toDate')?.invalid && updateForm.get('toDate')?.touched">
+          <div class="invalid-feedback">Required.</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Final Audit Report (PDF)</label>
+          <div class="file-drop-zone" (click)="finalReportInput.click()">
+            <i class="fa fa-file-pdf fa-2x text-danger mb-1 d-block"></i>
+            <p class="mb-0 small"
+              [class.text-muted]="!selectedFinalReport"
+              [class.text-success]="selectedFinalReport">
+              {{ selectedFinalReport ? selectedFinalReport.name : 'Click to select Final Report PDF' }}
+            </p>
+          </div>
+          <input #finalReportInput type="file" class="d-none" accept=".pdf"
+            (change)="onFinalReportSelected($event)">
+          <small *ngIf="selectedAudit?.finalReportPath" class="text-success">
+            <i class="fa fa-check-circle me-1"></i>Final report already uploaded. Upload again to replace.
+          </small>
+        </div>
+
+      </div>
+
+      <div class="modal-footer border-0 px-0 pb-0 mt-3">
+        <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          <i class="fa fa-check me-1"></i>{{ isSubmitting ? 'Saving...' : 'Complete Audit Stage' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STAGE 3 — OBSERVATIONS MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<ng-template #observationModal let-modal>
+  <div class="modal-header modal-header-icao">
+    <h5 class="modal-title">
+      <i class="fa fa-list-ul me-2"></i>
+      {{ isViewObsMode ? 'View Observations' : 'Add Observations' }}
+      <span class="stage-badge stage-obs ms-2">Stage 3 — Observation</span>
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body pt-3">
+
+    <div class="audit-info-box mb-3">
+      <i class="fa fa-shield-alt me-2 text-primary"></i>
+      <span class="fw-bold">{{ selectedAudit?.auditName }}</span>
+      <span class="ms-3 text-muted small">
+        {{ selectedAudit?.fromDate || '' }}{{ selectedAudit?.toDate ? ' → ' + selectedAudit?.toDate : '' }}
+      </span>
+    </div>
+
+    <!-- VIEW MODE: read-only observation list -->
+    <ng-container *ngIf="isViewObsMode">
+      <div *ngIf="selectedAudit?.observations && selectedAudit!.observations!.length > 0; else noObs">
+        <div *ngFor="let obs of selectedAudit!.observations; let i = index" class="obs-view-row">
+          <div class="obs-number">{{ i + 1 }}</div>
+          <div class="obs-content">
+            <p class="obs-text">{{ obs.observationText }}</p>
+            <div class="d-flex gap-2 flex-wrap mt-1">
+              <span class="obs-badge"
+                [ngClass]="{
+                  'remarks-minor':    obs.remarksType === 'Minor',
+                  'remarks-major':    obs.remarksType === 'Major',
+                  'remarks-critical': obs.remarksType === 'Critical'
+                }">
+                <i class="fa fa-tag me-1"></i>{{ obs.remarksType }}
+              </span>
+              <span class="obs-badge"
+                [ngClass]="{
+                  'compliance-yes':     obs.complianceStatus === 'Compliant',
+                  'compliance-partial': obs.complianceStatus === 'Partially Compliant',
+                  'compliance-no':      obs.complianceStatus === 'Non-Compliant'
+                }">
+                <i class="fa fa-check-circle me-1"></i>{{ obs.complianceStatus }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ng-template #noObs>
+        <div class="empty-state">
+          <i class="fa-regular fa-folder-open"></i>
+          <p>No observations recorded for this audit.</p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <!-- ADD MODE: dynamic observation form rows -->
+    <ng-container *ngIf="!isViewObsMode">
+      <div *ngFor="let row of observationRows; let i = index" class="obs-form-row">
+        <div class="obs-row-header">
+          <span class="fw-semibold small text-muted">Observation {{ i + 1 }}</span>
+          <button *ngIf="observationRows.length > 1" type="button"
+            class="btn btn-sm btn-outline-danger py-0 px-2"
+            (click)="removeObservationRow(i)">
+            <i class="fa fa-times me-1"></i>Remove
+          </button>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-12">
+            <textarea class="form-control" rows="3" [(ngModel)]="row.observationText"
+              placeholder="Enter observation text from the audit report..."></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-bold text-muted mb-1">Remarks Type</label>
+            <select class="form-select" [(ngModel)]="row.remarksType">
+              <option value="Minor">Minor</option>
+              <option value="Major">Major</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-bold text-muted mb-1">Compliance Status</label>
+            <select class="form-select" [(ngModel)]="row.complianceStatus">
+              <option value="Non-Compliant">Non-Compliant</option>
+              <option value="Partially Compliant">Partially Compliant</option>
+              <option value="Compliant">Compliant</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-sm btn-outline-secondary mt-2 mb-3"
+        (click)="addObservationRow()">
+        <i class="bi bi-plus-lg me-1"></i> Add Another Observation
+      </button>
+
+      <div class="modal-footer border-0 px-0 pb-0">
+        <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="saveObservations()" [disabled]="isSubmitting">
+          <i class="fa fa-paper-plane me-1"></i>
+          {{ isSubmitting ? 'Submitting...' : 'Submit to APS HQRs' }}
+        </button>
+      </div>
+    </ng-container>
+
+  </div>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FILE VIEWER MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<ng-template #fileViewerModal let-modal>
+
+  <!-- Header -->
+  <div class="fv-header">
+    <div class="fv-header-left">
+      <div class="fv-file-icon"
+        [ngClass]="{
+          'fv-icon-pdf':   getFileType(viewingFile?.fileName) === 'pdf',
+          'fv-icon-image': getFileType(viewingFile?.fileName) === 'image',
+          'fv-icon-other': getFileType(viewingFile?.fileName) === 'other'
+        }">
+        <i class="fa"
+          [ngClass]="{
+            'fa-file-pdf':   getFileType(viewingFile?.fileName) === 'pdf',
+            'fa-file-image': getFileType(viewingFile?.fileName) === 'image',
+            'fa-file':       getFileType(viewingFile?.fileName) === 'other'
+          }"></i>
+      </div>
+      <div>
+        <div class="fv-file-name">{{ viewingFile?.fileName }}</div>
+        <div class="fv-file-meta">
+          <span class="fv-badge"
+            [ngClass]="{
+              'fv-badge-pdf':   getFileType(viewingFile?.fileName) === 'pdf',
+              'fv-badge-image': getFileType(viewingFile?.fileName) === 'image',
+              'fv-badge-other': getFileType(viewingFile?.fileName) === 'other'
+            }">
+            {{ getFileType(viewingFile?.fileName).toUpperCase() }}
+          </span>
+          <span class="fv-dot">•</span>
+          <span style="font-size:11px; color:#9ca3af;">BCAS Audit Document</span>
+        </div>
+      </div>
+    </div>
+    <button class="fv-close" (click)="closeFileViewer(modal)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="fv-body">
+    <!-- Spinner while loading -->
+    <div class="fv-loader" *ngIf="!viewingFileUrl">
+      <div class="fv-spinner"><div class="fv-spin-ring"></div></div>
+      <p class="fv-loader-text">Loading document...</p>
+      <small style="color:#6c757d;">Fetching from server</small>
+    </div>
+
+    <!-- PDF -->
+    <div class="fv-pdf-wrap" *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'pdf'">
+      <iframe class="fv-iframe" [src]="viewingFileUrl" type="application/pdf"></iframe>
+    </div>
+
+    <!-- Image -->
+    <div class="fv-image-wrap" *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'image'">
+      <img class="fv-image" [src]="viewingFileUrl" [alt]="viewingFile?.fileName">
+    </div>
+
+    <!-- Unsupported -->
+    <div class="fv-unsupported" *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'other'">
+      <div class="fv-unsupported-icon"><i class="fa fa-file"></i></div>
+      <h6 class="mt-3">Preview not available</h6>
+      <p class="text-muted small">This file type cannot be displayed inline.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="fv-footer">
+    <div class="fv-footer-left">
+      <small style="color:#6c757d; font-size:11px;">
+        <i class="fa fa-lock me-1"></i>Accessed via secure JWT session
+      </small>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary text-white border-secondary"
+      (click)="closeFileViewer(modal)">
+      Close
+    </button>
+  </div>
+
+</ng-template>

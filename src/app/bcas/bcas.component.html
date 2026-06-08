@@ -7,7 +7,7 @@
         <i class="fa fa-shield-alt"></i>
       </div>
       <div>
-        <h2 class="page-title">BCAS Audit Tracking</h2>
+        <h2 class="page-title">BCAS, Internal, ICAO Audit Tracking</h2>
         <p class="page-subtitle">Manage BCAS, Internal &amp; ICAO audit records for CISF airport units</p>
       </div>
     </div>
@@ -20,7 +20,6 @@
   <div class="audit-tabs-wrapper">
     <button class="audit-tab bcas-tab" [class.active]="activeTab === 'BCAS'" (click)="setTab('BCAS')">
       <i class="fa fa-shield-alt"></i> BCAS
-      <span class="tab-count">{{ bcasSchedules.length }}</span>
     </button>
     <button class="audit-tab internal-tab" [class.active]="activeTab === 'Internal'" (click)="setTab('Internal')">
       <i class="fa fa-building"></i> Internal
@@ -30,253 +29,13 @@
     </button>
   </div>
 
-  <!-- ── INTERNAL TAB ────────────────────────────────────────────── -->
+  <!-- ── BCAS TAB ────────────────────────────────────────────────── -->
+  <app-bcas-bcas *ngIf="activeTab === 'BCAS'"></app-bcas-bcas>
+
+  <!-- ── INTERNAL TAB ───────────────────────────────────────────── -->
   <app-bcas-internal *ngIf="activeTab === 'Internal'"></app-bcas-internal>
 
-  <!-- ── ICAO TAB ────────────────────────────────────────────────── -->
+  <!-- ── ICAO TAB ───────────────────────────────────────────────── -->
   <app-bcas-icao *ngIf="activeTab === 'ICAO'"></app-bcas-icao>
-
-  <!-- ── BCAS TAB ─────────────────────────────────────────────────── -->
-  <ng-container *ngIf="activeTab === 'BCAS'">
-
-    <!-- Status Cards -->
-    <div class="status-grid">
-
-      <div class="status-card yellow">
-        <div>
-          <p class="stat-label">In Progress</p>
-          <h3 class="stat-value">{{ totalInProgress }}</h3>
-        </div>
-        <div class="stat-icon-box yellow-icon">
-          <i class="fa-regular fa-calendar"></i>
-        </div>
-      </div>
-
-      <div class="status-card green">
-        <div>
-          <p class="stat-label">Completed</p>
-          <h3 class="stat-value">{{ totalCompleted }}</h3>
-        </div>
-        <div class="stat-icon-box green-icon">
-          <i class="fa-regular fa-calendar-check"></i>
-        </div>
-      </div>
-
-      <div class="status-card red">
-        <div>
-          <p class="stat-label">Action Required</p>
-          <h3 class="stat-value">{{ totalActionRequired }}</h3>
-        </div>
-        <div class="stat-icon-box red-icon">
-          <i class="fa-regular fa-calendar-xmark"></i>
-        </div>
-      </div>
-
-      <div class="status-card purple">
-        <div>
-          <p class="stat-label">Compliance %</p>
-          <h3 class="stat-value">{{ compliancePercentage }}</h3>
-        </div>
-        <div class="stat-icon-box purple-icon">
-          <i class="fa fa-chart-pie"></i>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Section Toolbar -->
-    <div class="section-toolbar">
-      <div class="section-title">
-        <i class="fa fa-list-check"></i>
-        All BCAS Audits
-        <span class="count-pill">{{ bcasSchedules.length }}</span>
-      </div>
-      <button class="btn btn-primary" (click)="createModal(createAuditTemplate)">
-        <i class="bi bi-plus-lg me-1"></i> Add Audit
-      </button>
-    </div>
-
-    <!-- Table -->
-    <div class="bcas-schedule-table" *ngIf="bcasSchedules.length > 0; else noBcasSchedule">
-      <table class="table table-hover table-bordered align-middle modern-table mb-0">
-        <thead class="table-dark">
-          <tr>
-            <th>#</th>
-            <th>Audit Name</th>
-            <th>Unit</th>
-            <th>Month</th>
-            <th>From</th>
-            <th>To</th>
-            <th>Auditor</th>
-            <th>Gist</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let schedule of bcasSchedules; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td class="fw-semibold">{{ schedule.name }}</td>
-            <td>{{ schedule.unitName }}</td>
-            <td>{{ schedule.auditMonth ? (schedule.auditMonth + '-01' | date: 'MMM yyyy') : '-' }}</td>
-            <td>{{ schedule.auditScheduleFromDate || '-' }}</td>
-            <td>{{ schedule.auditScheduleToDate || '-' }}</td>
-            <td>{{ schedule.auditorName }}</td>
-            <td class="text-muted" style="max-width:180px; white-space:normal;">{{ schedule.auditDescription }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="schedule.auditStatus.replace(' ','')">
-                {{ schedule.auditStatus }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <ng-template #noBcasSchedule>
-      <div class="empty-state">
-        <i class="fa-regular fa-folder-open"></i>
-        <p>No BCAS audit records found.<br>
-           Click <strong>Add Audit</strong> above to create one.</p>
-      </div>
-    </ng-template>
-
-  </ng-container>
-  <!-- ── END BCAS TAB ─────────────────────────────────────────────── -->
-
-
-  <!-- ══════════════════════════════════════════════════════════════
-       CREATE BCAS AUDIT MODAL
-       ══════════════════════════════════════════════════════════════ -->
-  <ng-template #createAuditTemplate let-modal>
-
-    <div class="modal-header modal-header-accent">
-      <h5 class="modal-title">
-        <i class="fa fa-shield-alt me-2"></i> Add New BCAS Audit
-      </h5>
-      <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-    </div>
-
-    <div class="modal-body pt-3">
-
-      <div *ngIf="errorStatus"   class="alert alert-danger   py-2 mb-3">{{ errorMsg }}</div>
-      <div *ngIf="successStatus" class="alert alert-success  py-2 mb-3">{{ successMsg }}</div>
-
-      <form [formGroup]="auditTemplateForm" (ngSubmit)="addAuditTemplate()" class="bcas-schedule-form">
-        <div class="row g-3">
-
-          <div class="col-md-6">
-            <label class="form-label">Audit Name</label>
-            <input type="text" class="form-control" formControlName="name" readonly>
-            <small>Auto-generated from unit, type and month.</small>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">Unit Name <span class="text-danger">*</span></label>
-            <select class="form-select" formControlName="unitId" (change)="onUnitChange()"
-              [class.is-invalid]="auditTemplateForm.get('unitId')?.invalid && auditTemplateForm.get('unitId')?.touched">
-              <option value="" disabled>Select Unit</option>
-              <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
-            </select>
-            <div class="invalid-feedback">Unit is required.</div>
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label">Audit Month <span class="text-danger">*</span></label>
-            <input type="month" class="form-control" formControlName="auditMonth"
-              [class.is-invalid]="auditTemplateForm.get('auditMonth')?.invalid && auditTemplateForm.get('auditMonth')?.touched">
-            <div class="invalid-feedback">Required.</div>
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label">From Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" formControlName="auditScheduleFromDate"
-              [class.is-invalid]="auditTemplateForm.get('auditScheduleFromDate')?.invalid && auditTemplateForm.get('auditScheduleFromDate')?.touched">
-            <div class="invalid-feedback">Required.</div>
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label">To Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" formControlName="auditScheduleToDate"
-              [class.is-invalid]="auditTemplateForm.get('auditScheduleToDate')?.invalid && auditTemplateForm.get('auditScheduleToDate')?.touched">
-            <div class="invalid-feedback">Required.</div>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">PQ File Upload</label>
-            <input type="file" class="form-control" formControlName="pqFile"
-              accept=".pdf,.doc,.docx,.xls,.xlsx" (change)="onPqFileSelected($event)">
-            <small *ngIf="selectedPqFileName">Selected: {{ selectedPqFileName }}</small>
-            <small *ngIf="!selectedPqFileName">Attach PQ document if available.</small>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">Auditor Name <span class="text-danger">*</span></label>
-            <select class="form-select" formControlName="auditorId"
-              [class.is-invalid]="auditTemplateForm.get('auditorId')?.invalid && auditTemplateForm.get('auditorId')?.touched">
-              <option value="" disabled>Select Auditor</option>
-              <option *ngFor="let auditor of auditorList" [value]="auditor.id">
-                {{ auditor.cisfno }} {{ auditor.rank }} {{ auditor.name }}
-              </option>
-            </select>
-            <div class="invalid-feedback">Auditor is required.</div>
-          </div>
-
-          <div class="col-md-12">
-            <label class="form-label">Gist <span class="text-danger">*</span></label>
-            <textarea class="form-control" rows="3" formControlName="auditDescription"
-              placeholder="Enter brief gist of the BCAS audit"
-              [class.is-invalid]="auditTemplateForm.get('auditDescription')?.invalid && auditTemplateForm.get('auditDescription')?.touched"></textarea>
-            <div class="invalid-feedback">Gist is required (10–400 characters).</div>
-            <small>Min 10 and max 400 characters.</small>
-          </div>
-
-        </div>
-
-        <input type="hidden" formControlName="auditType">
-
-        <div class="modal-footer border-0 px-0 pb-0 mt-3">
-          <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
-          <button type="reset"  class="btn btn-warning"      (click)="audittemplateReset()">Reset</button>
-          <button type="submit" class="btn btn-primary"
-            [disabled]="auditTemplateForm.invalid || isSubmitting">
-            {{ isSubmitting ? 'Saving...' : btnName }}
-          </button>
-        </div>
-      </form>
-
-      <div class="info-message mt-3">
-        <ul>
-          <li>Audit name is auto-generated from unit and month.</li>
-          <li>Use from/to dates to define the audit window.</li>
-          <li>PQ file can be attached if available.</li>
-        </ul>
-      </div>
-
-    </div>
-  </ng-template>
-
-
-  <!-- ══════════════════════════════════════════════════════════════
-       DELETE MODAL
-       ══════════════════════════════════════════════════════════════ -->
-  <ng-template #deleteModal let-modal>
-    <div class="modal-header border-0 pb-0">
-      <h5 class="modal-title fw-bold text-danger">
-        <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
-      </h5>
-      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
-    </div>
-    <div class="modal-body">
-      <p class="text-muted mb-3">You are about to permanently delete this audit record.</p>
-      <div class="border rounded p-2 bg-light text-danger small">
-        <i class="fa fa-exclamation-circle me-1"></i> This operation cannot be undone.
-      </div>
-    </div>
-    <div class="modal-footer border-0">
-      <button class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
-      <button class="btn btn-danger"
-        (click)="deleteTemplate(templateId, 'deleteModal')">Delete Permanently</button>
-    </div>
-  </ng-template>
 
 </div>

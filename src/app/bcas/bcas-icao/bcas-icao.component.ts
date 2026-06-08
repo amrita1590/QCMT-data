@@ -1,14 +1,28 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { AuditScheduleTemplate } from '../../interface/AuditScheduleTemplate';
-import { AuditorResponse } from '../../interface/AuditorResponse';
+import {
+  AbstractControl, FormBuilder, FormControl, FormGroup,
+  FormsModule, ReactiveFormsModule, ValidationErrors, Validators
+} from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UnitDetails } from '../../interface/UnitDetails';
-import { AuditscheduleserviceService } from '../../service/auditscheduleservice.service';
+import { UserRoleDetails } from '../../interface/UserRoleDetails';
+import { User } from '../../interface/User';
+import { IcaoAuditRecord, IcaoAuditFile } from '../../interface/IcaoAuditRecord';
 import { UnitService } from '../../service/unit.service';
+import { UsermanagementService } from '../../service/usermanagement.service';
+import { IcaoService } from '../../service/icao.service';
 import { ToastService } from '../../service/toast.service';
-import { APP_CONSTANTS } from '../../constants/app.constants';
+
+function dateRangeValidator(group: AbstractControl): ValidationErrors | null {
+  const from = group.get('fromDate')?.value;
+  const to   = group.get('toDate')?.value;
+  if (from && to && new Date(from) > new Date(to)) {
+    return { dateRange: true };
+  }
+  return null;
+}
 
 @Component({
   selector: 'app-bcas-icao',
@@ -19,194 +33,309 @@ import { APP_CONSTANTS } from '../../constants/app.constants';
 })
 export class BcasIcaoComponent implements OnInit {
 
-  icaoAudits: AuditScheduleTemplate[] = [];
+  icaoAudits: IcaoAuditRecord[] = [];
   icaoForm: FormGroup;
   units: UnitDetails[] = [];
+  casoList: UserRoleDetails[] = [];
+
   casoName = '';
-  casoId = 0;
+  casoRank = '';
+  casoNo   = '';
+  casoId   = 0;
+
   selectedFiles: File[] = [];
   isSubmitting = false;
-  private modalRef: NgbModalRef | null = null;
+  loggedUser: User | null = null;
 
-  selectedAuditFiles: AuditorResponse | null = null;
-  loadingFiles = false;
-  fileBaseUrl = APP_CONSTANTS.FILES.BASE_URL;
+  // pagination & search
+  searchText    = '';
+  page          = 1;
+  pageSize      = 10;
+  pageSizeOptions = [5, 10, 20, 50];
+
+  // File viewer state
+  viewingFile: IcaoAuditFile | null = null;
+  viewingFileUrl: SafeResourceUrl | null = null;
+  private currentBlobUrl: string | null = null;
+
+  private profileLoaded = false;
+  private unitsLoaded   = false;
 
   get totalAudits() { return this.icaoAudits.length; }
 
+  get thisMonthAudits() {
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return this.icaoAudits.filter(a => a.auditMonth === ym).length;
+  }
+
+  get auditsWithFiles() {
+    return this.icaoAudits.filter(a => a.files && a.files.length > 0).length;
+  }
+
+  get filteredAudits() {
+    const q = this.searchText.toLowerCase().trim();
+    if (!q) return this.icaoAudits;
+    return this.icaoAudits.filter(a =>
+      a.auditName?.toLowerCase().includes(q) ||
+      a.unitName?.toLowerCase().includes(q)  ||
+      a.casoName?.toLowerCase().includes(q)  ||
+      a.createdBy?.toLowerCase().includes(q)
+    );
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredAudits.length / this.pageSize));
+  }
+
+  get visiblePages(): number[] {
+    const show = 5, half = Math.floor(show / 2);
+    let start = Math.max(1, this.page - half);
+    let end   = Math.min(this.totalPages, start + show - 1);
+    if (end - start < show - 1) start = Math.max(1, end - show + 1);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+
+  goToPage(p: number) { this.page = p; }
+  prevPage() { if (this.page > 1) this.page--; }
+  nextPage() { if (this.page < this.totalPages) this.page++; }
+
   constructor(
     private fb: FormBuilder,
-    private auditService: AuditscheduleserviceService,
     private unitService: UnitService,
+    private umService: UsermanagementService,
+    private icaoService: IcaoService,
     private modalService: NgbModal,
-    private toast: ToastService
+    private toast: ToastService,
+    private sanitizer: DomSanitizer
   ) {
     this.icaoForm = this.fb.group({
-      id: new FormControl(''),
-      name: new FormControl(''),
-      unitId: new FormControl('', [Validators.required]),
+      name:       new FormControl({ value: '', disabled: true }),
+      unitId:     new FormControl('', [Validators.required]),
       auditMonth: new FormControl('', [Validators.required]),
-      auditScheduleFromDate: new FormControl('', [Validators.required]),
-      auditScheduleToDate: new FormControl('', [Validators.required]),
-      auditDescription: new FormControl('', [Validators.required, Validators.minLength(10), Validators.maxLength(500)])
-    });
+      fromDate:   new FormControl('', [Validators.required]),
+      toDate:     new FormControl('', [Validators.required]),
+      gist:       new FormControl('', [Validators.required, Validators.minLength(10), Validators.maxLength(500)])
+    }, { validators: dateRangeValidator });
   }
 
   ngOnInit() {
     this.loadAudits();
     this.loadUnits();
+    this.loadCasoList();
+    this.loadUserProfile();
     this.icaoForm.valueChanges.subscribe(() => this.generateName());
   }
 
-  private generateName() {
-    const unitId = this.icaoForm.get('unitId')?.value;
-    const auditMonth = this.icaoForm.get('auditMonth')?.value;
-    if (unitId && auditMonth) {
-      const unit = this.units.find(u => Number(u.id) === Number(unitId));
-      const [yr, mo] = auditMonth.split('-');
-      const label = new Date(+yr, +mo - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-      this.icaoForm.patchValue({ name: `${unit?.unitName ?? ''} - ICAO - ${label}` }, { emitEvent: false });
-    }
-  }
+  // ── data loaders ───────────────────────────────────────────────────
 
   loadAudits() {
-    this.auditService.getAuditDetails().subscribe({
+    this.icaoService.getIcaoAudits().subscribe({
       next: data => {
-        this.icaoAudits = data
-          .filter(t => t.auditType === 'ICAO')
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        this.icaoAudits = data.sort((a, b) =>
+          new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime()
+        );
       },
       error: () => this.toast.show('Failed to load ICAO audits', 'error')
     });
   }
 
+  private loadUserProfile() {
+    this.umService.getUserProfileDetails().subscribe({
+      next: (user: User) => {
+        this.loggedUser = user;
+        this.profileLoaded = true;
+        this.tryAutoFillUnit();
+      },
+      error: () => this.toast.show('Failed to load user profile', 'error')
+    });
+  }
+
   private loadUnits() {
     this.unitService.getUnitDetails().subscribe({
-      next: data => this.units = data.sort((a, b) => a.unitName.localeCompare(b.unitName)),
+      next: data => {
+        this.units = data.sort((a, b) => a.unitName.localeCompare(b.unitName));
+        this.unitsLoaded = true;
+        this.tryAutoFillUnit();
+      },
       error: () => this.toast.show('Failed to load units', 'error')
     });
   }
 
+  private loadCasoList() {
+    this.umService.getUserAuditDetailList().subscribe({
+      next: data => {
+        this.casoList = data.filter(u => u.rolename === 'CASO');
+        this.tryAutoFillUnit();
+      },
+      error: () => this.toast.show('Failed to load CASO list', 'error')
+    });
+  }
+
+  private tryAutoFillUnit() {
+    if (this.profileLoaded && this.unitsLoaded && this.loggedUser?.unitid != null) {
+      this.applyUnitFromProfile();
+    }
+  }
+
+  private applyUnitFromProfile() {
+    const uid = Number(this.loggedUser!.unitid);
+    if (!uid) return;
+    this.icaoForm.patchValue({ unitId: uid }, { emitEvent: false });
+    this.onUnitChange();
+    this.generateName();
+  }
+
+  // ── form logic ─────────────────────────────────────────────────────
+
+  private generateName() {
+    const unitId     = this.icaoForm.get('unitId')?.value;
+    const auditMonth = this.icaoForm.get('auditMonth')?.value;
+    if (unitId && auditMonth) {
+      const unit  = this.units.find(u => Number(u.id) === Number(unitId));
+      const [yr, mo] = auditMonth.split('-');
+      const label = new Date(+yr, +mo - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      this.icaoForm.patchValue(
+        { name: `${unit?.unitName ?? ''} - ICAO - ${label}` },
+        { emitEvent: false }
+      );
+    }
+  }
+
   onUnitChange() {
-    const unit = this.units.find(u => u.id === Number(this.icaoForm.value.unitId));
-    this.casoName = unit?.casoName ?? '';
-    this.casoId = unit?.casoId ?? 0;
+    const unitId = Number(this.icaoForm.get('unitId')?.value);
+    const unit   = this.units.find(u => u.id === unitId);
+    if (!unit) return;
+
+    this.casoName = unit.casoName ?? '';
+    this.casoId   = unit.casoId  ?? 0;
+
+    const casoUser   = this.casoList.find(u => Number(u.id) === Number(unit.casoId));
+    this.casoRank = casoUser?.rank   ?? '';
+    this.casoNo   = casoUser?.cisfno ?? '';
   }
 
   onFilesSelected(event: Event) {
     const input = event.target as HTMLInputElement;
-    this.selectedFiles = input.files ? Array.from(input.files) : [];
+    const newFiles = input.files ? Array.from(input.files) : [];
+    newFiles.forEach(f => {
+      const duplicate = this.selectedFiles.some(e => e.name === f.name && e.size === f.size);
+      if (!duplicate) this.selectedFiles.push(f);
+    });
+    input.value = '';
   }
+
+  removeFile(index: number) {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  // ── file viewer ────────────────────────────────────────────────────
+
+  getFileType(fileName?: string): 'pdf' | 'image' | 'other' {
+    if (!fileName) return 'other';
+    const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+    if (ext === 'pdf') return 'pdf';
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) return 'image';
+    return 'other';
+  }
+
+  openFileViewer(file: IcaoAuditFile, content: any) {
+    this.viewingFile = file;
+    this.viewingFileUrl = null;
+    if (this.currentBlobUrl) {
+      URL.revokeObjectURL(this.currentBlobUrl);
+      this.currentBlobUrl = null;
+    }
+    this.modalService.open(content, { size: 'xl', backdrop: 'static' });
+
+    this.icaoService.getIcaoFile(file.filePath).subscribe({
+      next: (blob: Blob) => {
+        this.currentBlobUrl = URL.createObjectURL(blob);
+        this.viewingFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.currentBlobUrl);
+      },
+      error: () => this.toast.show('Failed to load file for viewing.', 'error')
+    });
+  }
+
+  closeFileViewer(modal: any) {
+    modal.dismiss();
+    if (this.currentBlobUrl) {
+      URL.revokeObjectURL(this.currentBlobUrl);
+      this.currentBlobUrl = null;
+    }
+    this.viewingFileUrl = null;
+    this.viewingFile = null;
+  }
+
+  // ── modal ──────────────────────────────────────────────────────────
 
   openCreateModal(content: any) {
     this.resetForm();
-    this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
-  }
-
-  openFilesModal(audit: AuditScheduleTemplate, content: any) {
-    this.selectedAuditFiles = null;
-    this.loadingFiles = true;
-    this.modalService.open(content, { size: 'lg' });
-    this.auditService.getAuditorResponseDetails(audit.id).subscribe({
-      next: data => {
-        this.selectedAuditFiles = data;
-        this.loadingFiles = false;
-      },
-      error: () => {
-        this.loadingFiles = false;
-        this.selectedAuditFiles = null;
-      }
-    });
+    this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
   }
 
   resetForm() {
     this.icaoForm.reset();
     this.selectedFiles = [];
     this.casoName = '';
-    this.casoId = 0;
+    this.casoRank = '';
+    this.casoNo   = '';
+    this.casoId   = 0;
+    if (this.loggedUser?.unitid != null) {
+      this.applyUnitFromProfile();
+    }
   }
+
+  // ── save ───────────────────────────────────────────────────────────
 
   saveAudit() {
     if (this.isSubmitting) return;
+
+    this.icaoForm.markAllAsTouched();
     if (this.icaoForm.invalid) {
-      this.icaoForm.markAllAsTouched();
       this.toast.show('Please fill all required fields.', 'error');
       return;
     }
-    const from = this.icaoForm.value.auditScheduleFromDate;
-    const to = this.icaoForm.value.auditScheduleToDate;
+
+    const from = this.icaoForm.value.fromDate;
+    const to   = this.icaoForm.value.toDate;
     if (new Date(from) > new Date(to)) {
       this.toast.show('From Date cannot be later than To Date.', 'error');
       return;
     }
-    const unit = this.units.find(u => Number(u.id) === Number(this.icaoForm.value.unitId));
-    const payload: AuditScheduleTemplate = {
-      id: 0,
-      name: this.icaoForm.value.name,
-      unitId: Number(this.icaoForm.value.unitId),
-      unitName: unit?.unitName ?? '',
-      auditMonth: this.icaoForm.value.auditMonth,
-      auditType: 'ICAO',
-      auditorId: 0,
-      auditorName: '',
-      casoName: this.casoName,
-      casoId: this.casoId,
-      auditStatus: 'Completed',
-      auditScheduleList: [],
-      status: 'SAVED',
-      createdBy: '',
-      createdById: 0,
-      createdAt: new Date().toISOString(),
-      auditScheduleFromDate: from,
-      auditScheduleToDate: to,
-      auditDescription: this.icaoForm.value.auditDescription
-    };
+
+    const unit      = this.units.find(u => Number(u.id) === Number(this.icaoForm.value.unitId));
+    const auditName = this.icaoForm.getRawValue().name;
+
+    const fd = new FormData();
+    fd.append('auditName',    auditName);
+    fd.append('unitId',       String(this.icaoForm.value.unitId));
+    fd.append('unitName',     unit?.unitName ?? '');
+    fd.append('auditMonth',   this.icaoForm.value.auditMonth);
+    fd.append('fromDate',     from);
+    fd.append('toDate',       to);
+    fd.append('gist',         this.icaoForm.value.gist);
+    fd.append('createdBy',    this.loggedUser?.mstr_name ?? '');
+    fd.append('createdById',  String(this.loggedUser?.id ?? 0));
+    fd.append('casoId',       String(this.casoId));
+    fd.append('casoName',     this.casoName);
+    fd.append('casoRank',     this.casoRank);
+    fd.append('casoNo',       this.casoNo);
+    this.selectedFiles.forEach(f => fd.append('files', f, f.name));
+
     this.isSubmitting = true;
-    this.auditService.saveAuditDetails(payload).subscribe({
+    this.icaoService.saveIcaoAudit(fd).subscribe({
       next: () => {
-        if (this.selectedFiles.length > 0) {
-          this.uploadFilesAfterSave();
-        } else {
-          this.finishSave();
-        }
+        this.toast.show('ICAO audit saved successfully.', 'success');
+        this.resetForm();
+        this.loadAudits();
+        this.modalService.dismissAll();
+        this.isSubmitting = false;
       },
       error: err => {
         this.toast.show('Error saving ICAO audit: ' + err, 'error');
         this.isSubmitting = false;
       }
     });
-  }
-
-  private uploadFilesAfterSave() {
-    this.auditService.getAuditDetails().subscribe({
-      next: data => {
-        const newest = data
-          .filter(t => t.auditType === 'ICAO')
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-        if (newest) {
-          const formData = new FormData();
-          formData.append('auditTemplateId', newest.id.toString());
-          this.selectedFiles.forEach(f => formData.append('files', f, f.name));
-          this.auditService.uploadIcaoFiles(formData).subscribe({
-            next: () => this.finishSave(),
-            error: () => {
-              this.toast.show('Audit saved but file upload failed. Upload files from the list.', 'error');
-              this.finishSave();
-            }
-          });
-        } else {
-          this.finishSave();
-        }
-      },
-      error: () => this.finishSave()
-    });
-  }
-
-  private finishSave() {
-    this.toast.show('ICAO audit saved successfully.', 'success');
-    this.resetForm();
-    this.loadAudits();
-    this.modalService.dismissAll();
-    this.isSubmitting = false;
   }
 }
