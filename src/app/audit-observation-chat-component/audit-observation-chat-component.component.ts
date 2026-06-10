@@ -60,8 +60,8 @@ export class AuditObservationChatComponentComponent {
   }
 
   buildDownloadUrl(path: string, documentName: string) {
-    const normalizedPath = path.replace(/[\\\/]+$/, '');
-    const fullPath = `${normalizedPath}\\${documentName}`;
+   const normalizedPath = path.replace(/[\\\/]+$/, '').replace(/\\/g, '/');
+      const fullPath = `${normalizedPath}/${documentName}`;
     //console.log("Building download URL for:", fullPath);
     return this.baseUrl + 'v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(fullPath);
   }
