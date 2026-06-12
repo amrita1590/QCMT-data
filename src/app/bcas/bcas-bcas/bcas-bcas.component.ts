@@ -9,7 +9,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UnitDetails } from '../../interface/UnitDetails';
 import { UserRoleDetails } from '../../interface/UserRoleDetails';
 import { User } from '../../interface/User';
-import { BcasAuditRecord, BcasAuditFile, BcasObservation } from '../../interface/BcasAuditRecord';
+import { BcasAuditRecord, BcasAuditFile } from '../../interface/BcasAuditRecord';
 import { UnitService } from '../../service/unit.service';
 import { UsermanagementService } from '../../service/usermanagement.service';
 import { BcasAuditService } from '../../service/bcas-audit.service';
@@ -54,8 +54,10 @@ export class BcasBcasComponent implements OnInit {
   selectedAudit: BcasAuditRecord | null = null;
 
   // Stage 3 observations
-  observationRows: { observationText: string; remarksType: string; complianceStatus: string }[] = [];
+  observationRows: { observationText: string; remarksType: string; complianceStatus: string; currentStatus: string; supportingDoc: File | null }[] = [];
   isViewObsMode = false;
+  obsLetterNo = '';
+  obsLetterDate = '';
 
   // File viewer
   viewingFile: BcasAuditFile | null = null;
@@ -125,8 +127,10 @@ export class BcasBcasComponent implements OnInit {
     });
 
     this.updateForm = this.fb.group({
-      fromDate: new FormControl('', [Validators.required]),
-      toDate:   new FormControl('', [Validators.required])
+      fromDate:   new FormControl('', [Validators.required]),
+      toDate:     new FormControl('', [Validators.required]),
+      letterNo:   new FormControl('', [Validators.required]),
+      letterDate: new FormControl('', [Validators.required])
     }, { validators: dateRangeValidator });
   }
 
@@ -254,8 +258,12 @@ export class BcasBcasComponent implements OnInit {
   openUpdateModal(audit: BcasAuditRecord, content: any) {
     this.selectedAudit = audit;
     this.updateForm.reset();
-    if (audit.fromDate) this.updateForm.patchValue({ fromDate: audit.fromDate });
-    if (audit.toDate)   this.updateForm.patchValue({ toDate:   audit.toDate });
+    this.updateForm.patchValue({
+      fromDate:   audit.fromDate   || '',
+      toDate:     audit.toDate     || '',
+      letterNo:   audit.letterNo   || '',
+      letterDate: audit.letterDate || ''
+    });
     this.selectedFinalReport = null;
     this.modalService.open(content, { size: 'lg', backdrop: 'static', keyboard: false });
   }
@@ -264,9 +272,34 @@ export class BcasBcasComponent implements OnInit {
     this.selectedAudit  = audit;
     this.isViewObsMode  = audit.status === 'OBSERVATION_STAGE' || audit.status === 'COMPLETED';
     if (!this.isViewObsMode) {
-      this.observationRows = [{ observationText: '', remarksType: 'Minor', complianceStatus: 'Non-Compliant' }];
+      this.observationRows = [this.newObsRow()];
+      this.obsLetterNo     = '';
+      this.obsLetterDate   = '';
     }
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+  }
+
+  openAddObservationModal(audit: BcasAuditRecord, content: any) {
+    this.selectedAudit   = audit;
+    this.isViewObsMode   = false;
+    this.observationRows = [this.newObsRow()];
+    this.obsLetterNo     = '';
+    this.obsLetterDate   = '';
+    this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+  }
+
+  private newObsRow() {
+    return { observationText: '', remarksType: 'Non Critical', complianceStatus: 'Compliant', currentStatus: '', supportingDoc: null as File | null };
+  }
+
+  formatStatusClass(status: string): string {
+    if (!status) return '';
+    return status.replace(/\s+/g, '').replace(/[()\-]/g, '');
+  }
+
+  openSummaryModal(audit: BcasAuditRecord, content: any) {
+    this.selectedAudit = audit;
+    this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false, scrollable: true });
   }
 
   private resetCreateForm() {
@@ -282,7 +315,7 @@ export class BcasBcasComponent implements OnInit {
   // ── Observation row management ─────────────────────────────────
 
   addObservationRow() {
-    this.observationRows.push({ observationText: '', remarksType: 'Minor', complianceStatus: 'Non-Compliant' });
+    this.observationRows.push(this.newObsRow());
   }
 
   removeObservationRow(index: number) { this.observationRows.splice(index, 1); }
@@ -343,9 +376,11 @@ export class BcasBcasComponent implements OnInit {
     }
 
     const fd = new FormData();
-    fd.append('auditId',  String(this.selectedAudit.id));
-    fd.append('fromDate', this.updateForm.value.fromDate);
-    fd.append('toDate',   this.updateForm.value.toDate);
+    fd.append('auditId',    String(this.selectedAudit.id));
+    fd.append('fromDate',   this.updateForm.value.fromDate);
+    fd.append('toDate',     this.updateForm.value.toDate);
+    fd.append('letterNo',   this.updateForm.value.letterNo   || '');
+    fd.append('letterDate', this.updateForm.value.letterDate || '');
     if (this.selectedFinalReport) {
       fd.append('finalReport', this.selectedFinalReport, this.selectedFinalReport.name);
     }
@@ -367,6 +402,13 @@ export class BcasBcasComponent implements OnInit {
 
   // ── Save Stage 3 ───────────────────────────────────────────────
 
+  onObsDocSelected(index: number, event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.observationRows[index].supportingDoc = input.files[0];
+    }
+  }
+
   saveObservations() {
     if (this.isSubmitting || !this.selectedAudit) return;
     const allFilled = this.observationRows.every(r => r.observationText.trim().length > 0);
@@ -375,8 +417,23 @@ export class BcasBcasComponent implements OnInit {
       return;
     }
 
+    const obsPayload = this.observationRows.map(r => ({
+      observationText: r.observationText,
+      remarksType:     r.remarksType,
+      complianceStatus: r.complianceStatus,
+      currentStatus:   r.currentStatus
+    }));
+
+    const fd = new FormData();
+    fd.append('obsLetterNo',   this.obsLetterNo   || '');
+    fd.append('obsLetterDate', this.obsLetterDate || '');
+    fd.append('observations',  JSON.stringify(obsPayload));
+    this.observationRows.forEach((r, i) => {
+      if (r.supportingDoc) fd.append(`file_${i}`, r.supportingDoc, r.supportingDoc.name);
+    });
+
     this.isSubmitting = true;
-    this.bcasService.saveBcasObservations(this.selectedAudit.id!, this.observationRows).subscribe({
+    this.bcasService.saveBcasObservations(this.selectedAudit.id!, fd).subscribe({
       next: () => {
         this.toast.show('Observations submitted to APS HQRs.', 'success');
         this.loadAudits();

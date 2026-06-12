@@ -3,6 +3,7 @@ export interface BcasAuditFile {
   fileName: string;
   filePath: string;
   uploadedAt?: string;
+  fileType?: string;
 }
 
 export interface BcasObservation {
@@ -10,6 +11,8 @@ export interface BcasObservation {
   observationText: string;
   remarksType: string;
   complianceStatus: string;
+  currentStatus?: string;
+  supportingDocPath?: string;
   createdAt?: string;
 }
 
@@ -23,6 +26,10 @@ export interface BcasAuditRecord {
   toDate?: string;
   gist: string;
   finalReportPath?: string;
+  letterNo?: string;
+  letterDate?: string;
+  obsLetterNo?: string;
+  obsLetterDate?: string;
   createdBy: string;
   createdById: number;
   createdAt?: string;
@@ -32,5 +39,6 @@ export interface BcasAuditRecord {
   casoNo: string;
   status: string;
   files?: BcasAuditFile[];
+  obsSupportDocs?: BcasAuditFile[];
   observations?: BcasObservation[];
 }

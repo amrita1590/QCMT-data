@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BcasAuditRecord, BcasObservation } from '../interface/BcasAuditRecord';
+import { BcasAuditRecord } from '../interface/BcasAuditRecord';
 
 @Injectable({ providedIn: 'root' })
 export class BcasAuditService {
@@ -18,8 +18,8 @@ export class BcasAuditService {
     return this.http.post(`${this.base}/updatebcasaudit`, fd, { responseType: 'text' });
   }
 
-  saveBcasObservations(auditId: number, observations: BcasObservation[]): Observable<any> {
-    return this.http.post(`${this.base}/savebcasobservations/${auditId}`, observations, { responseType: 'text' });
+  saveBcasObservations(auditId: number, fd: FormData): Observable<any> {
+    return this.http.post(`${this.base}/savebcasobservations/${auditId}`, fd, { responseType: 'text' });
   }
 
   getBcasAudits(): Observable<BcasAuditRecord[]> {

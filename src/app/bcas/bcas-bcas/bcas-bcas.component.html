@@ -66,12 +66,9 @@
           <th>#</th>
           <th>Audit Name</th>
           <th>Unit</th>
-          <th>CASO Name</th>
-          <th>Rank</th>
-          <th>CISF No</th>
+          <th>CASO</th>
           <th>Month</th>
           <th>Status</th>
-          <th>PQ Documents</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -80,59 +77,42 @@
           <td>{{ (page - 1) * pageSize + i + 1 }}</td>
           <td class="fw-semibold" style="max-width:160px; white-space:normal;">{{ audit.auditName }}</td>
           <td>{{ audit.unitName }}</td>
-          <td>{{ audit.casoName || '—' }}</td>
-          <td><span class="type-badge">{{ audit.casoRank || '—' }}</span></td>
-          <td>{{ audit.casoNo || '—' }}</td>
+          <td>
+            <div class="fw-semibold small">{{ audit.casoName || '—' }}</div>
+            <div class="text-muted" style="font-size:11px;">
+              <span class="type-badge me-1">{{ audit.casoRank || '—' }}</span>{{ audit.casoNo || '—' }}
+            </div>
+          </td>
           <td>{{ audit.auditMonth ? (audit.auditMonth + '-01' | date:'MMM yyyy') : '—' }}</td>
           <td>
             <span class="status-badge" [ngClass]="getStatusBadgeClass(audit.status)">
               {{ getStatusLabel(audit.status) }}
             </span>
           </td>
-          <!-- PQ Documents -->
+          <!-- Actions: buttons shown based on workflow stage -->
           <td>
-            <div class="doc-list" *ngIf="audit.files && audit.files.length > 0; else noDocs">
-              <button *ngFor="let file of audit.files"
-                class="doc-btn"
-                (click)="openFileViewer(file, fileViewerModal)">
-                <i class="fa fa-file-pdf doc-icon-pdf" *ngIf="getFileType(file.fileName) === 'pdf'"></i>
-                <i class="fa fa-file-image doc-icon-img" *ngIf="getFileType(file.fileName) === 'image'"></i>
-                <i class="fa fa-file doc-icon-other" *ngIf="getFileType(file.fileName) === 'other'"></i>
-                <span class="doc-name">{{ file.fileName }}</span>
-                <i class="fa fa-eye doc-eye"></i>
+            <div class="action-group">
+
+              <!-- Always: view summary -->
+              <button class="action-btn ab-summary" title="View Summary"
+                (click)="openSummaryModal(audit, summaryModal)">
+                <i class="fa fa-eye"></i>
               </button>
-            </div>
-            <ng-template #noDocs>
-              <span class="text-muted small">—</span>
-            </ng-template>
-          </td>
-          <!-- Actions -->
-          <td>
-            <div class="d-flex flex-column gap-1">
-              <!-- Final report button (stage 2+) -->
-              <button *ngIf="audit.finalReportPath"
-                class="btn btn-outline-success btn-xs"
-                (click)="openFinalReportViewer(audit.finalReportPath!, fileViewerModal)">
-                <i class="fa fa-file-pdf me-1"></i> Final Report
-              </button>
-              <!-- PQ_STAGE → Update Audit -->
+
+              <!-- Step 2 form: only when PQ stage is done (status = PQ_STAGE) -->
               <button *ngIf="audit.status === 'PQ_STAGE'"
-                class="btn btn-outline-primary btn-xs"
+                class="action-btn ab-edit" title="Submit Audit Details"
                 (click)="openUpdateModal(audit, updateModal)">
-                <i class="fa fa-edit me-1"></i> Update Audit
+                <i class="fa fa-edit"></i>
               </button>
-              <!-- AUDIT_STAGE → Add Observations -->
-              <button *ngIf="audit.status === 'AUDIT_STAGE'"
-                class="btn btn-obs btn-xs"
-                (click)="openObservationModal(audit, observationModal)">
-                <i class="fa fa-list-ul me-1"></i> Add Observations
+
+              <!-- Step 3 form: only after final report submitted (AUDIT_STAGE or OBSERVATION_STAGE) -->
+              <button *ngIf="audit.status === 'AUDIT_STAGE' || audit.status === 'OBSERVATION_STAGE'"
+                class="action-btn ab-obs" title="Add Observation"
+                (click)="openAddObservationModal(audit, observationModal)">
+                <i class="fa fa-list-ul"></i>
               </button>
-              <!-- OBSERVATION_STAGE / COMPLETED → View Observations -->
-              <button *ngIf="audit.status === 'OBSERVATION_STAGE' || audit.status === 'COMPLETED'"
-                class="btn btn-outline-secondary btn-xs"
-                (click)="openObservationModal(audit, observationModal)">
-                <i class="fa fa-eye me-1"></i> View Observations
-              </button>
+
             </div>
           </td>
         </tr>
@@ -310,19 +290,48 @@
         <div class="col-md-6">
           <label class="form-label">Audit From Date <span class="text-danger">*</span></label>
           <input type="date" class="form-control" formControlName="fromDate"
-            [class.is-invalid]="updateForm.get('fromDate')?.invalid && updateForm.get('fromDate')?.touched">
-          <div class="invalid-feedback">Required.</div>
-          <div class="invalid-feedback d-block text-danger small"
+            [max]="updateForm.get('toDate')?.value || ''"
+            [class.is-invalid]="(updateForm.get('fromDate')?.invalid && updateForm.get('fromDate')?.touched)
+                              || (updateForm.hasError('dateRange') && updateForm.get('fromDate')?.touched)">
+          <div class="invalid-feedback"
+            *ngIf="updateForm.get('fromDate')?.hasError('required') && updateForm.get('fromDate')?.touched">
+            From date is required.
+          </div>
+          <div class="text-danger small mt-1"
             *ngIf="updateForm.hasError('dateRange') && updateForm.get('fromDate')?.touched && updateForm.get('toDate')?.touched">
-            From date must be on or before To date.
+            <i class="fa fa-exclamation-circle me-1"></i>From date must be on or before To date.
           </div>
         </div>
 
         <div class="col-md-6">
           <label class="form-label">Audit To Date <span class="text-danger">*</span></label>
           <input type="date" class="form-control" formControlName="toDate"
-            [class.is-invalid]="updateForm.get('toDate')?.invalid && updateForm.get('toDate')?.touched">
-          <div class="invalid-feedback">Required.</div>
+            [min]="updateForm.get('fromDate')?.value || ''"
+            [class.is-invalid]="(updateForm.get('toDate')?.invalid && updateForm.get('toDate')?.touched)
+                              || (updateForm.hasError('dateRange') && updateForm.get('toDate')?.touched)">
+          <div class="invalid-feedback"
+            *ngIf="updateForm.get('toDate')?.hasError('required') && updateForm.get('toDate')?.touched">
+            To date is required.
+          </div>
+          <div class="text-danger small mt-1"
+            *ngIf="updateForm.hasError('dateRange') && updateForm.get('fromDate')?.touched && updateForm.get('toDate')?.touched">
+            <i class="fa fa-exclamation-circle me-1"></i>To date must be on or after From date.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Letter Number <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" formControlName="letterNo"
+            placeholder="e.g. BCAS/2024/001"
+            [class.is-invalid]="updateForm.get('letterNo')?.invalid && updateForm.get('letterNo')?.touched">
+          <div class="invalid-feedback">Letter number is required.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Letter Date <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" formControlName="letterDate"
+            [class.is-invalid]="updateForm.get('letterDate')?.invalid && updateForm.get('letterDate')?.touched">
+          <div class="invalid-feedback">Letter date is required.</div>
         </div>
 
         <div class="col-12">
@@ -358,13 +367,13 @@
      STAGE 3 — OBSERVATIONS MODAL
      ═══════════════════════════════════════════════════════════════ -->
 <ng-template #observationModal let-modal>
-  <div class="modal-header modal-header-icao">
+  <div class="modal-header modal-header-obs">
     <h5 class="modal-title">
       <i class="fa fa-list-ul me-2"></i>
-      {{ isViewObsMode ? 'View Observations' : 'Add Observations' }}
+      {{ isViewObsMode ? 'View Observations' : 'Submit Observations to APS HQRs' }}
       <span class="stage-badge stage-obs ms-2">Stage 3 — Observation</span>
     </h5>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body pt-3">
 
@@ -372,7 +381,7 @@
       <i class="fa fa-shield-alt me-2 text-primary"></i>
       <span class="fw-bold">{{ selectedAudit?.auditName }}</span>
       <span class="ms-3 text-muted small">
-        {{ selectedAudit?.fromDate || '' }}{{ selectedAudit?.toDate ? ' → ' + selectedAudit?.toDate : '' }}
+        {{ selectedAudit?.casoName }} · {{ selectedAudit?.casoRank }}
       </span>
     </div>
 
@@ -383,23 +392,23 @@
           <div class="obs-number">{{ i + 1 }}</div>
           <div class="obs-content">
             <p class="obs-text">{{ obs.observationText }}</p>
-            <div class="d-flex gap-2 flex-wrap mt-1">
-              <span class="obs-badge"
-                [ngClass]="{
-                  'remarks-minor':    obs.remarksType === 'Minor',
-                  'remarks-major':    obs.remarksType === 'Major',
-                  'remarks-critical': obs.remarksType === 'Critical'
-                }">
-                <i class="fa fa-tag me-1"></i>{{ obs.remarksType }}
+            <div class="d-flex gap-2 flex-wrap mt-1 align-items-center">
+              <span class="criticality-badge" [ngClass]="obs.remarksType.replace(' ','')">
+                {{ obs.remarksType }}
               </span>
-              <span class="obs-badge"
-                [ngClass]="{
-                  'compliance-yes':     obs.complianceStatus === 'Compliant',
-                  'compliance-partial': obs.complianceStatus === 'Partially Compliant',
-                  'compliance-no':      obs.complianceStatus === 'Non-Compliant'
-                }">
-                <i class="fa fa-check-circle me-1"></i>{{ obs.complianceStatus }}
+              <span class="status-badge" [ngClass]="formatStatusClass(obs.complianceStatus)">
+                {{ obs.complianceStatus }}
               </span>
+            </div>
+            <div *ngIf="obs.currentStatus" class="obs-cur-status-text mt-1">
+              <i class="fa fa-comment-dots me-1 text-secondary"></i>
+              <span class="text-muted small fw-semibold me-1">Current Status:</span>{{ obs.currentStatus }}
+            </div>
+            <div *ngIf="obs.supportingDocPath" class="mt-2">
+              <button class="btn btn-sm obs-doc-view-btn"
+                (click)="openFinalReportViewer(obs.supportingDocPath!, fileViewerModal)">
+                <i class="fa fa-paperclip me-1"></i>View Supporting Doc
+              </button>
             </div>
           </div>
         </div>
@@ -412,8 +421,32 @@
       </ng-template>
     </ng-container>
 
-    <!-- ADD MODE: dynamic observation form rows -->
+    <!-- ADD MODE: letter details + supporting docs + observation rows -->
     <ng-container *ngIf="!isViewObsMode">
+
+      <!-- Letter Details section -->
+      <div class="obs-section-header mb-2">
+        <i class="fa fa-envelope me-2"></i>Letter to APS HQRs
+      </div>
+      <div class="obs-letter-box mb-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-bold text-muted mb-1">Letter Number <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="obsLetterNo"
+              placeholder="e.g. BCAS/APS/2024/001">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-bold text-muted mb-1">Letter Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" [(ngModel)]="obsLetterDate">
+          </div>
+        </div>
+      </div>
+
+      <!-- Observation rows -->
+      <div class="obs-section-header mb-2">
+        <i class="fa fa-clipboard-list me-2"></i>Observations
+      </div>
+
       <div *ngFor="let row of observationRows; let i = index" class="obs-form-row">
         <div class="obs-row-header">
           <span class="fw-semibold small text-muted">Observation {{ i + 1 }}</span>
@@ -426,30 +459,68 @@
         <div class="row g-2 mt-1">
           <div class="col-12">
             <textarea class="form-control" rows="3" [(ngModel)]="row.observationText"
-              placeholder="Enter observation text from the audit report..."></textarea>
+              placeholder="Describe the observation from the BCAS audit report..."></textarea>
           </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-bold text-muted mb-1">Remarks Type</label>
-            <select class="form-select" [(ngModel)]="row.remarksType">
-              <option value="Minor">Minor</option>
-              <option value="Major">Major</option>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold mb-1">Type / Criticality</label>
+            <select class="form-select form-select-sm" [(ngModel)]="row.remarksType">
+              <option value="Non Critical">Non Critical</option>
               <option value="Critical">Critical</option>
+              <option value="Moderate">Moderate</option>
             </select>
+            <div class="mt-1">
+              <span class="criticality-badge" [ngClass]="row.remarksType.replace(' ','')">
+                {{ row.remarksType }}
+              </span>
+            </div>
           </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-bold text-muted mb-1">Compliance Status</label>
-            <select class="form-select" [(ngModel)]="row.complianceStatus">
-              <option value="Non-Compliant">Non-Compliant</option>
-              <option value="Partially Compliant">Partially Compliant</option>
+          <div class="col-md-5">
+            <label class="form-label small fw-bold mb-1">Compliance Status</label>
+            <select class="form-select form-select-sm" [(ngModel)]="row.complianceStatus">
               <option value="Compliant">Compliant</option>
+              <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
+              <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
+              <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
+              <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
+              <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
             </select>
+            <div class="mt-1">
+              <span class="status-badge" [ngClass]="formatStatusClass(row.complianceStatus)">
+                {{ row.complianceStatus }}
+              </span>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-bold mb-1">
+              <i class="fa fa-comment-dots me-1 text-secondary"></i>Current Status / Compliance Description
+            </label>
+            <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="row.currentStatus"
+              placeholder="Describe current compliance action taken or status update..."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-bold mb-1">
+              <i class="fa fa-paperclip me-1 text-secondary"></i>Supporting Document
+              <span class="text-muted fw-normal ms-1">(optional)</span>
+            </label>
+            <div class="obs-doc-upload-row">
+              <label class="obs-upload-btn-sm">
+                <i class="fa fa-upload me-1"></i>
+                {{ row.supportingDoc ? row.supportingDoc.name : 'Choose file...' }}
+                <input type="file" class="d-none" (change)="onObsDocSelected(i, $event)">
+              </label>
+              <button *ngIf="row.supportingDoc" type="button"
+                class="btn btn-sm btn-link text-danger p-0 ms-2"
+                (click)="row.supportingDoc = null">
+                <i class="fa fa-times"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <button type="button" class="btn btn-sm btn-outline-secondary mt-2 mb-3"
         (click)="addObservationRow()">
-        <i class="bi bi-plus-lg me-1"></i> Add Another Observation
+        <i class="fa fa-plus me-1"></i> Add Another Observation
       </button>
 
       <div class="modal-footer border-0 px-0 pb-0">
@@ -462,6 +533,285 @@
     </ng-container>
 
   </div>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SUMMARY MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<ng-template #summaryModal let-modal>
+
+  <!-- ── ONLY colored element: main modal header ─────────────── -->
+  <div class="sum-modal-header">
+    <div class="d-flex align-items-center gap-3 flex-grow-1 overflow-hidden">
+      <div class="sum-header-icon"><i class="fa fa-clipboard-check"></i></div>
+      <div class="overflow-hidden">
+        <div class="sum-header-title text-truncate">{{ selectedAudit?.auditName || 'Audit Summary' }}</div>
+        <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+          <span class="sum-header-tag"><i class="fa fa-building me-1"></i>{{ selectedAudit?.unitName || '—' }}</span>
+          <span class="sum-header-tag">
+            <i class="fa fa-calendar me-1"></i>
+            {{ selectedAudit?.auditMonth ? (selectedAudit!.auditMonth + '-01' | date:'MMM yyyy') : '—' }}
+          </span>
+          <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedAudit?.status || '')">
+            {{ getStatusLabel(selectedAudit?.status || '') }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="sum-close-btn" (click)="modal.dismiss()">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+
+  <div class="modal-body sum-modal-body">
+
+    <!-- ══ STEP 1 — Pre-Qualification Stage (always shown) ══════ -->
+    <div class="sum-card mb-3">
+      <div class="sum-step-header">
+        <span class="sum-step-num">1</span>
+        <div>
+          <div class="sum-step-label">Pre-Qualification Stage</div>
+          <div class="sum-step-sub">Initial audit setup &amp; CASO assignment</div>
+        </div>
+      </div>
+      <div class="sum-card-body">
+
+        <!-- Audit Info -->
+        <div class="sum-sub-strip mb-3">
+          <i class="fa fa-file-alt me-2"></i>Audit Information
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="sum-tile">
+              <span class="sum-label">Unit / Airport</span>
+              <div class="sum-value">{{ selectedAudit?.unitName || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile">
+              <span class="sum-label">Audit Month</span>
+              <div class="sum-value">
+                {{ selectedAudit?.auditMonth ? (selectedAudit!.auditMonth + '-01' | date:'MMM yyyy') : '—' }}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile">
+              <span class="sum-label">Created By</span>
+              <div class="sum-value">{{ selectedAudit?.createdBy || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile">
+              <span class="sum-label">Status</span>
+              <div class="mt-1">
+                <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedAudit?.status || '')">
+                  {{ getStatusLabel(selectedAudit?.status || '') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CASO Details -->
+        <div class="sum-sub-strip sum-sub-caso mb-3">
+          <i class="fa fa-user-shield me-2"></i>CASO Officer Details
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="sum-tile sum-tile-caso">
+              <span class="sum-label">CASO Name</span>
+              <div class="sum-value">{{ selectedAudit?.casoName || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile sum-tile-caso">
+              <span class="sum-label">Rank</span>
+              <div class="sum-value">{{ selectedAudit?.casoRank || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile sum-tile-caso">
+              <span class="sum-label">CISF No</span>
+              <div class="sum-value">{{ selectedAudit?.casoNo || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gist (if entered) -->
+        <ng-container *ngIf="selectedAudit?.gist">
+          <div class="sum-sub-strip mb-3">
+            <i class="fa fa-align-left me-2"></i>Gist / Description
+          </div>
+          <p class="gist-text mb-3">{{ selectedAudit?.gist }}</p>
+        </ng-container>
+
+        <!-- PQ Documents -->
+        <div class="sum-sub-strip mb-3">
+          <i class="fa fa-paperclip me-2"></i>PQ Documents
+          <span class="sum-pill ms-2">{{ selectedAudit?.files?.length || 0 }}</span>
+        </div>
+        <ng-container *ngIf="selectedAudit?.files && selectedAudit!.files!.length > 0; else noPqFiles">
+          <div class="sum-doc-grid">
+            <button *ngFor="let file of selectedAudit!.files"
+              class="sum-doc-btn"
+              (click)="openFileViewer(file, fileViewerModal)">
+              <i class="fa fa-file-pdf sum-doc-icon-pdf"   *ngIf="getFileType(file.fileName) === 'pdf'"></i>
+              <i class="fa fa-file-image sum-doc-icon-img" *ngIf="getFileType(file.fileName) === 'image'"></i>
+              <i class="fa fa-file sum-doc-icon-oth"       *ngIf="getFileType(file.fileName) === 'other'"></i>
+              <span class="sum-doc-name">{{ file.fileName }}</span>
+              <i class="fa fa-eye sum-doc-eye"></i>
+            </button>
+          </div>
+        </ng-container>
+        <ng-template #noPqFiles>
+          <div class="sum-empty">
+            <i class="fa fa-folder-open"></i><span>No PQ documents uploaded</span>
+          </div>
+        </ng-template>
+
+      </div>
+    </div><!-- /Step 1 -->
+
+    <!-- ══ STEP 2 — Audit Stage: shown ONLY when final report uploaded ══ -->
+    <div class="sum-card mb-3" *ngIf="selectedAudit?.finalReportPath">
+      <div class="sum-step-header">
+        <span class="sum-step-num">2</span>
+        <div>
+          <div class="sum-step-label">Audit Stage</div>
+          <div class="sum-step-sub">Final audit report submitted</div>
+        </div>
+      </div>
+      <div class="sum-card-body">
+
+        <!-- Audit Period -->
+        <div class="sum-sub-strip mb-3">
+          <i class="fa fa-calendar-alt me-2"></i>Audit Period
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="sum-tile">
+              <span class="sum-label">From Date</span>
+              <div class="sum-value">{{ (selectedAudit?.fromDate | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="sum-tile">
+              <span class="sum-label">To Date</span>
+              <div class="sum-value">{{ (selectedAudit?.toDate | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Letter details -->
+        <div class="sum-sub-strip mb-3">
+          <i class="fa fa-envelope me-2"></i>Letter Details
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="sum-tile">
+              <span class="sum-label">Letter Number</span>
+              <div class="sum-value">{{ selectedAudit?.letterNo || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="sum-tile">
+              <span class="sum-label">Letter Date</span>
+              <div class="sum-value">{{ (selectedAudit?.letterDate | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final report -->
+        <div class="sum-sub-strip mb-3">
+          <i class="fa fa-file-pdf me-2"></i>Final Audit Report
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="sum-tile flex-grow-1">
+            <span class="sum-label">Uploaded Report</span>
+            <div class="sum-value text-truncate">{{ selectedAudit?.finalReportPath }}</div>
+          </div>
+          <button class="btn btn-dark btn-sm px-3 flex-shrink-0"
+            (click)="openFinalReportViewer(selectedAudit!.finalReportPath!, fileViewerModal)">
+            <i class="fa fa-eye me-1"></i>View
+          </button>
+        </div>
+
+      </div>
+    </div><!-- /Step 2 -->
+
+    <!-- ══ STEP 3 — Observations: shown ONLY when observations exist ══ -->
+    <div class="sum-card" *ngIf="selectedAudit?.observations && selectedAudit!.observations!.length > 0">
+      <div class="sum-step-header">
+        <span class="sum-step-num">3</span>
+        <div class="flex-grow-1">
+          <div class="sum-step-label">Observations &amp; Compliance</div>
+          <div class="sum-step-sub">{{ selectedAudit!.observations!.length }} observation(s) submitted to APS HQRs</div>
+        </div>
+      </div>
+      <div class="sum-card-body">
+
+        <!-- Observation Letter Details -->
+        <ng-container *ngIf="selectedAudit?.obsLetterNo || selectedAudit?.obsLetterDate">
+          <div class="sum-sub-strip mb-3">
+            <i class="fa fa-envelope me-2"></i>Submission Letter Details
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="sum-tile">
+                <span class="sum-label">Letter Number</span>
+                <div class="sum-value">{{ selectedAudit?.obsLetterNo || '—' }}</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="sum-tile">
+                <span class="sum-label">Letter Date</span>
+                <div class="sum-value">{{ (selectedAudit?.obsLetterDate | date:'dd MMM yyyy') || '—' }}</div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Observation List -->
+        <div class="sum-sub-strip mb-3">
+          <i class="fa fa-clipboard-list me-2"></i>Observation Details
+        </div>
+        <div *ngFor="let obs of selectedAudit!.observations!; let i = index" class="obs-view-row mb-2">
+          <div class="obs-number">{{ i + 1 }}</div>
+          <div class="obs-content">
+            <p class="obs-text mb-2">{{ obs.observationText }}</p>
+            <div class="d-flex gap-2 flex-wrap align-items-center mb-1">
+              <span class="criticality-badge" [ngClass]="obs.remarksType.replace(' ','')">
+                {{ obs.remarksType }}
+              </span>
+              <span class="status-badge" [ngClass]="formatStatusClass(obs.complianceStatus)">
+                {{ obs.complianceStatus }}
+              </span>
+            </div>
+            <div *ngIf="obs.currentStatus" class="obs-cur-status-text">
+              <i class="fa fa-comment-dots me-1 text-secondary"></i>
+              <span class="text-muted small fw-semibold me-1">Current Status:</span>{{ obs.currentStatus }}
+            </div>
+            <div *ngIf="obs.supportingDocPath" class="mt-2">
+              <button class="btn btn-sm obs-doc-view-btn"
+                (click)="openFinalReportViewer(obs.supportingDocPath!, fileViewerModal)">
+                <i class="fa fa-paperclip me-1"></i>View Supporting Doc
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /Step 3 -->
+
+  </div><!-- /modal-body -->
+
+  <div class="modal-footer border-0 bg-light">
+    <button type="button" class="btn btn-outline-secondary px-4" (click)="modal.dismiss()">
+      <i class="fa fa-times me-2"></i>Close
+    </button>
+  </div>
+
 </ng-template>
 
 <!-- ═══════════════════════════════════════════════════════════════
