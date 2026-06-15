@@ -70,7 +70,20 @@ export class BcasBcasComponent implements OnInit {
   pageSize        = 10;
   pageSizeOptions = [5, 10, 20, 50];
 
-  isSubmitting    = false;
+  isSubmitting      = false;
+  formSaved         = false;
+  isDraftLoading    = false;
+  showCreateConfirm = false;
+  showAuditConfirm  = false;
+  obsFormSaved      = false;
+  showObsConfirm    = false;
+  draftId: number | null = null;
+  draftFiles: BcasAuditFile[] = [];
+  draftSavedAt: string | null = null;
+
+  get selectedUnitName(): string {
+    return this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId))?.unitName || '—';
+  }
 
   private profileLoaded = false;
   private unitsLoaded   = false;
@@ -253,10 +266,33 @@ export class BcasBcasComponent implements OnInit {
   openCreateModal(content: any) {
     this.resetCreateForm();
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+    this.loadExistingDraft();
+  }
+
+  private loadExistingDraft(): void {
+    this.isDraftLoading = true;
+    this.bcasService.getBcasDraft().subscribe({
+      next: (draft) => {
+        this.isDraftLoading = false;
+        if (!draft) return;
+        this.draftId      = draft.id ?? null;
+        this.draftSavedAt = draft.createdAt ?? null;
+        this.draftFiles   = draft.files ?? [];
+        this.createForm.patchValue(
+          { unitId: draft.unitId, auditMonth: draft.auditMonth, gist: draft.gist },
+          { emitEvent: true }
+        );
+        this.onUnitChange();
+        this.generateName();
+        this.formSaved = true;
+      },
+      error: () => { this.isDraftLoading = false; }
+    });
   }
 
   openUpdateModal(audit: BcasAuditRecord, content: any) {
-    this.selectedAudit = audit;
+    this.selectedAudit    = audit;
+    this.showAuditConfirm = false;
     this.updateForm.reset();
     this.updateForm.patchValue({
       fromDate:   audit.fromDate   || '',
@@ -268,13 +304,29 @@ export class BcasBcasComponent implements OnInit {
     this.modalService.open(content, { size: 'lg', backdrop: 'static', keyboard: false });
   }
 
+  requestAuditConfirm(): void {
+    this.updateForm.markAllAsTouched();
+    if (this.updateForm.invalid) {
+      this.toast.show('Please fill all required fields.', 'error');
+      return;
+    }
+    if (this.updateForm.hasError('dateRange')) {
+      this.toast.show('From date must be on or before To date.', 'error');
+      return;
+    }
+    this.showAuditConfirm = true;
+  }
+
   openObservationModal(audit: BcasAuditRecord, content: any) {
     this.selectedAudit  = audit;
     this.isViewObsMode  = audit.status === 'OBSERVATION_STAGE' || audit.status === 'COMPLETED';
+    this.obsFormSaved   = false;
+    this.showObsConfirm = false;
     if (!this.isViewObsMode) {
       this.observationRows = [this.newObsRow()];
       this.obsLetterNo     = '';
       this.obsLetterDate   = '';
+      this.loadObsDraft(audit.id!);
     }
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
   }
@@ -282,10 +334,32 @@ export class BcasBcasComponent implements OnInit {
   openAddObservationModal(audit: BcasAuditRecord, content: any) {
     this.selectedAudit   = audit;
     this.isViewObsMode   = false;
+    this.obsFormSaved    = false;
+    this.showObsConfirm  = false;
     this.observationRows = [this.newObsRow()];
     this.obsLetterNo     = '';
     this.obsLetterDate   = '';
+    this.loadObsDraft(audit.id!);
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+  }
+
+  private loadObsDraft(auditId: number): void {
+    this.bcasService.getObsDraft(auditId).subscribe({
+      next: (draft) => {
+        if (!draft) return;
+        this.obsLetterNo   = draft.obsLetterNo   ?? '';
+        this.obsLetterDate = draft.obsLetterDate ?? '';
+        if (draft.observations?.length) {
+          this.observationRows = draft.observations.map(o => ({
+            observationText:  o.observationText,
+            remarksType:      o.remarksType,
+            complianceStatus: o.complianceStatus,
+            currentStatus:    o.currentStatus ?? '',
+            supportingDoc:    null as File | null
+          }));
+        }
+      }
+    });
   }
 
   private newObsRow() {
@@ -302,7 +376,62 @@ export class BcasBcasComponent implements OnInit {
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false, scrollable: true });
   }
 
+  saveDraft(): void {
+    this.createForm.markAllAsTouched();
+    if (this.createForm.invalid) {
+      this.toast.show('Please fill all required fields.', 'error');
+      return;
+    }
+
+    const unit = this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId));
+    const fd = new FormData();
+    fd.append('auditName',   this.createForm.getRawValue().name);
+    fd.append('unitId',      String(this.createForm.value.unitId));
+    fd.append('unitName',    unit?.unitName ?? '');
+    fd.append('auditMonth',  this.createForm.value.auditMonth);
+    fd.append('gist',        this.createForm.value.gist);
+    fd.append('createdBy',   this.loggedUser?.mstr_name ?? '');
+    fd.append('createdById', String(this.loggedUser?.id ?? 0));
+    fd.append('casoId',      String(this.casoId));
+    fd.append('casoName',    this.casoName);
+    fd.append('casoRank',    this.casoRank);
+    fd.append('casoNo',      this.casoNo);
+    this.selectedPqFiles.forEach(f => fd.append('files', f, f.name));
+
+    const handleResponse = (record: BcasAuditRecord) => {
+      this.isSubmitting = false;
+      this.draftId      = record.id ?? null;
+      this.draftSavedAt = record.createdAt ?? null;
+      this.draftFiles   = record.files ?? [];
+      this.selectedPqFiles = [];
+      this.formSaved = true;
+      this.toast.show('Draft saved to database.', 'success');
+    };
+    const handleError = (err: any) => {
+      this.isSubmitting = false;
+      const msg = typeof err?.error === 'string' ? err.error : (err?.message ?? 'Unknown error');
+      this.toast.show('Failed to save draft: ' + msg, 'error');
+    };
+
+    this.isSubmitting = true;
+    if (this.draftId) {
+      fd.append('draftId', String(this.draftId));
+      this.bcasService.updateBcasDraft(fd).subscribe({ next: handleResponse, error: handleError });
+    } else {
+      this.bcasService.saveBcasDraft(fd).subscribe({ next: handleResponse, error: handleError });
+    }
+  }
+
+  editDraft(): void {
+    this.formSaved = false;
+  }
+
   private resetCreateForm() {
+    this.formSaved         = false;
+    this.showCreateConfirm = false;
+    this.draftId           = null;
+    this.draftFiles        = [];
+    this.draftSavedAt      = null;
     this.createForm.reset();
     this.selectedPqFiles = [];
     this.casoName = '';
@@ -324,56 +453,48 @@ export class BcasBcasComponent implements OnInit {
 
   savePqStage() {
     if (this.isSubmitting) return;
-    this.createForm.markAllAsTouched();
-    if (this.createForm.invalid) {
-      this.toast.show('Please fill all required fields.', 'error');
-      return;
-    }
-
-    const unit = this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId));
-    const fd   = new FormData();
-    fd.append('auditName',   this.createForm.getRawValue().name);
-    fd.append('unitId',      String(this.createForm.value.unitId));
-    fd.append('unitName',    unit?.unitName ?? '');
-    fd.append('auditMonth',  this.createForm.value.auditMonth);
-    fd.append('gist',        this.createForm.value.gist);
-    fd.append('createdBy',   this.loggedUser?.mstr_name ?? '');
-    fd.append('createdById', String(this.loggedUser?.id ?? 0));
-    fd.append('casoId',      String(this.casoId));
-    fd.append('casoName',    this.casoName);
-    fd.append('casoRank',    this.casoRank);
-    fd.append('casoNo',      this.casoNo);
-    this.selectedPqFiles.forEach(f => fd.append('files', f, f.name));
-
     this.isSubmitting = true;
-    this.bcasService.saveBcasAudit(fd).subscribe({
-      next: () => {
-        this.toast.show('BCAS audit created successfully.', 'success');
-        this.resetCreateForm();
-        this.loadAudits();
-        this.modalService.dismissAll();
-        this.isSubmitting = false;
-      },
-      error: err => {
-        this.toast.show('Error saving BCAS audit: ' + err, 'error');
-        this.isSubmitting = false;
-      }
-    });
+
+    const onSuccess = () => {
+      this.toast.show('BCAS audit created successfully.', 'success');
+      this.resetCreateForm();
+      this.loadAudits();
+      this.modalService.dismissAll();
+      this.isSubmitting = false;
+    };
+    const onError = (err: any) => {
+      this.toast.show('Error creating audit: ' + err, 'error');
+      this.isSubmitting = false;
+    };
+
+    if (this.draftId) {
+      // Draft already persisted — just promote it to PQ_STAGE
+      this.bcasService.promoteBcasDraft(this.draftId).subscribe({ next: onSuccess, error: onError });
+    } else {
+      // No draft on server (edge case) — create directly
+      const unit = this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId));
+      const fd   = new FormData();
+      fd.append('auditName',   this.createForm.getRawValue().name);
+      fd.append('unitId',      String(this.createForm.value.unitId));
+      fd.append('unitName',    unit?.unitName ?? '');
+      fd.append('auditMonth',  this.createForm.value.auditMonth);
+      fd.append('gist',        this.createForm.value.gist);
+      fd.append('createdBy',   this.loggedUser?.mstr_name ?? '');
+      fd.append('createdById', String(this.loggedUser?.id ?? 0));
+      fd.append('casoId',      String(this.casoId));
+      fd.append('casoName',    this.casoName);
+      fd.append('casoRank',    this.casoRank);
+      fd.append('casoNo',      this.casoNo);
+      this.selectedPqFiles.forEach(f => fd.append('files', f, f.name));
+      this.bcasService.saveBcasAudit(fd).subscribe({ next: onSuccess, error: onError });
+    }
   }
 
   // ── Save Stage 2 ───────────────────────────────────────────────
 
   saveAuditStage() {
     if (this.isSubmitting || !this.selectedAudit) return;
-    this.updateForm.markAllAsTouched();
-    if (this.updateForm.invalid) {
-      this.toast.show('Please fill all required fields.', 'error');
-      return;
-    }
-    if (this.updateForm.hasError('dateRange')) {
-      this.toast.show('From date must be on or before To date.', 'error');
-      return;
-    }
+    this.showAuditConfirm = false;
 
     const fd = new FormData();
     fd.append('auditId',    String(this.selectedAudit.id));
@@ -409,13 +530,58 @@ export class BcasBcasComponent implements OnInit {
     }
   }
 
-  saveObservations() {
-    if (this.isSubmitting || !this.selectedAudit) return;
+  saveObsDraft(): void {
+    if (!this.obsLetterNo.trim()) {
+      this.toast.show('Please enter the letter number.', 'error');
+      return;
+    }
+    if (!this.obsLetterDate) {
+      this.toast.show('Please enter the letter date.', 'error');
+      return;
+    }
+    if (this.observationRows.length === 0) {
+      this.toast.show('Please add at least one observation.', 'error');
+      return;
+    }
     const allFilled = this.observationRows.every(r => r.observationText.trim().length > 0);
-    if (!allFilled || this.observationRows.length === 0) {
+    if (!allFilled) {
       this.toast.show('Please enter observation text for each row.', 'error');
       return;
     }
+
+    if (!this.selectedAudit?.id) { this.obsFormSaved = true; return; }
+
+    const obsPayload = this.observationRows.map(r => ({
+      observationText:  r.observationText,
+      remarksType:      r.remarksType,
+      complianceStatus: r.complianceStatus,
+      currentStatus:    r.currentStatus
+    }));
+
+    const fd = new FormData();
+    fd.append('obsLetterNo',   this.obsLetterNo);
+    fd.append('obsLetterDate', this.obsLetterDate);
+    fd.append('observations',  JSON.stringify(obsPayload));
+
+    this.isSubmitting = true;
+    this.bcasService.saveObsDraft(this.selectedAudit.id, fd).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.obsFormSaved = true;
+        this.loadAudits();
+        this.toast.show('Draft saved.', 'success');
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        const msg = typeof err?.error === 'string' ? err.error : (err?.message ?? 'Unknown error');
+        this.toast.show('Failed to save draft: ' + msg, 'error');
+      }
+    });
+  }
+
+  saveObservations() {
+    if (this.isSubmitting || !this.selectedAudit) return;
+    this.showObsConfirm = false;
 
     const obsPayload = this.observationRows.map(r => ({
       observationText: r.observationText,
@@ -436,6 +602,8 @@ export class BcasBcasComponent implements OnInit {
     this.bcasService.saveBcasObservations(this.selectedAudit.id!, fd).subscribe({
       next: () => {
         this.toast.show('Observations submitted to APS HQRs.', 'success');
+        this.obsFormSaved   = false;
+        this.showObsConfirm = false;
         this.loadAudits();
         this.modalService.dismissAll();
         this.isSubmitting = false;
@@ -497,21 +665,23 @@ export class BcasBcasComponent implements OnInit {
 
   getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'PQ_STAGE':          return 'badge-pq';
-      case 'AUDIT_STAGE':       return 'badge-audit';
-      case 'OBSERVATION_STAGE': return 'badge-obs';
-      case 'COMPLETED':         return 'badge-done';
-      default:                  return 'badge-secondary';
+      case 'PQ_STAGE':           return 'badge-pq';
+      case 'AUDIT_STAGE':        return 'badge-audit';
+      case 'OBSERVATION_DRAFT':  return 'badge-obs-draft';
+      case 'OBSERVATION_STAGE':  return 'badge-obs';
+      case 'COMPLETED':          return 'badge-done';
+      default:                   return 'badge-secondary';
     }
   }
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'PQ_STAGE':          return 'PQ Stage';
-      case 'AUDIT_STAGE':       return 'Audit Stage';
-      case 'OBSERVATION_STAGE': return 'Observation';
-      case 'COMPLETED':         return 'Completed';
-      default:                  return status;
+      case 'PQ_STAGE':           return 'PQ Stage';
+      case 'AUDIT_STAGE':        return 'Audit Stage';
+      case 'OBSERVATION_DRAFT':  return 'Obs. Draft';
+      case 'OBSERVATION_STAGE':  return 'Observation';
+      case 'COMPLETED':          return 'Completed';
+      default:                   return status;
     }
   }
 }

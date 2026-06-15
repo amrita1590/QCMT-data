@@ -127,10 +127,11 @@
   letter-spacing: 0.3px;
 }
 
-.badge-pq   { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
-.badge-audit { background: #cce5ff; color: #004085; border: 1px solid #007bff; }
-.badge-obs   { background: #f3e5f5; color: #6a1b9a; border: 1px solid #9c27b0; }
-.badge-done  { background: #d4edda; color: #155724; border: 1px solid #28a745; }
+.badge-pq        { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+.badge-audit     { background: #cce5ff; color: #004085; border: 1px solid #007bff; }
+.badge-obs-draft { background: #fde9d9; color: #7c3503; border: 1px solid #fd7e14; }
+.badge-obs       { background: #f3e5f5; color: #6a1b9a; border: 1px solid #9c27b0; }
+.badge-done      { background: #d4edda; color: #155724; border: 1px solid #28a745; }
 
 /* stage header badge */
 .stage-badge {
@@ -737,9 +738,10 @@ input[readonly] { background-color: #f1f3f5; cursor: not-allowed; font-weight: 5
   box-shadow: 0 4px 10px rgba(0,0,0,0.22);
 }
 
-.ab-summary { background: #3498db; }
-.ab-edit    { background: #f39c12; }
-.ab-obs     { background: #8e24aa; }
+.ab-summary  { background: #3498db; }
+.ab-edit     { background: #f39c12; }
+.ab-obs      { background: #8e24aa; }
+.ab-view-obs { background: #6c757d; }
 
 /* ══ SUMMARY MODAL ════════════════════════════════════ */
 
@@ -1002,6 +1004,39 @@ input[readonly] { background-color: #f1f3f5; cursor: not-allowed; font-weight: 5
 
 .text-purple { color: #9c27b0; }
 
+/* ── Draft save / review panel ──────────────────────── */
+.review-saved-banner {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.draft-date {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #3d7a4d;
+}
+
+.review-lock-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.review-panel {
+  padding: 2px;
+}
+
 /* ── misc ───────────────────────────────────────────── */
 .btn-primary { border-radius: 8px; }
 .btn-light   { border-radius: 8px; }
@@ -1012,4 +1047,38 @@ input[readonly] { background-color: #f1f3f5; cursor: not-allowed; font-weight: 5
 
 @media (max-width: 576px) {
   .status-grid { grid-template-columns: 1fr; }
+}
+
+/* ── create-audit confirmation box ───────────────────── */
+.create-confirm-box {
+  border: 2px solid #f5c2c7;
+  border-radius: 10px;
+  background: #fff8f8;
+  padding: 18px 20px 14px;
+}
+
+.confirm-warning-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.confirm-warn-icon {
+  font-size: 26px;
+  color: #dc3545;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.confirm-warn-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #842029;
+  margin-bottom: 4px;
+}
+
+.confirm-warn-text {
+  font-size: 13px;
+  color: #6c1c24;
+  line-height: 1.5;
 }

@@ -16,6 +16,12 @@ export interface BcasObservation {
   createdAt?: string;
 }
 
+export interface BcasObsDraft {
+  obsLetterNo?: string;
+  obsLetterDate?: string;
+  observations: BcasObservation[];
+}
+
 export interface BcasAuditRecord {
   id?: number;
   auditName: string;

@@ -106,11 +106,18 @@
                 <i class="fa fa-edit"></i>
               </button>
 
-              <!-- Step 3 form: only after final report submitted (AUDIT_STAGE or OBSERVATION_STAGE) -->
-              <button *ngIf="audit.status === 'AUDIT_STAGE' || audit.status === 'OBSERVATION_STAGE'"
-                class="action-btn ab-obs" title="Add Observation"
+              <!-- Step 3 form: edit (AUDIT_STAGE or OBSERVATION_DRAFT only) -->
+              <button *ngIf="audit.status === 'AUDIT_STAGE' || audit.status === 'OBSERVATION_DRAFT'"
+                class="action-btn ab-obs" title="Add / Edit Observation"
                 (click)="openAddObservationModal(audit, observationModal)">
                 <i class="fa fa-list-ul"></i>
+              </button>
+
+              <!-- Step 3 view: read-only once submitted (OBSERVATION_STAGE or COMPLETED) -->
+              <button *ngIf="audit.status === 'OBSERVATION_STAGE' || audit.status === 'COMPLETED'"
+                class="action-btn ab-view-obs" title="View Observations"
+                (click)="openObservationModal(audit, observationModal)">
+                <i class="fa fa-clipboard-list"></i>
               </button>
 
             </div>
@@ -162,11 +169,23 @@
     <h5 class="modal-title">
       <i class="fa fa-shield-alt me-2 text-primary"></i> Create BCAS Audit
       <span class="stage-badge ms-2">Stage 1 — PQ</span>
+      <span *ngIf="formSaved && !isDraftLoading" class="review-lock-badge ms-2">
+        <i class="fa fa-lock me-1"></i>Review Mode
+      </span>
     </h5>
     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
+
   <div class="modal-body pt-3">
-    <form [formGroup]="createForm" (ngSubmit)="savePqStage()" class="bcas-schedule-form">
+
+    <!-- Draft loading indicator -->
+    <div *ngIf="isDraftLoading" class="d-flex align-items-center gap-2 p-3 text-muted">
+      <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+      <span class="small">Checking for saved draft...</span>
+    </div>
+
+    <!-- ── EDIT MODE ──────────────────────────────────────────────── -->
+    <form [formGroup]="createForm" class="bcas-schedule-form" *ngIf="!formSaved && !isDraftLoading">
       <div class="row g-3">
 
         <!-- Audit Name (auto) -->
@@ -237,9 +256,27 @@
         <!-- PQ Files -->
         <div class="col-12">
           <label class="form-label">PQ Question &amp; Answer Files (PDF only)</label>
+
+          <!-- Files already saved to DB from a previous draft save -->
+          <div *ngIf="draftFiles.length > 0" class="mb-2">
+            <small class="text-success fw-semibold d-block mb-1">
+              <i class="fa fa-database me-1"></i>
+              Already saved ({{ draftFiles.length }} file{{ draftFiles.length > 1 ? 's' : '' }}):
+            </small>
+            <div *ngFor="let f of draftFiles"
+              class="d-flex align-items-center p-2 border border-success rounded mb-1 bg-light">
+              <i class="fa fa-file-pdf text-danger me-2"></i>
+              <span class="small fw-semibold flex-grow-1">{{ f.fileName }}</span>
+              <span class="badge bg-success ms-2">Saved</span>
+            </div>
+          </div>
+
+          <!-- New file picker -->
           <div class="file-drop-zone" (click)="pqFileInput.click()">
             <i class="fa fa-cloud-upload-alt fa-2x text-muted mb-1 d-block"></i>
-            <p class="mb-0 text-muted small">Click to select PDF files (multiple allowed)</p>
+            <p class="mb-0 text-muted small">
+              {{ draftFiles.length > 0 ? 'Click to add more PDF files' : 'Click to select PDF files (multiple allowed)' }}
+            </p>
           </div>
           <input #pqFileInput type="file" class="d-none" accept=".pdf" multiple
             (change)="onPqFilesSelected($event)">
@@ -259,11 +296,142 @@
 
       <div class="modal-footer border-0 px-0 pb-0 mt-3">
         <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
-        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-          <i class="fa fa-save me-1"></i>{{ isSubmitting ? 'Saving...' : 'Create Audit' }}
+        <button type="button" class="btn btn-success" (click)="saveDraft()" [disabled]="isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          <i *ngIf="!isSubmitting" class="fa fa-database me-1"></i>
+          {{ isSubmitting ? 'Saving...' : (draftId ? 'Update Draft' : 'Save Draft') }}
         </button>
       </div>
     </form>
+
+    <!-- ── REVIEW MODE ──────────────────────────────────────────── -->
+    <div class="review-panel" *ngIf="formSaved && !isDraftLoading">
+
+      <div class="review-saved-banner mb-3">
+        <div class="d-flex align-items-start gap-2">
+          <i class="fa fa-database mt-1 flex-shrink-0"></i>
+          <div>
+            <div><strong>Draft saved to database.</strong>
+              You can navigate away or log out — your data will be waiting when you return.
+            </div>
+            <small *ngIf="draftSavedAt" class="draft-date">
+              <i class="fa fa-clock me-1"></i>Saved on {{ draftSavedAt | date:'dd MMM yyyy, hh:mm a' }}
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data tiles -->
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <div class="sum-tile">
+            <span class="sum-label">Audit Name</span>
+            <div class="sum-value">{{ createForm.getRawValue().name }}</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="sum-tile">
+            <span class="sum-label">Unit / Airport</span>
+            <div class="sum-value">{{ selectedUnitName }}</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="sum-tile">
+            <span class="sum-label">Audit Month</span>
+            <div class="sum-value">{{ createForm.value.auditMonth + '-01' | date:'MMMM yyyy' }}</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="sum-tile">
+            <span class="sum-label">Created By</span>
+            <div class="sum-value">{{ loggedUser?.mstr_name || '—' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CASO Details -->
+      <div class="caso-panel p-3 mb-3">
+        <div class="caso-panel-title fw-bold mb-2">
+          <i class="fa fa-user-shield me-1"></i> CASO Details
+        </div>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <div class="sum-tile sum-tile-caso">
+              <span class="sum-label">CASO Name</span>
+              <div class="sum-value">{{ casoName || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile sum-tile-caso">
+              <span class="sum-label">Rank</span>
+              <div class="sum-value">{{ casoRank || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="sum-tile sum-tile-caso">
+              <span class="sum-label">CISF No</span>
+              <div class="sum-value">{{ casoNo || '—' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gist -->
+      <div class="sum-sub-strip mb-2"><i class="fa fa-align-left me-2"></i>Gist / Description</div>
+      <p class="gist-text mb-3">{{ createForm.value.gist }}</p>
+
+      <!-- PQ Files (confirmed on backend) -->
+      <ng-container *ngIf="draftFiles.length > 0">
+        <div class="sum-sub-strip mb-2">
+          <i class="fa fa-paperclip me-2"></i>PQ Files
+          <span class="sum-pill ms-2">{{ draftFiles.length }}</span>
+        </div>
+        <div *ngFor="let f of draftFiles"
+          class="d-flex align-items-center p-2 border rounded mb-1 bg-light">
+          <i class="fa fa-file-pdf text-danger me-2"></i>
+          <span class="small fw-semibold flex-grow-1">{{ f.fileName }}</span>
+          <span class="badge bg-success">Saved</span>
+        </div>
+      </ng-container>
+
+      <!-- Normal footer -->
+      <div class="modal-footer border-0 px-0 pb-0 mt-3" *ngIf="!showCreateConfirm">
+        <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="editDraft()">
+          <i class="fa fa-edit me-1"></i> Edit
+        </button>
+        <button type="button" class="btn btn-primary" (click)="showCreateConfirm = true">
+          <i class="fa fa-plus-circle me-1"></i> Create Audit
+        </button>
+      </div>
+
+      <!-- Confirmation box — replaces footer when "Create Audit" is clicked -->
+      <div class="create-confirm-box mt-3" *ngIf="showCreateConfirm">
+        <div class="confirm-warning-row">
+          <i class="fa fa-exclamation-triangle confirm-warn-icon"></i>
+          <div>
+            <div class="confirm-warn-title">Are you sure you want to create this audit?</div>
+            <div class="confirm-warn-text">
+              Once created, the audit will move to <strong>PQ Stage</strong> and
+              <strong>cannot be edited</strong>.
+            </div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button type="button" class="btn btn-light border"
+            (click)="showCreateConfirm = false" [disabled]="isSubmitting">
+            <i class="fa fa-arrow-left me-1"></i> Go Back
+          </button>
+          <button type="button" class="btn btn-danger"
+            (click)="savePqStage()" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            <i *ngIf="!isSubmitting" class="fa fa-check me-1"></i>
+            {{ isSubmitting ? 'Creating...' : 'Yes, Create Audit' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </ng-template>
 
@@ -284,7 +452,7 @@
       <span class="fw-bold">{{ selectedAudit?.auditName }}</span>
       <span class="ms-3 text-muted small">CASO: {{ selectedAudit?.casoName }}</span>
     </div>
-    <form [formGroup]="updateForm" (ngSubmit)="saveAuditStage()" class="bcas-schedule-form">
+    <form [formGroup]="updateForm" (ngSubmit)="requestAuditConfirm()" class="bcas-schedule-form">
       <div class="row g-3">
 
         <div class="col-md-6">
@@ -353,11 +521,38 @@
 
       </div>
 
-      <div class="modal-footer border-0 px-0 pb-0 mt-3">
+      <!-- Normal footer -->
+      <div class="modal-footer border-0 px-0 pb-0 mt-3" *ngIf="!showAuditConfirm">
         <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
         <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-          <i class="fa fa-check me-1"></i>{{ isSubmitting ? 'Saving...' : 'Complete Audit Stage' }}
+          <i class="fa fa-check me-1"></i>Submit Audit Details
         </button>
+      </div>
+
+      <!-- Confirmation box -->
+      <div class="create-confirm-box mt-3" *ngIf="showAuditConfirm">
+        <div class="confirm-warning-row">
+          <i class="fa fa-exclamation-triangle confirm-warn-icon"></i>
+          <div>
+            <div class="confirm-warn-title">Are all details correct?</div>
+            <div class="confirm-warn-text">
+              Once submitted, the audit details <strong>cannot be changed</strong>.
+              Please verify all fields before proceeding.
+            </div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button type="button" class="btn btn-light border"
+            (click)="showAuditConfirm = false" [disabled]="isSubmitting">
+            <i class="fa fa-arrow-left me-1"></i> Go Back
+          </button>
+          <button type="button" class="btn btn-danger"
+            (click)="saveAuditStage()" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            <i *ngIf="!isSubmitting" class="fa fa-check me-1"></i>
+            {{ isSubmitting ? 'Submitting...' : 'Yes, Submit Details' }}
+          </button>
+        </div>
       </div>
     </form>
   </div>
@@ -421,115 +616,220 @@
       </ng-template>
     </ng-container>
 
-    <!-- ADD MODE: letter details + supporting docs + observation rows -->
+    <!-- ADD MODE -->
     <ng-container *ngIf="!isViewObsMode">
 
-      <!-- Letter Details section -->
-      <div class="obs-section-header mb-2">
-        <i class="fa fa-envelope me-2"></i>Letter to APS HQRs
-      </div>
-      <div class="obs-letter-box mb-4">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label small fw-bold text-muted mb-1">Letter Number <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" [(ngModel)]="obsLetterNo"
-              placeholder="e.g. BCAS/APS/2024/001">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label small fw-bold text-muted mb-1">Letter Date <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" [(ngModel)]="obsLetterDate">
+      <!-- ── EDIT STATE ──────────────────────────────────────────── -->
+      <ng-container *ngIf="!obsFormSaved">
+
+        <!-- Letter Details section -->
+        <div class="obs-section-header mb-2">
+          <i class="fa fa-envelope me-2"></i>Letter to APS HQRs
+        </div>
+        <div class="obs-letter-box mb-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted mb-1">Letter Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" [(ngModel)]="obsLetterNo"
+                placeholder="e.g. BCAS/APS/2024/001">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted mb-1">Letter Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" [(ngModel)]="obsLetterDate">
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Observation rows -->
-      <div class="obs-section-header mb-2">
-        <i class="fa fa-clipboard-list me-2"></i>Observations
-      </div>
+        <!-- Observation rows -->
+        <div class="obs-section-header mb-2">
+          <i class="fa fa-clipboard-list me-2"></i>Observations
+        </div>
 
-      <div *ngFor="let row of observationRows; let i = index" class="obs-form-row">
-        <div class="obs-row-header">
-          <span class="fw-semibold small text-muted">Observation {{ i + 1 }}</span>
-          <button *ngIf="observationRows.length > 1" type="button"
-            class="btn btn-sm btn-outline-danger py-0 px-2"
-            (click)="removeObservationRow(i)">
-            <i class="fa fa-times me-1"></i>Remove
+        <div *ngFor="let row of observationRows; let i = index" class="obs-form-row">
+          <div class="obs-row-header">
+            <span class="fw-semibold small text-muted">Observation {{ i + 1 }}</span>
+            <button *ngIf="observationRows.length > 1" type="button"
+              class="btn btn-sm btn-outline-danger py-0 px-2"
+              (click)="removeObservationRow(i)">
+              <i class="fa fa-times me-1"></i>Remove
+            </button>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col-12">
+              <textarea class="form-control" rows="3" [(ngModel)]="row.observationText"
+                placeholder="Describe the observation from the BCAS audit report..."></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold mb-1">Type / Criticality</label>
+              <select class="form-select form-select-sm" [(ngModel)]="row.remarksType">
+                <option value="Non Critical">Non Critical</option>
+                <option value="Critical">Critical</option>
+                <option value="Moderate">Moderate</option>
+              </select>
+              <div class="mt-1">
+                <span class="criticality-badge" [ngClass]="row.remarksType.replace(' ','')">
+                  {{ row.remarksType }}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-bold mb-1">Compliance Status</label>
+              <select class="form-select form-select-sm" [(ngModel)]="row.complianceStatus">
+                <option value="Compliant">Compliant</option>
+                <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
+                <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
+                <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
+                <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
+                <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
+              </select>
+              <div class="mt-1">
+                <span class="status-badge" [ngClass]="formatStatusClass(row.complianceStatus)">
+                  {{ row.complianceStatus }}
+                </span>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold mb-1">
+                <i class="fa fa-comment-dots me-1 text-secondary"></i>Current Status / Compliance Description
+              </label>
+              <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="row.currentStatus"
+                placeholder="Describe current compliance action taken or status update..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold mb-1">
+                <i class="fa fa-paperclip me-1 text-secondary"></i>Supporting Document
+                <span class="text-muted fw-normal ms-1">(optional)</span>
+              </label>
+              <div class="obs-doc-upload-row">
+                <label class="obs-upload-btn-sm">
+                  <i class="fa fa-upload me-1"></i>
+                  {{ row.supportingDoc ? row.supportingDoc.name : 'Choose file...' }}
+                  <input type="file" class="d-none" (change)="onObsDocSelected(i, $event)">
+                </label>
+                <button *ngIf="row.supportingDoc" type="button"
+                  class="btn btn-sm btn-link text-danger p-0 ms-2"
+                  (click)="row.supportingDoc = null">
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-2 mb-3"
+          (click)="addObservationRow()">
+          <i class="fa fa-plus me-1"></i> Add Another Observation
+        </button>
+
+        <div class="modal-footer border-0 px-0 pb-0">
+          <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+          <button type="button" class="btn btn-success" (click)="saveObsDraft()">
+            <i class="fa fa-check-circle me-1"></i>Review &amp; Proceed
           </button>
         </div>
-        <div class="row g-2 mt-1">
-          <div class="col-12">
-            <textarea class="form-control" rows="3" [(ngModel)]="row.observationText"
-              placeholder="Describe the observation from the BCAS audit report..."></textarea>
+      </ng-container>
+
+      <!-- ── REVIEW STATE ────────────────────────────────────────── -->
+      <ng-container *ngIf="obsFormSaved">
+
+        <!-- Green review banner -->
+        <div class="review-saved-banner mb-3">
+          <div class="d-flex align-items-start gap-2">
+            <i class="fa fa-check-circle mt-1 flex-shrink-0"></i>
+            <div>
+              <strong>All observations reviewed.</strong>
+              Click <em>Edit</em> to make changes, or <em>Submit to APS HQRs</em> when ready.
+            </div>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small fw-bold mb-1">Type / Criticality</label>
-            <select class="form-select form-select-sm" [(ngModel)]="row.remarksType">
-              <option value="Non Critical">Non Critical</option>
-              <option value="Critical">Critical</option>
-              <option value="Moderate">Moderate</option>
-            </select>
-            <div class="mt-1">
+        </div>
+
+        <!-- Letter details (read-only) -->
+        <div class="obs-section-header mb-2">
+          <i class="fa fa-envelope me-2"></i>Letter to APS HQRs
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="sum-tile">
+              <span class="sum-label">Letter Number</span>
+              <div class="sum-value">{{ obsLetterNo || '—' }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="sum-tile">
+              <span class="sum-label">Letter Date</span>
+              <div class="sum-value">{{ (obsLetterDate | date:'dd MMM yyyy') || '—' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observation list (read-only) -->
+        <div class="obs-section-header mb-2">
+          <i class="fa fa-clipboard-list me-2"></i>Observations
+          <span class="sum-pill ms-2">{{ observationRows.length }}</span>
+        </div>
+
+        <div *ngFor="let row of observationRows; let i = index" class="obs-view-row mb-2">
+          <div class="obs-number">{{ i + 1 }}</div>
+          <div class="obs-content">
+            <p class="obs-text mb-2">{{ row.observationText }}</p>
+            <div class="d-flex gap-2 flex-wrap align-items-center mb-1">
               <span class="criticality-badge" [ngClass]="row.remarksType.replace(' ','')">
                 {{ row.remarksType }}
               </span>
-            </div>
-          </div>
-          <div class="col-md-5">
-            <label class="form-label small fw-bold mb-1">Compliance Status</label>
-            <select class="form-select form-select-sm" [(ngModel)]="row.complianceStatus">
-              <option value="Compliant">Compliant</option>
-              <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
-              <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
-              <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
-              <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
-              <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
-            </select>
-            <div class="mt-1">
               <span class="status-badge" [ngClass]="formatStatusClass(row.complianceStatus)">
                 {{ row.complianceStatus }}
               </span>
             </div>
-          </div>
-          <div class="col-12">
-            <label class="form-label small fw-bold mb-1">
-              <i class="fa fa-comment-dots me-1 text-secondary"></i>Current Status / Compliance Description
-            </label>
-            <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="row.currentStatus"
-              placeholder="Describe current compliance action taken or status update..."></textarea>
-          </div>
-          <div class="col-12">
-            <label class="form-label small fw-bold mb-1">
-              <i class="fa fa-paperclip me-1 text-secondary"></i>Supporting Document
-              <span class="text-muted fw-normal ms-1">(optional)</span>
-            </label>
-            <div class="obs-doc-upload-row">
-              <label class="obs-upload-btn-sm">
-                <i class="fa fa-upload me-1"></i>
-                {{ row.supportingDoc ? row.supportingDoc.name : 'Choose file...' }}
-                <input type="file" class="d-none" (change)="onObsDocSelected(i, $event)">
-              </label>
-              <button *ngIf="row.supportingDoc" type="button"
-                class="btn btn-sm btn-link text-danger p-0 ms-2"
-                (click)="row.supportingDoc = null">
-                <i class="fa fa-times"></i>
-              </button>
+            <div *ngIf="row.currentStatus" class="obs-cur-status-text mt-1">
+              <i class="fa fa-comment-dots me-1 text-secondary"></i>
+              <span class="text-muted small fw-semibold me-1">Current Status:</span>{{ row.currentStatus }}
+            </div>
+            <div *ngIf="row.supportingDoc" class="mt-1">
+              <span class="badge bg-secondary">
+                <i class="fa fa-paperclip me-1"></i>{{ row.supportingDoc.name }}
+              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      <button type="button" class="btn btn-sm btn-outline-secondary mt-2 mb-3"
-        (click)="addObservationRow()">
-        <i class="fa fa-plus me-1"></i> Add Another Observation
-      </button>
+        <!-- Normal footer -->
+        <div class="modal-footer border-0 px-0 pb-0 mt-3" *ngIf="!showObsConfirm">
+          <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="obsFormSaved = false">
+            <i class="fa fa-edit me-1"></i> Edit
+          </button>
+          <button type="button" class="btn btn-primary" (click)="showObsConfirm = true">
+            <i class="fa fa-paper-plane me-1"></i> Submit to APS HQRs
+          </button>
+        </div>
 
-      <div class="modal-footer border-0 px-0 pb-0">
-        <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
-        <button type="button" class="btn btn-primary" (click)="saveObservations()" [disabled]="isSubmitting">
-          <i class="fa fa-paper-plane me-1"></i>
-          {{ isSubmitting ? 'Submitting...' : 'Submit to APS HQRs' }}
-        </button>
-      </div>
+        <!-- Confirmation box -->
+        <div class="create-confirm-box mt-3" *ngIf="showObsConfirm">
+          <div class="confirm-warning-row">
+            <i class="fa fa-exclamation-triangle confirm-warn-icon"></i>
+            <div>
+              <div class="confirm-warn-title">Are all details correct?</div>
+              <div class="confirm-warn-text">
+                Once submitted to APS HQRs, these observations
+                <strong>cannot be changed</strong>. Please review carefully.
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-light border"
+              (click)="showObsConfirm = false" [disabled]="isSubmitting">
+              <i class="fa fa-arrow-left me-1"></i> Go Back
+            </button>
+            <button type="button" class="btn btn-danger"
+              (click)="saveObservations()" [disabled]="isSubmitting">
+              <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"></span>
+              <i *ngIf="!isSubmitting" class="fa fa-paper-plane me-1"></i>
+              {{ isSubmitting ? 'Submitting...' : 'Yes, Submit to APS HQRs' }}
+            </button>
+          </div>
+        </div>
+
+      </ng-container>
     </ng-container>
 
   </div>
