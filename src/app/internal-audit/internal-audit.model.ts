@@ -16,6 +16,7 @@ export interface InternalAuditFile {
   type: string;
   uploadedBy: string;
   uploadedOn: string;
+  filePath?: string;
 }
 
 export interface InternalAuditQuestion {

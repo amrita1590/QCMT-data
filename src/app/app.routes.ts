@@ -25,6 +25,7 @@ import { IqcuAuditComponent } from './iqcu-audit/iqcu-audit.component';
 import { ChangepasswordComponent } from './register/changepassword/changepassword.component';
 import { ChangepasswordpageComponent } from './changepassword/changepasswordpage/changepasswordpage.component';
 import { IqcuauditlistComponent } from './iqcuaudit/iqcuauditlist/iqcuauditlist.component';
+import { OtherauditapshqrsdeskComponent } from './otherauditapshqrsdesk/otherauditapshqrsdesk.component';
 
 
 export const routes: Routes = [
@@ -51,5 +52,6 @@ export const routes: Routes = [
     {path: 'bcas', component: BcasComponent, canActivate: [AuthGuard]},
     {path: 'icao', component: IcaoComponent, canActivate: [AuthGuard]},
     {path: 'iqcuauditlist', component: IqcuauditlistComponent, canActivate: [AuthGuard]},
+    {path: 'otherauditapshqrsdesk', component: OtherauditapshqrsdeskComponent, canActivate: [AuthGuard]},
     {path: '**', component: PageNotFoundComponentComponent, canActivate: [AuthGuard]}
 ];

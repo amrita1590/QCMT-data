@@ -12,8 +12,12 @@ export interface BcasObservation {
   remarksType: string;
   complianceStatus: string;
   currentStatus?: string;
+  apsRemarks?: string;
   supportingDocPath?: string;
   createdAt?: string;
+  complianceRemark?: string;
+  changedBy?: number;
+  changedByName?: string;
 }
 
 export interface BcasObsDraft {
@@ -47,4 +51,7 @@ export interface BcasAuditRecord {
   files?: BcasAuditFile[];
   obsSupportDocs?: BcasAuditFile[];
   observations?: BcasObservation[];
+  apsLetterNo?: string;
+  apsLetterDate?: string;
+  apsLetterFiles?: BcasAuditFile[];
 }

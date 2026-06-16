@@ -66,4 +66,8 @@ export class InternalAuditService {
       { responseType: 'text' }
     );
   }
+
+  getInternalAuditFile(fullPath: string): Observable<Blob> {
+    return this.http.get(`/v1/qcmt/master/internalauditfile?fullPath=${encodeURIComponent(fullPath)}`, { responseType: 'blob' });
+  }
 }

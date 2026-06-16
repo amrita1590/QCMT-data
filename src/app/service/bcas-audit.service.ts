@@ -68,4 +68,19 @@ export class BcasAuditService {
       catchError(() => of(null))
     );
   }
+
+  // ── APS HQrs response endpoint (legacy Accept/Reject) ───────
+  saveApsResponse(auditId: number, fd: FormData): Observable<string> {
+    return this.http.post(`${this.base}/savebcasapsresponse/${auditId}`, fd, { responseType: 'text' });
+  }
+
+  // ── APS HQrs: save compliance progress (no letter, no status change) ──
+  saveComplianceDraft(auditId: number, data: any[]): Observable<string> {
+    return this.http.post(`${this.base}/savebcasobscompliance/${auditId}`, data, { responseType: 'text' });
+  }
+
+  // ── APS HQrs compliance review → Send to CASO (with letter) ─────────
+  sendToCaso(auditId: number, fd: FormData): Observable<string> {
+    return this.http.post(`${this.base}/sendbcastocaso/${auditId}`, fd, { responseType: 'text' });
+  }
 }

@@ -1,0 +1,930 @@
+<div class="desk-page">
+
+  <!-- ── HEADER ────────────────────────────────────────────────── -->
+  <div class="desk-header">
+    <div class="d-flex align-items-center gap-3">
+      <div class="desk-icon"><i class="fa fa-building-columns"></i></div>
+      <div>
+        <h2 class="desk-title">APS HQrs — Other Audit Desk</h2>
+        <p class="desk-sub">
+          All BCAS, Internal &amp; ICAO audit records submitted by airport units
+          &nbsp;<span class="year-badge"><i class="fa fa-calendar-alt me-1"></i>{{ currentYear }}</span>
+        </p>
+      </div>
+    </div>
+    <a href="/dashboard" class="back-btn"><i class="fa fa-arrow-left"></i> Dashboard</a>
+  </div>
+
+  <!-- ── STATS ROW ──────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-card blue">
+      <div class="stat-body">
+        <p class="stat-label">Total Audits</p>
+        <p class="stat-val">{{ grandTotal }}</p>
+      </div>
+      <div class="stat-icon blue-i"><i class="fa fa-list-check"></i></div>
+    </div>
+    <div class="stat-card purple" (click)="setTab('BCAS')" style="cursor:pointer">
+      <div class="stat-body">
+        <p class="stat-label">BCAS</p>
+        <p class="stat-val">{{ bcasTotal }}</p>
+      </div>
+      <div class="stat-icon purple-i"><i class="fa fa-shield-alt"></i></div>
+    </div>
+    <div class="stat-card green" (click)="setTab('Internal')" style="cursor:pointer">
+      <div class="stat-body">
+        <p class="stat-label">Internal</p>
+        <p class="stat-val">{{ internalTotal }}</p>
+      </div>
+      <div class="stat-icon green-i"><i class="fa fa-building"></i></div>
+    </div>
+    <div class="stat-card teal" (click)="setTab('ICAO')" style="cursor:pointer">
+      <div class="stat-body">
+        <p class="stat-label">ICAO</p>
+        <p class="stat-val">{{ icaoTotal }}</p>
+      </div>
+      <div class="stat-icon teal-i"><i class="fa fa-globe"></i></div>
+    </div>
+  </div>
+
+  <!-- ── TABS ───────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn" [class.active-bcas]="activeTab==='BCAS'" (click)="setTab('BCAS')">
+      <i class="fa fa-shield-alt"></i> BCAS <span class="tab-count">{{ bcasTotal }}</span>
+    </button>
+    <button class="tab-btn" [class.active-internal]="activeTab==='Internal'" (click)="setTab('Internal')">
+      <i class="fa fa-building"></i> Internal <span class="tab-count">{{ internalTotal }}</span>
+    </button>
+    <button class="tab-btn" [class.active-icao]="activeTab==='ICAO'" (click)="setTab('ICAO')">
+      <i class="fa fa-globe"></i> ICAO <span class="tab-count">{{ icaoTotal }}</span>
+    </button>
+    <button class="tab-btn" [class.active-all]="activeTab==='All'" (click)="setTab('All')">
+      <i class="fa fa-magnifying-glass"></i> Search All <span class="tab-count">{{ grandTotal }}</span>
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted" style="font-size:13px">Loading audit records…</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+
+    <!-- ══════════════════════════════════════════════════════════
+         BCAS TAB
+         ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'BCAS'">
+      <div class="toolbar">
+        <span class="section-title">
+          <i class="fa fa-shield-alt me-2" style="color:#7d3cff"></i>BCAS Audits
+          <span class="count-pill">{{ filteredBcas.length }}</span>
+        </span>
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select form-select-sm" style="width:90px" [(ngModel)]="pageSize">
+            <option *ngFor="let n of pageSizeOptions" [value]="n">{{ n }}</option>
+          </select>
+          <input class="form-control form-control-sm search-box" placeholder="Search…"
+            [(ngModel)]="bcasSearch" (ngModelChange)="bcasPage=1">
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()" title="Refresh">
+            <i class="fa fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card" *ngIf="filteredBcas.length > 0; else bcasEmpty">
+        <table class="table table-hover mb-0 modern-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Audit Name</th><th>Unit</th><th>Month</th>
+              <th>CASO</th><th>Stage</th><th>Created By</th><th>View</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of pagedBcas(); let i = index">
+              <td class="text-muted" style="font-size:12px">{{ (bcasPage-1)*pageSize + i + 1 }}</td>
+              <td><strong>{{ a.auditName }}</strong></td>
+              <td>{{ a.unitName }}</td>
+              <td>{{ formatMonth(a.auditMonth) }}</td>
+              <td>{{ a.casoName }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="bcasBadge(a.status)">{{ bcasLabel(a.status) }}</span>
+                <!-- Indicator when awaiting APS action -->
+                <span *ngIf="a.status === 'OBSERVATION_STAGE'"
+                  class="badge bg-warning text-dark ms-1" style="font-size:10px">Action Required</span>
+              </td>
+              <td style="font-size:12px">{{ a.createdBy }}</td>
+              <td>
+                <button class="view-btn" (click)="viewBcas(a, bcasModal)" title="View / Respond">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pager-bar" *ngIf="bcasTotalPages() > 1">
+          <button class="pager-btn" [disabled]="bcasPage===1" (click)="bcasPage=bcasPage-1">‹</button>
+          <button class="pager-btn" *ngFor="let p of visiblePageNums(bcasPage, bcasTotalPages())"
+            [class.active]="p===bcasPage" (click)="bcasPage=p">{{ p }}</button>
+          <button class="pager-btn" [disabled]="bcasPage===bcasTotalPages()" (click)="bcasPage=bcasPage+1">›</button>
+          <span class="pager-info">
+            {{ (bcasPage-1)*pageSize+1 }}–{{ endItem(bcasPage, filteredBcas.length) }} of {{ filteredBcas.length }}
+          </span>
+        </div>
+      </div>
+      <ng-template #bcasEmpty>
+        <div class="empty-box"><i class="fa fa-shield-alt"></i><p>No BCAS audit records found.</p></div>
+      </ng-template>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         INTERNAL TAB
+         ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'Internal'">
+      <div class="toolbar">
+        <span class="section-title">
+          <i class="fa fa-building me-2" style="color:#009b75"></i>Internal Audits
+          <span class="count-pill" style="background:#d9f5ea;color:#009b75">{{ filteredInternal.length }}</span>
+        </span>
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select form-select-sm" style="width:90px" [(ngModel)]="pageSize">
+            <option *ngFor="let n of pageSizeOptions" [value]="n">{{ n }}</option>
+          </select>
+          <input class="form-control form-control-sm search-box" placeholder="Search…"
+            [(ngModel)]="internalSearch" (ngModelChange)="internalPage=1">
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()">
+            <i class="fa fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card" *ngIf="filteredInternal.length > 0; else internalEmpty">
+        <table class="table table-hover mb-0 modern-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Ref No</th><th>Unit</th><th>From Date</th>
+              <th>Auditor</th><th>Status</th><th>To Date</th><th>View</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of pagedInternal(); let i = index">
+              <td class="text-muted" style="font-size:12px">{{ (internalPage-1)*pageSize + i + 1 }}</td>
+              <td><strong>{{ a.auditRefNo }}</strong></td>
+              <td>{{ a.unit.unitName }}</td>
+              <td>{{ a.auditFromDate }}</td>
+              <td>{{ a.auditorName }}</td>
+              <td><span class="status-badge" [ngClass]="internalBadge(a.status)">{{ a.status }}</span></td>
+              <td style="font-size:12px">{{ a.auditToDate }}</td>
+              <td>
+                <button class="view-btn green-view" (click)="viewInternal(a, internalModal)" title="View Details">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pager-bar" *ngIf="internalTotalPages() > 1">
+          <button class="pager-btn" [disabled]="internalPage===1" (click)="internalPage=internalPage-1">‹</button>
+          <button class="pager-btn" *ngFor="let p of visiblePageNums(internalPage, internalTotalPages())"
+            [class.active]="p===internalPage" (click)="internalPage=p">{{ p }}</button>
+          <button class="pager-btn" [disabled]="internalPage===internalTotalPages()" (click)="internalPage=internalPage+1">›</button>
+          <span class="pager-info">
+            {{ (internalPage-1)*pageSize+1 }}–{{ endItem(internalPage, filteredInternal.length) }} of {{ filteredInternal.length }}
+          </span>
+        </div>
+      </div>
+      <ng-template #internalEmpty>
+        <div class="empty-box"><i class="fa fa-building"></i><p>No Internal audit records found.</p></div>
+      </ng-template>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ICAO TAB
+         ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'ICAO'">
+      <div class="toolbar">
+        <span class="section-title">
+          <i class="fa fa-globe me-2" style="color:#0097a7"></i>ICAO Audits
+          <span class="count-pill" style="background:#d0f4f7;color:#0097a7">{{ filteredIcao.length }}</span>
+        </span>
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select form-select-sm" style="width:90px" [(ngModel)]="pageSize">
+            <option *ngFor="let n of pageSizeOptions" [value]="n">{{ n }}</option>
+          </select>
+          <input class="form-control form-control-sm search-box" placeholder="Search…"
+            [(ngModel)]="icaoSearch" (ngModelChange)="icaoPage=1">
+          <button class="btn btn-sm btn-outline-secondary" (click)="loadAll()">
+            <i class="fa fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card" *ngIf="filteredIcao.length > 0; else icaoEmpty">
+        <table class="table table-hover mb-0 modern-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Audit Name</th><th>Unit</th><th>Month</th>
+              <th>CASO</th><th>Dates</th><th>Created By</th><th>View</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of pagedIcao(); let i = index">
+              <td class="text-muted" style="font-size:12px">{{ (icaoPage-1)*pageSize + i + 1 }}</td>
+              <td><strong>{{ a.auditName }}</strong></td>
+              <td>{{ a.unitName }}</td>
+              <td>{{ formatMonth(a.auditMonth) }}</td>
+              <td>{{ a.casoName }}</td>
+              <td style="font-size:12px">{{ a.fromDate }} – {{ a.toDate }}</td>
+              <td style="font-size:12px">{{ a.createdBy }}</td>
+              <td>
+                <button class="view-btn teal-view" (click)="viewIcao(a, icaoModal)" title="View Details">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pager-bar" *ngIf="icaoTotalPages() > 1">
+          <button class="pager-btn" [disabled]="icaoPage===1" (click)="icaoPage=icaoPage-1">‹</button>
+          <button class="pager-btn" *ngFor="let p of visiblePageNums(icaoPage, icaoTotalPages())"
+            [class.active]="p===icaoPage" (click)="icaoPage=p">{{ p }}</button>
+          <button class="pager-btn" [disabled]="icaoPage===icaoTotalPages()" (click)="icaoPage=icaoPage+1">›</button>
+          <span class="pager-info">
+            {{ (icaoPage-1)*pageSize+1 }}–{{ endItem(icaoPage, filteredIcao.length) }} of {{ filteredIcao.length }}
+          </span>
+        </div>
+      </div>
+      <ng-template #icaoEmpty>
+        <div class="empty-box"><i class="fa fa-globe"></i><p>No ICAO audit records found.</p></div>
+      </ng-template>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SEARCH ALL TAB
+         ══════════════════════════════════════════════════════════ -->
+    <div *ngIf="activeTab === 'All'">
+
+      <!-- ── Filter Panel ─────────────────────────────────────── -->
+      <div class="search-panel">
+        <div class="search-panel-hdr">
+          <span class="search-panel-title">
+            <i class="fa fa-sliders me-2"></i>Filter Criteria
+          </span>
+          <small class="sf-required-note">
+            <i class="fa fa-asterisk me-1"></i>From Date &amp; To Date are required
+          </small>
+        </div>
+        <div class="sf-grid">
+
+          <!-- From Date -->
+          <div class="sf-group">
+            <label class="sf-label">From Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control form-control-sm"
+              [(ngModel)]="allFromDate" [class.sf-filled]="allFromDate">
+          </div>
+
+          <!-- To Date -->
+          <div class="sf-group">
+            <label class="sf-label">To Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control form-control-sm"
+              [(ngModel)]="allToDate" [class.sf-filled]="allToDate">
+          </div>
+
+          <!-- Audit Type -->
+          <div class="sf-group">
+            <label class="sf-label">Audit Type</label>
+            <select class="form-select form-select-sm" [(ngModel)]="allAuditType">
+              <option value="">All Types</option>
+              <option value="BCAS">BCAS</option>
+              <option value="ICAO">ICAO</option>
+              <option value="Internal">Internal</option>
+            </select>
+          </div>
+
+          <!-- Unit -->
+          <div class="sf-group">
+            <label class="sf-label">Unit / Airport</label>
+            <div class="sf-input-wrap">
+              <i class="fa fa-building sf-input-icon"></i>
+              <input type="text" class="form-control form-control-sm sf-has-icon"
+                placeholder="e.g. IGI Delhi, BOM…" [(ngModel)]="allUnit">
+            </div>
+          </div>
+
+          <!-- Keyword search -->
+          <div class="sf-group sf-grow">
+            <label class="sf-label">Keyword Search</label>
+            <div class="sf-input-wrap">
+              <i class="fa fa-search sf-input-icon"></i>
+              <input type="text" class="form-control form-control-sm sf-has-icon"
+                placeholder="Audit name, ref no, status…"
+                [(ngModel)]="allSearch" (keydown.enter)="runSearch()">
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="sf-group sf-actions-group">
+            <label class="sf-label">&nbsp;</label>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <button class="btn btn-sm sf-search-btn" (click)="runSearch()">
+                <i class="fa fa-search me-1"></i>Search
+              </button>
+              <button class="btn btn-sm sf-clear-btn" (click)="clearAllFilters()" title="Clear all filters">
+                <i class="fa fa-times me-1"></i>Clear
+              </button>
+              <select class="form-select form-select-sm sf-page-select" [(ngModel)]="pageSize">
+                <option *ngFor="let n of pageSizeOptions" [value]="n">{{ n }}/page</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Prompt: search not yet run ───────────────────────── -->
+      <div class="date-prompt-box" *ngIf="!hasSearched">
+        <div class="date-prompt-icon">
+          <i class="fa fa-calendar-alt"></i>
+        </div>
+        <h6 class="date-prompt-heading">Set Filters &amp; Click Search</h6>
+        <p class="text-muted small mb-0">
+          Select From Date and To Date, optionally filter by Audit Type or Unit, then click
+          <strong>Search</strong> to load matching records.
+        </p>
+      </div>
+
+      <!-- ── Results ───────────────────────────────────────────── -->
+      <ng-container *ngIf="hasSearched">
+
+        <div class="toolbar">
+          <span class="section-title">
+            <i class="fa fa-table-list me-2" style="color:#3b5bdb"></i>
+            Results
+            <span class="count-pill" style="background:#dde5ff;color:#3b5bdb">{{ searchResults.length }}</span>
+            <span *ngIf="allAuditType" class="type-badge ms-2" [ngClass]="auditTypeBadge(allAuditType)">
+              {{ allAuditType }}
+            </span>
+          </span>
+          <span class="sf-date-range-tag">
+            <i class="fa fa-calendar me-1"></i>
+            {{ formatDate(allFromDate) }} &rarr; {{ formatDate(allToDate) }}
+          </span>
+        </div>
+
+        <div class="table-card" *ngIf="searchResults.length > 0; else allEmpty">
+          <table class="table table-hover mb-0 modern-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Audit / Ref No</th>
+                <th>Unit / Airport</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>View</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of pagedAll(); let i = index">
+                <td class="text-muted" style="font-size:12px">{{ (allPage-1)*pageSize + i + 1 }}</td>
+                <td>
+                  <span class="type-badge" [ngClass]="auditTypeBadge(r.auditType)">{{ r.auditType }}</span>
+                </td>
+                <td><strong>{{ r.displayName }}</strong></td>
+                <td>{{ r.unit }}</td>
+                <td style="font-size:12px">{{ formatDate(r.date) }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="statusBadge(r)">{{ statusLabel(r) }}</span>
+                </td>
+                <td>
+                  <button class="view-btn all-view"
+                    (click)="openFromAll(r, bcasModal, internalModal, icaoModal)" title="View Details">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pager-bar" *ngIf="allTotalPages() > 1">
+            <button class="pager-btn" [disabled]="allPage===1" (click)="allPage=allPage-1">‹</button>
+            <button class="pager-btn" *ngFor="let p of visiblePageNums(allPage, allTotalPages())"
+              [class.active]="p===allPage" (click)="allPage=p">{{ p }}</button>
+            <button class="pager-btn" [disabled]="allPage===allTotalPages()" (click)="allPage=allPage+1">›</button>
+            <span class="pager-info">
+              {{ (allPage-1)*pageSize+1 }}–{{ endItem(allPage, searchResults.length) }} of {{ searchResults.length }}
+            </span>
+          </div>
+        </div>
+
+        <ng-template #allEmpty>
+          <div class="empty-box">
+            <i class="fa fa-magnifying-glass"></i>
+            <p>No audits found for the selected criteria.</p>
+            <small class="text-muted">Try adjusting the date range, audit type, or search terms.</small>
+          </div>
+        </ng-template>
+
+      </ng-container>
+    </div>
+
+  </ng-container>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     BCAS DETAIL + RESPONSE MODAL
+     Progressive — shows more info as audit advances through stages
+     ══════════════════════════════════════════════════════════════ -->
+<ng-template #bcasModal let-modal>
+  <div class="modal-header modal-hdr-purple">
+    <div>
+      <h5 class="modal-title"><i class="fa fa-shield-alt me-2"></i>BCAS Audit</h5>
+      <small style="color:#d8c9ff">{{ selectedBcas?.auditName }}</small>
+    </div>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body" *ngIf="selectedBcas">
+
+    <!-- Stage badge + created date -->
+    <div class="detail-status-row">
+      <span class="status-badge lg" [ngClass]="bcasBadge(selectedBcas.status)">
+        {{ bcasLabel(selectedBcas.status) }}
+      </span>
+      <span class="text-muted" style="font-size:12px">
+        Created: {{ selectedBcas.createdAt | date:'dd MMM yyyy' }} &nbsp;|&nbsp; By: {{ selectedBcas.createdBy }}
+      </span>
+    </div>
+
+    <!-- ── STAGE 1: Audit creation info (always visible) ─────── -->
+    <p class="stage-chip"><span>Stage 1 — Audit Created</span></p>
+    <div class="detail-grid">
+      <div class="d-field"><span class="d-label">Unit</span><span class="d-val">{{ selectedBcas.unitName }}</span></div>
+      <div class="d-field"><span class="d-label">Audit Month</span><span class="d-val">{{ formatMonth(selectedBcas.auditMonth) }}</span></div>
+      <div class="d-field"><span class="d-label">CASO</span><span class="d-val">{{ selectedBcas.casoName }}</span></div>
+      <div class="d-field"><span class="d-label">CASO Rank / No</span><span class="d-val">{{ selectedBcas.casoRank }} / {{ selectedBcas.casoNo }}</span></div>
+    </div>
+    <div class="mt-2">
+      <p class="d-label mb-1">Gist / Summary</p>
+      <div class="gist-box">{{ selectedBcas.gist || '—' }}</div>
+    </div>
+    <div class="mt-2" *ngIf="selectedBcas.files && selectedBcas.files.length">
+      <p class="d-label mb-1">PQ Documents</p>
+      <div class="file-list">
+        <div class="file-chip file-chip-btn" *ngFor="let f of selectedBcas.files"
+          (click)="openFileViewer(f.fileName, f.filePath, 'bcas', fileViewerModal)" title="View file">
+          <i class="fa" [ngClass]="getFileType(f.fileName)==='pdf' ? 'fa-file-pdf text-danger' :
+                                    getFileType(f.fileName)==='image' ? 'fa-file-image text-success' :
+                                    'fa-file text-secondary'"></i>
+          {{ f.fileName }}
+          <i class="fa fa-eye ms-1 fv-eye-hint"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STAGE 2: Final report info (visible from AUDIT_STAGE+) -->
+    <ng-container *ngIf="selectedBcas.status === 'AUDIT_STAGE' ||
+                         selectedBcas.status === 'OBSERVATION_DRAFT' ||
+                         selectedBcas.status === 'OBSERVATION_STAGE' ||
+                         selectedBcas.status === 'COMPLETED'">
+      <p class="stage-chip mt-3"><span>Stage 2 — Audit Details Submitted</span></p>
+      <div class="detail-grid">
+        <div class="d-field"><span class="d-label">From Date</span><span class="d-val">{{ selectedBcas.fromDate || '—' }}</span></div>
+        <div class="d-field"><span class="d-label">To Date</span><span class="d-val">{{ selectedBcas.toDate || '—' }}</span></div>
+        <div class="d-field"><span class="d-label">Letter No</span><span class="d-val">{{ selectedBcas.letterNo || '—' }}</span></div>
+        <div class="d-field"><span class="d-label">Letter Date</span><span class="d-val">{{ selectedBcas.letterDate || '—' }}</span></div>
+      </div>
+      <div class="mt-2" *ngIf="selectedBcas.finalReportPath">
+        <p class="d-label mb-1">Final Report</p>
+        <div class="file-chip file-chip-btn"
+          (click)="openFileViewer(selectedBcas.finalReportPath.split('\\').pop()!, selectedBcas.finalReportPath, 'bcas', fileViewerModal)"
+          title="View final report">
+          <i class="fa fa-file-pdf text-danger"></i>
+          {{ selectedBcas.finalReportPath.split('\\').pop() }}
+          <i class="fa fa-eye ms-1 fv-eye-hint"></i>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── STAGE 3: Observations (visible from OBSERVATION_STAGE+) -->
+    <ng-container *ngIf="selectedBcas.status === 'OBSERVATION_STAGE' ||
+                         selectedBcas.status === 'APS_RESPONDED'     ||
+                         selectedBcas.status === 'COMPLETED'">
+      <p class="stage-chip mt-3"><span>Stage 3 — Observations Submitted</span></p>
+      <div class="detail-grid mb-2">
+        <div class="d-field"><span class="d-label">Obs. Letter No</span><span class="d-val">{{ selectedBcas.obsLetterNo || '—' }}</span></div>
+        <div class="d-field"><span class="d-label">Obs. Letter Date</span><span class="d-val">{{ selectedBcas.obsLetterDate || '—' }}</span></div>
+      </div>
+
+      <!-- Observations list -->
+      <div *ngIf="selectedBcas.observations && selectedBcas.observations.length; else noObs">
+        <div class="obs-item"
+          [class.obs-compliant]="obsCompliances[i].complianceStatus === 'Compliant'"
+          [class.obs-dropped]="obsCompliances[i].complianceStatus === 'Dropped'"
+          *ngFor="let o of selectedBcas.observations; let i = index">
+          <div class="obs-num">{{ i+1 }}</div>
+          <div class="obs-body">
+            <p class="obs-text-val">{{ o.observationText }}</p>
+            <div class="d-flex gap-3 flex-wrap mt-1">
+              <span class="obs-meta"><strong>Type:</strong> {{ o.remarksType }}</span>
+              <span class="obs-meta">
+                <strong>CASO Compliance:</strong>
+                <span class="comp-chip-caso">{{ o.complianceStatus || '—' }}</span>
+              </span>
+              <!-- Previous APS status (from earlier rounds) -->
+              <span class="obs-meta" *ngIf="o.currentStatus && selectedBcas.status === 'OBSERVATION_STAGE'">
+                <strong>Last APS Status:</strong>
+                <span [class.text-success]="o.currentStatus==='Compliant'"
+                      [class.text-danger]="o.currentStatus==='Dropped'">
+                  {{ o.currentStatus }}
+                </span>
+                <span class="text-muted" *ngIf="o.changedByName"> ({{ o.changedByName }})</span>
+              </span>
+            </div>
+
+            <!-- APS Compliance Controls — OBSERVATION_STAGE only -->
+            <ng-container *ngIf="selectedBcas.status === 'OBSERVATION_STAGE'">
+              <div class="compliance-controls mt-2">
+                <!-- Optional buttons — clicking either one resolves the observation -->
+                <button class="comp-btn compliant"
+                  [class.selected]="obsCompliances[i].complianceStatus === 'Compliant'"
+                  (click)="setComplianceStatus(i, 'Compliant')">
+                  <i class="fa fa-check-circle"></i> Compliant
+                </button>
+                <button class="comp-btn dropped"
+                  [class.selected]="obsCompliances[i].complianceStatus === 'Dropped'"
+                  (click)="setComplianceStatus(i, 'Dropped')">
+                  <i class="fa fa-ban"></i> Dropped
+                </button>
+                <button class="comp-btn-clear"
+                  *ngIf="obsCompliances[i].complianceStatus"
+                  (click)="clearComplianceStatus(i)"
+                  title="Clear — will ask airport for current status again">
+                  <i class="fa fa-rotate-left"></i> Clear
+                </button>
+                <!-- Needs-attention dot: shown only when no status AND no remark yet -->
+                <span class="needs-remark-dot"
+                  *ngIf="obsCompliances[i].complianceStatus === '' && !obsCompliances[i].complianceRemark.trim()"
+                  title="Fill remark below OR click Compliant/Dropped">
+                  <i class="fa fa-circle-exclamation"></i> remark needed
+                </span>
+              </div>
+              <!-- Remark is the alternative to clicking a button — mandatory if no button clicked -->
+              <label class="compliance-remark-label mt-2">
+                Compliance Remarks
+                <span class="text-muted" style="font-weight:400;font-size:10px">
+                  — required if not marking Compliant / Dropped
+                </span>
+              </label>
+              <textarea class="compliance-remark-input" rows="2"
+                placeholder="Enter compliance remarks…"
+                [(ngModel)]="obsCompliances[i].complianceRemark">
+              </textarea>
+            </ng-container>
+
+            <!-- Show APS compliance result when COMPLETED -->
+            <ng-container *ngIf="selectedBcas.status === 'COMPLETED'">
+              <div class="d-flex gap-3 flex-wrap mt-1">
+                <span class="obs-meta" *ngIf="o.currentStatus">
+                  <strong>APS Status:</strong>
+                  <span [class.text-success]="o.currentStatus==='Compliant'"
+                        [class.text-danger]="o.currentStatus==='Dropped'">
+                    {{ o.currentStatus }}
+                  </span>
+                  <span class="text-muted" *ngIf="o.changedByName"> (by {{ o.changedByName }})</span>
+                </span>
+                <span class="obs-meta" *ngIf="o.complianceRemark">
+                  <strong>APS Remark:</strong> {{ o.complianceRemark }}
+                </span>
+              </div>
+            </ng-container>
+
+          </div>
+        </div>
+      </div>
+      <ng-template #noObs>
+        <p class="text-muted" style="font-size:13px">No observations on record.</p>
+      </ng-template>
+
+      <!-- ── APS Compliance Action Bar — OBSERVATION_STAGE only ── -->
+      <div class="response-section" *ngIf="selectedBcas.status === 'OBSERVATION_STAGE'">
+        <p class="response-section-title">
+          <i class="fa fa-clipboard-check"></i> APS HQrs — Compliance Review
+        </p>
+        <div class="compliance-summary-row">
+          <span class="comp-summary-chip marked" *ngIf="markedCount > 0">
+            <i class="fa fa-check-circle"></i> {{ markedCount }} observation(s) marked
+          </span>
+          <span class="comp-summary-chip pending"
+            *ngIf="(selectedBcas.observations?.length ?? 0) - markedCount > 0">
+            <i class="fa fa-clock"></i>
+            {{ (selectedBcas.observations?.length ?? 0) - markedCount }} pending —
+            airport will be asked for current status
+          </span>
+        </div>
+        <div class="response-footer">
+          <small class="text-muted me-auto" style="font-size:11px">
+            <i class="fa fa-info-circle"></i>
+            Save progress anytime. Fill remark or mark Compliant/Dropped for each observation, then Send to CASO.
+          </small>
+          <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancel</button>
+          <button class="btn btn-outline-success btn-sm" [disabled]="isSavingCompliance"
+            (click)="saveComplianceDraft()">
+            <span *ngIf="isSavingCompliance" class="spinner-border spinner-border-sm me-1"></span>
+            <i class="fa fa-floppy-disk me-1" *ngIf="!isSavingCompliance"></i>
+            Save Progress
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="openSendToCasoModal(modal)">
+            <i class="fa fa-paper-plane me-1"></i> Send to CASO
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- ── STAGE 4: APS Letter (after first send onward) ────────── -->
+    <ng-container *ngIf="selectedBcas.status === 'APS_RESPONDED' || selectedBcas.status === 'COMPLETED'">
+      <p class="stage-chip mt-3"><span>Stage 4 — APS HQrs Compliance Sent</span></p>
+      <div class="detail-grid mb-2">
+        <div class="d-field"><span class="d-label">APS Letter No</span><span class="d-val">{{ selectedBcas.apsLetterNo || '—' }}</span></div>
+        <div class="d-field"><span class="d-label">APS Letter Date</span><span class="d-val">{{ selectedBcas.apsLetterDate || '—' }}</span></div>
+      </div>
+      <div class="mt-2" *ngIf="selectedBcas.apsLetterFiles?.length">
+        <p class="d-label mb-1">APS Supporting Documents</p>
+        <div class="file-list">
+          <div class="file-chip file-chip-btn" *ngFor="let f of selectedBcas.apsLetterFiles"
+            (click)="openFileViewer(f.fileName, f.filePath, 'bcas', fileViewerModal)" title="View file">
+            <i class="fa" [ngClass]="getFileType(f.fileName)==='pdf' ? 'fa-file-pdf text-danger' :
+                                      getFileType(f.fileName)==='image' ? 'fa-file-image text-success' :
+                                      'fa-file text-secondary'"></i>
+            {{ f.fileName }}
+            <i class="fa fa-eye ms-1 fv-eye-hint"></i>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+
+  <div class="modal-footer" *ngIf="selectedBcas?.status !== 'OBSERVATION_STAGE'">
+    <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Close</button>
+  </div>
+
+</ng-template>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     INTERNAL DETAIL MODAL
+     ══════════════════════════════════════════════════════════════ -->
+<ng-template #internalModal let-modal>
+  <div class="modal-header modal-hdr-green">
+    <div>
+      <h5 class="modal-title"><i class="fa fa-building me-2"></i>Internal Audit</h5>
+      <small style="color:#b3e8d8">{{ selectedInternal?.auditRefNo }}</small>
+    </div>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" *ngIf="selectedInternal">
+    <div class="detail-status-row">
+      <span class="status-badge lg" [ngClass]="internalBadge(selectedInternal.status)">
+        {{ selectedInternal.status }}
+      </span>
+      <span class="text-muted" style="font-size:12px">
+        Ref: {{ selectedInternal.auditRefNo }} &nbsp;|&nbsp; Type: {{ selectedInternal.auditType }}
+      </span>
+    </div>
+    <div class="detail-grid">
+      <div class="d-field"><span class="d-label">Unit</span><span class="d-val">{{ selectedInternal.unit.unitName }}</span></div>
+      <div class="d-field"><span class="d-label">Airport Code</span><span class="d-val">{{ selectedInternal.unit.airportCode || '—' }}</span></div>
+      <div class="d-field"><span class="d-label">From Date</span><span class="d-val">{{ selectedInternal.auditFromDate }}</span></div>
+      <div class="d-field"><span class="d-label">To Date</span><span class="d-val">{{ selectedInternal.auditToDate }}</span></div>
+      <div class="d-field"><span class="d-label">Auditor</span><span class="d-val">{{ selectedInternal.auditorName }}</span></div>
+      <div class="d-field"><span class="d-label">Auditor Rank</span><span class="d-val">{{ selectedInternal.auditorRank || '—' }}</span></div>
+    </div>
+    <div class="mt-3" *ngIf="selectedInternal.reportFiles?.length">
+      <p class="d-label mb-1">Report Files ({{ selectedInternal.reportFiles.length }})</p>
+      <div class="file-list">
+        <div class="file-chip file-chip-btn" *ngFor="let f of selectedInternal.reportFiles"
+          [class.file-chip-no-path]="!f.filePath"
+          (click)="f.filePath ? openFileViewer(f.name, f.filePath, 'internal', fileViewerModal) : null"
+          [title]="f.filePath ? 'View file' : 'File path not available'">
+          <i class="fa" [ngClass]="getFileType(f.name)==='pdf' ? 'fa-file-pdf text-danger' :
+                                    getFileType(f.name)==='image' ? 'fa-file-image text-success' :
+                                    'fa-file text-secondary'"></i>
+          {{ f.name }}
+          <i class="fa fa-eye ms-1 fv-eye-hint" *ngIf="f.filePath"></i>
+        </div>
+      </div>
+    </div>
+    <div class="mt-3" *ngIf="selectedInternal.observations?.length">
+      <p class="d-label mb-1">Observations ({{ selectedInternal.observations.length }})</p>
+      <div class="obs-item" *ngFor="let o of selectedInternal.observations; let i = index">
+        <div class="obs-num">{{ i+1 }}</div>
+        <div class="obs-body">
+          <p class="obs-text-val">{{ o.observation }}</p>
+          <div class="d-flex gap-3 flex-wrap mt-1">
+            <span class="obs-meta"><strong>Type:</strong> {{ o.type }}</span>
+            <span class="obs-meta"><strong>Status:</strong> {{ o.status }}</span>
+            <span class="obs-meta" *ngIf="o.complianceDetails">
+              <strong>Compliance:</strong> {{ o.complianceDetails }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Close</button>
+  </div>
+</ng-template>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     ICAO DETAIL MODAL
+     ══════════════════════════════════════════════════════════════ -->
+<ng-template #icaoModal let-modal>
+  <div class="modal-header modal-hdr-teal">
+    <div>
+      <h5 class="modal-title"><i class="fa fa-globe me-2"></i>ICAO Audit</h5>
+      <small style="color:#b2ebf2">{{ selectedIcao?.auditName }}</small>
+    </div>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" *ngIf="selectedIcao">
+    <div class="detail-status-row">
+      <span class="status-badge lg" [ngClass]="icaoBadge(selectedIcao.status)">
+        {{ selectedIcao.status || 'Submitted' }}
+      </span>
+      <span class="text-muted" style="font-size:12px">
+        Created: {{ selectedIcao.createdAt | date:'dd MMM yyyy' }} &nbsp;|&nbsp; By: {{ selectedIcao.createdBy }}
+      </span>
+    </div>
+    <div class="detail-grid">
+      <div class="d-field"><span class="d-label">Unit</span><span class="d-val">{{ selectedIcao.unitName }}</span></div>
+      <div class="d-field"><span class="d-label">Audit Month</span><span class="d-val">{{ formatMonth(selectedIcao.auditMonth) }}</span></div>
+      <div class="d-field"><span class="d-label">From Date</span><span class="d-val">{{ selectedIcao.fromDate }}</span></div>
+      <div class="d-field"><span class="d-label">To Date</span><span class="d-val">{{ selectedIcao.toDate }}</span></div>
+      <div class="d-field"><span class="d-label">CASO Name</span><span class="d-val">{{ selectedIcao.casoName }}</span></div>
+      <div class="d-field"><span class="d-label">CASO Rank / No</span><span class="d-val">{{ selectedIcao.casoRank }} / {{ selectedIcao.casoNo }}</span></div>
+    </div>
+    <div class="mt-3">
+      <p class="d-label mb-1">Gist / Summary</p>
+      <div class="gist-box">{{ selectedIcao.gist || '—' }}</div>
+    </div>
+    <div class="mt-3" *ngIf="selectedIcao.files && selectedIcao.files.length">
+      <p class="d-label mb-2">Documents ({{ selectedIcao.files.length }})</p>
+      <div class="file-list">
+        <div class="file-chip file-chip-btn" *ngFor="let f of selectedIcao.files"
+          (click)="openFileViewer(f.fileName, f.filePath, 'icao', fileViewerModal)" title="View file">
+          <i class="fa" [ngClass]="getFileType(f.fileName)==='pdf' ? 'fa-file-pdf text-danger' :
+                                    getFileType(f.fileName)==='image' ? 'fa-file-image text-success' :
+                                    'fa-file text-secondary'"></i>
+          {{ f.fileName }}
+          <i class="fa fa-eye ms-1 fv-eye-hint"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Close</button>
+  </div>
+</ng-template>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SEND TO CASO MODAL — Letter no/date + supporting docs
+     ══════════════════════════════════════════════════════════════ -->
+<ng-template #sendToCasoModal let-modal>
+  <div class="modal-header" style="background:#3b5bdb;color:#fff;padding:14px 18px">
+    <div>
+      <h5 class="modal-title" style="margin:0;font-size:15px">
+        <i class="fa fa-paper-plane me-2"></i>Send Compliance Review to CASO
+      </h5>
+      <small style="color:#c5ceff;font-size:11px">
+        {{ selectedBcas?.auditName }} &nbsp;|&nbsp; {{ selectedBcas?.unitName }}
+      </small>
+    </div>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" style="padding:20px">
+    <div class="alert alert-info py-2 px-3 mb-3" style="font-size:12px">
+      <i class="fa fa-info-circle me-1"></i>
+      This will send your compliance marks and remarks to the airport CASO user.
+      Each round can have a covering letter with optional supporting documents.
+    </div>
+
+    <div class="mb-3">
+      <label class="d-label">Letter Number <span class="text-danger">*</span></label>
+      <input type="text" class="form-control form-control-sm" placeholder="e.g. BCAS/HQ/2024/001"
+        [(ngModel)]="sendToCasoLetterNo">
+    </div>
+    <div class="mb-3">
+      <label class="d-label">Letter Date <span class="text-danger">*</span></label>
+      <input type="date" class="form-control form-control-sm"
+        [(ngModel)]="sendToCasoLetterDate">
+    </div>
+    <div class="mb-2">
+      <label class="d-label">Supporting Documents <span class="text-muted">(PDF / image, optional)</span></label>
+      <input type="file" class="form-control form-control-sm" multiple accept=".pdf,.jpg,.jpeg,.png"
+        (change)="onSendToCasoFiles($event)">
+      <small class="text-muted" style="font-size:11px">
+        {{ sendToCasoFiles.length ? sendToCasoFiles.length + ' file(s) selected' : 'No files selected' }}
+      </small>
+    </div>
+
+    <div class="confirm-check-row mt-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="sendToCasoConfirmChk"
+          [(ngModel)]="sendToCasoConfirmed">
+        <label class="form-check-label" for="sendToCasoConfirmChk" style="font-size:12px;font-weight:600;color:#3b5bdb">
+          I confirm this compliance review is final and ready to send to the CASO at
+          <strong>{{ selectedBcas?.unitName }}</strong>.
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer" style="padding:10px 18px">
+    <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancel</button>
+    <button class="btn btn-primary btn-sm"
+      [disabled]="isSendingToCaso || !sendToCasoConfirmed"
+      [title]="!sendToCasoConfirmed ? 'Please tick the confirmation box before submitting' : ''"
+      (click)="submitSendToCaso(modal)">
+      <span *ngIf="isSendingToCaso" class="spinner-border spinner-border-sm me-1"></span>
+      <i class="fa fa-paper-plane me-1" *ngIf="!isSendingToCaso"></i>
+      Submit &amp; Send to CASO
+    </button>
+  </div>
+</ng-template>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     SHARED FILE VIEWER MODAL (BCAS · ICAO · Internal)
+     ══════════════════════════════════════════════════════════════ -->
+<ng-template #fileViewerModal let-modal>
+
+  <div class="fv-header">
+    <div class="fv-header-left">
+      <div class="fv-file-icon"
+        [ngClass]="{
+          'fv-icon-pdf':   getFileType(viewingFile?.fileName) === 'pdf',
+          'fv-icon-image': getFileType(viewingFile?.fileName) === 'image',
+          'fv-icon-other': getFileType(viewingFile?.fileName) === 'other'
+        }">
+        <i class="fa"
+          [ngClass]="{
+            'fa-file-pdf':   getFileType(viewingFile?.fileName) === 'pdf',
+            'fa-file-image': getFileType(viewingFile?.fileName) === 'image',
+            'fa-file':       getFileType(viewingFile?.fileName) === 'other'
+          }"></i>
+      </div>
+      <div>
+        <div class="fv-file-name">{{ viewingFile?.fileName }}</div>
+        <div class="fv-file-meta">
+          <span class="fv-badge"
+            [ngClass]="{
+              'fv-badge-pdf':   getFileType(viewingFile?.fileName) === 'pdf',
+              'fv-badge-image': getFileType(viewingFile?.fileName) === 'image',
+              'fv-badge-other': getFileType(viewingFile?.fileName) === 'other'
+            }">
+            {{ getFileType(viewingFile?.fileName).toUpperCase() }}
+          </span>
+          <span class="fv-dot">•</span>
+          <span style="font-size:11px;color:#9ca3af;">Audit Document</span>
+        </div>
+      </div>
+    </div>
+    <button class="fv-close" (click)="closeFileViewer(modal)">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+
+  <div class="fv-body">
+    <div class="fv-loader" *ngIf="!viewingFileUrl">
+      <div class="fv-spinner"><div class="fv-spin-ring"></div></div>
+      <p class="fv-loader-text">Loading document…</p>
+      <small style="color:#6c757d;">Fetching from server</small>
+    </div>
+    <div class="fv-pdf-wrap" *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'pdf'">
+      <iframe class="fv-iframe" [src]="viewingFileUrl" type="application/pdf"></iframe>
+    </div>
+    <div class="fv-image-wrap" *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'image'">
+      <img class="fv-image" [src]="viewingFileUrl" [alt]="viewingFile?.fileName">
+    </div>
+    <div class="fv-unsupported" *ngIf="viewingFileUrl && getFileType(viewingFile?.fileName) === 'other'">
+      <div class="fv-unsupported-icon"><i class="fa fa-file"></i></div>
+      <h6 class="mt-3">Preview not available</h6>
+      <p class="text-muted small">This file type cannot be displayed inline.</p>
+    </div>
+  </div>
+
+  <div class="fv-footer">
+    <div class="fv-footer-left">
+      <small style="color:#6c757d;font-size:11px;">
+        <i class="fa fa-lock me-1"></i>Accessed via secure JWT session
+      </small>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary text-white border-secondary"
+      (click)="closeFileViewer(modal)">Close</button>
+  </div>
+
+</ng-template>
