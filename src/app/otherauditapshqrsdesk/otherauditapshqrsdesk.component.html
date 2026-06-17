@@ -94,7 +94,7 @@
 
       <div class="table-card" *ngIf="filteredBcas.length > 0; else bcasEmpty">
         <table class="table table-hover mb-0 modern-table">
-          <thead>
+          <thead class="table-dark">
             <tr>
               <th>#</th><th>Audit Name</th><th>Unit</th><th>Month</th>
               <th>CASO</th><th>Stage</th><th>Created By</th><th>View</th>
@@ -160,7 +160,7 @@
 
       <div class="table-card" *ngIf="filteredInternal.length > 0; else internalEmpty">
         <table class="table table-hover mb-0 modern-table">
-          <thead>
+          <thead class="table-dark">
             <tr>
               <th>#</th><th>Ref No</th><th>Unit</th><th>From Date</th>
               <th>Auditor</th><th>Status</th><th>To Date</th><th>View</th>
@@ -221,7 +221,7 @@
 
       <div class="table-card" *ngIf="filteredIcao.length > 0; else icaoEmpty">
         <table class="table table-hover mb-0 modern-table">
-          <thead>
+          <thead class="table-dark">
             <tr>
               <th>#</th><th>Audit Name</th><th>Unit</th><th>Month</th>
               <th>CASO</th><th>Dates</th><th>Created By</th><th>View</th>
@@ -373,7 +373,7 @@
 
         <div class="table-card" *ngIf="searchResults.length > 0; else allEmpty">
           <table class="table table-hover mb-0 modern-table">
-            <thead>
+            <thead class="table-dark">
               <tr>
                 <th>#</th>
                 <th>Type</th>
@@ -486,6 +486,7 @@
     <ng-container *ngIf="selectedBcas.status === 'AUDIT_STAGE' ||
                          selectedBcas.status === 'OBSERVATION_DRAFT' ||
                          selectedBcas.status === 'OBSERVATION_STAGE' ||
+                         selectedBcas.status === 'APS_RESPONDED'     ||
                          selectedBcas.status === 'COMPLETED'">
       <p class="stage-chip mt-3"><span>Stage 2 — Audit Details Submitted</span></p>
       <div class="detail-grid">
@@ -531,9 +532,9 @@
                 <strong>CASO Compliance:</strong>
                 <span class="comp-chip-caso">{{ o.complianceStatus || '—' }}</span>
               </span>
-              <!-- Previous APS status (from earlier rounds) -->
-              <span class="obs-meta" *ngIf="o.currentStatus && selectedBcas.status === 'OBSERVATION_STAGE'">
-                <strong>Last APS Status:</strong>
+              <!-- Compliance status details — shown in all stages for full trail -->
+              <span class="obs-meta" *ngIf="o.currentStatus">
+                <strong>Compliance Status Details:</strong>
                 <span [class.text-success]="o.currentStatus==='Compliant'"
                       [class.text-danger]="o.currentStatus==='Dropped'">
                   {{ o.currentStatus }}
@@ -586,7 +587,7 @@
             <ng-container *ngIf="selectedBcas.status === 'COMPLETED'">
               <div class="d-flex gap-3 flex-wrap mt-1">
                 <span class="obs-meta" *ngIf="o.currentStatus">
-                  <strong>APS Status:</strong>
+                  <strong>Compliance Status Details:</strong>
                   <span [class.text-success]="o.currentStatus==='Compliant'"
                         [class.text-danger]="o.currentStatus==='Dropped'">
                     {{ o.currentStatus }}
@@ -596,6 +597,53 @@
                 <span class="obs-meta" *ngIf="o.complianceRemark">
                   <strong>APS Remark:</strong> {{ o.complianceRemark }}
                 </span>
+              </div>
+            </ng-container>
+
+            <!-- ── Status change history thread ─────────────────────── -->
+            <p *ngIf="o.messages && o.messages.length > 0" class="small fw-bold text-secondary mt-3 mb-1">
+              <i class="fa fa-history me-1"></i> Status Change History
+            </p>
+            <ng-container *ngIf="o.messages && o.messages.length > 0">
+              <div class="obs-thread mt-2">
+
+                <div *ngFor="let msg of o.messages"
+                  class="thread-entry" [ngClass]="msg.sender === 'APS' ? 'thread-aps' : 'thread-caso'">
+                  <div class="thread-avatar" [ngClass]="msg.sender === 'APS' ? 'aps-avatar' : 'caso-avatar'">
+                    <i class="fa" [ngClass]="msg.sender === 'APS' ? 'fa-user-tie' : 'fa-user-shield'"></i>
+                  </div>
+                  <div class="thread-content">
+                    <div class="thread-meta">
+                      <span class="thread-sender-name">{{ msg.sender === 'APS' ? 'APS HQrs' : 'Airport CASO' }}</span>
+                      <span class="text-muted ms-1" style="font-size:10px">{{ msg.senderName }}</span>
+                      <span *ngIf="msg.replyStatus" class="thread-status-chip ms-2"
+                        [ngClass]="msg.replyStatus==='Compliant' ? 'chip-green' : msg.replyStatus==='Dropped' ? 'chip-red' : 'chip-orange'">
+                        {{ msg.replyStatus }}
+                      </span>
+                      <span class="thread-time ms-auto">{{ msg.entryDate }}<span *ngIf="msg.entryTime"> | {{ msg.entryTime }}</span></span>
+                    </div>
+                    <div *ngIf="msg.letterNo" class="thread-letter-info">
+                      <i class="fa fa-envelope me-1"></i>
+                      Letter: <strong>{{ msg.letterNo }}</strong>
+                      <span *ngIf="msg.letterDate"> dated {{ msg.letterDate | date:'dd MMM yyyy' }}</span>
+                    </div>
+                    <div class="thread-text">{{ msg.message }}</div>
+                    <div *ngIf="msg.attachmentStatus === 'Attached' && msg.filePath" class="mt-1">
+                      <button class="btn btn-sm thread-doc-btn"
+                        (click)="openFileViewer(msg.fileName || 'Document', msg.filePath!, 'bcas', fileViewerModal)">
+                        <i class="fa fa-paperclip me-1"></i>{{ msg.fileName || 'View Document' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Awaiting reply indicator for open observations -->
+              <div class="thread-waiting mt-2"
+                *ngIf="selectedBcas.status === 'APS_RESPONDED' && o.currentStatus !== 'Compliant' && o.currentStatus !== 'Dropped'">
+                <i class="fa fa-hourglass-half me-1"></i>
+                Awaiting airport response on current compliance status
               </div>
             </ng-container>
 
@@ -642,27 +690,6 @@
 
     </ng-container>
 
-    <!-- ── STAGE 4: APS Letter (after first send onward) ────────── -->
-    <ng-container *ngIf="selectedBcas.status === 'APS_RESPONDED' || selectedBcas.status === 'COMPLETED'">
-      <p class="stage-chip mt-3"><span>Stage 4 — APS HQrs Compliance Sent</span></p>
-      <div class="detail-grid mb-2">
-        <div class="d-field"><span class="d-label">APS Letter No</span><span class="d-val">{{ selectedBcas.apsLetterNo || '—' }}</span></div>
-        <div class="d-field"><span class="d-label">APS Letter Date</span><span class="d-val">{{ selectedBcas.apsLetterDate || '—' }}</span></div>
-      </div>
-      <div class="mt-2" *ngIf="selectedBcas.apsLetterFiles?.length">
-        <p class="d-label mb-1">APS Supporting Documents</p>
-        <div class="file-list">
-          <div class="file-chip file-chip-btn" *ngFor="let f of selectedBcas.apsLetterFiles"
-            (click)="openFileViewer(f.fileName, f.filePath, 'bcas', fileViewerModal)" title="View file">
-            <i class="fa" [ngClass]="getFileType(f.fileName)==='pdf' ? 'fa-file-pdf text-danger' :
-                                      getFileType(f.fileName)==='image' ? 'fa-file-image text-success' :
-                                      'fa-file text-secondary'"></i>
-            {{ f.fileName }}
-            <i class="fa fa-eye ms-1 fv-eye-hint"></i>
-          </div>
-        </div>
-      </div>
-    </ng-container>
 
   </div>
 

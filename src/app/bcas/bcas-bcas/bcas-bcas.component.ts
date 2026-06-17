@@ -9,7 +9,8 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UnitDetails } from '../../interface/UnitDetails';
 import { UserRoleDetails } from '../../interface/UserRoleDetails';
 import { User } from '../../interface/User';
-import { BcasAuditRecord, BcasAuditFile } from '../../interface/BcasAuditRecord';
+import { BcasAuditRecord, BcasAuditFile, BcasObsMessage, type CasoReplyDraft } from '../../interface/BcasAuditRecord';
+import { APP_CONSTANTS } from '../../constants/app.constants';
 import { UnitService } from '../../service/unit.service';
 import { UsermanagementService } from '../../service/usermanagement.service';
 import { BcasAuditService } from '../../service/bcas-audit.service';
@@ -75,31 +76,60 @@ export class BcasBcasComponent implements OnInit {
   isDraftLoading    = false;
   showCreateConfirm = false;
   showAuditConfirm  = false;
-  obsFormSaved      = false;
-  showObsConfirm    = false;
+  obsFormSaved       = false;
+  showObsConfirm     = false;
+  obsSubmitAttempted = false;
   draftId: number | null = null;
   draftFiles: BcasAuditFile[] = [];
   draftSavedAt: string | null = null;
 
+  // ── APS reply state ────────────────────────────────────────────
+  baseUrl = APP_CONSTANTS.FILES.BASE_URL;
+  apsReplyAudit: BcasAuditRecord | null = null;
+  casoReplies: {
+    observationId?: number;
+    obsText: string;
+    replyMessage: string;
+    replyStatus: string;
+    messages: BcasObsMessage[];
+    isOpen: boolean;
+    replyFile: File | null;
+  }[] = [];
+  casoReplyLetterNo   = '';
+  casoReplyLetterDate = '';
+  isSubmittingReply    = false;
+  isSavingDraft        = false;
+  casoReplyDraftSavedAt: string | null = null;
+
   get selectedUnitName(): string {
-    return this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId))?.unitName || '—';
+    return this.units.find(u => Number(u.id) === Number(this.createForm.getRawValue().unitId))?.unitName
+      ?? this.loggedUser?.unitmaster?.unitName
+      ?? '—';
   }
 
   private profileLoaded = false;
   private unitsLoaded   = false;
 
   // ── Stats ──────────────────────────────────────────────────────
-  get totalAudits()      { return this.audits.length; }
-  get pqStageCount()     { return this.audits.filter(a => a.status === 'PQ_STAGE').length; }
-  get auditStageCount()  { return this.audits.filter(a => a.status === 'AUDIT_STAGE').length; }
-  get observationCount() { return this.audits.filter(a => a.status === 'OBSERVATION_STAGE').length; }
-  get completedCount()   { return this.audits.filter(a => a.status === 'COMPLETED').length; }
+  get totalAudits()        { return this.audits.length; }
+  get pqStageCount()       { return this.audits.filter(a => a.status === 'PQ_STAGE').length; }
+  get auditStageCount()    { return this.audits.filter(a => a.status === 'AUDIT_STAGE').length; }
+  get observationCount()   { return this.audits.filter(a => a.status === 'OBSERVATION_STAGE').length; }
+  get apsRespondedCount()  { return this.audits.filter(a => a.status === 'APS_RESPONDED').length; }
+  get completedCount()     { return this.audits.filter(a => a.status === 'COMPLETED').length; }
 
   // ── Pagination ─────────────────────────────────────────────────
   get filteredAudits() {
+    let result = this.audits;
+
+    // Restrict to logged-in user's unit
+    if (this.loggedUser?.unitid != null) {
+      result = result.filter(a => Number(a.unitId) === Number(this.loggedUser!.unitid));
+    }
+
     const q = this.searchText.toLowerCase().trim();
-    if (!q) return this.audits;
-    return this.audits.filter(a =>
+    if (!q) return result;
+    return result.filter(a =>
       a.auditName?.toLowerCase().includes(q) ||
       a.unitName?.toLowerCase().includes(q)  ||
       a.casoName?.toLowerCase().includes(q)  ||
@@ -134,7 +164,7 @@ export class BcasBcasComponent implements OnInit {
   ) {
     this.createForm = this.fb.group({
       name:       new FormControl({ value: '', disabled: true }),
-      unitId:     new FormControl('', [Validators.required]),
+      unitId:     new FormControl({ value: '', disabled: true }),
       auditMonth: new FormControl('', [Validators.required]),
       gist:       new FormControl('', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)])
     });
@@ -165,9 +195,10 @@ export class BcasBcasComponent implements OnInit {
   }
 
   private loadUserProfile() {
-    this.umService.getUserProfileDetails().subscribe({
-      next: (user: User) => {
-        this.loggedUser = user;
+    // Use master endpoint — it includes unitid (auth /userprofile does not)
+    this.umService.getLoggedUserDetailList().subscribe({
+      next: (users: User[]) => {
+        if (users.length > 0) this.loggedUser = users[0];
         this.profileLoaded = true;
         this.tryAutoFillUnit();
       },
@@ -213,7 +244,7 @@ export class BcasBcasComponent implements OnInit {
   // ── Form helpers ───────────────────────────────────────────────
 
   private generateName() {
-    const unitId     = this.createForm.get('unitId')?.value;
+    const unitId     = this.createForm.getRawValue().unitId;
     const auditMonth = this.createForm.get('auditMonth')?.value;
     if (unitId && auditMonth) {
       const unit = this.units.find(u => Number(u.id) === Number(unitId));
@@ -227,7 +258,7 @@ export class BcasBcasComponent implements OnInit {
   }
 
   onUnitChange() {
-    const unitId = Number(this.createForm.get('unitId')?.value);
+    const unitId = Number(this.createForm.getRawValue().unitId);
     const unit   = this.units.find(u => u.id === unitId);
     if (!unit) return;
     this.casoName = unit.casoName ?? '';
@@ -320,8 +351,9 @@ export class BcasBcasComponent implements OnInit {
   openObservationModal(audit: BcasAuditRecord, content: any) {
     this.selectedAudit  = audit;
     this.isViewObsMode  = audit.status === 'OBSERVATION_STAGE' || audit.status === 'COMPLETED';
-    this.obsFormSaved   = false;
-    this.showObsConfirm = false;
+    this.obsFormSaved        = false;
+    this.showObsConfirm      = false;
+    this.obsSubmitAttempted  = false;
     if (!this.isViewObsMode) {
       this.observationRows = [this.newObsRow()];
       this.obsLetterNo     = '';
@@ -334,8 +366,9 @@ export class BcasBcasComponent implements OnInit {
   openAddObservationModal(audit: BcasAuditRecord, content: any) {
     this.selectedAudit   = audit;
     this.isViewObsMode   = false;
-    this.obsFormSaved    = false;
-    this.showObsConfirm  = false;
+    this.obsFormSaved        = false;
+    this.showObsConfirm      = false;
+    this.obsSubmitAttempted  = false;
     this.observationRows = [this.newObsRow()];
     this.obsLetterNo     = '';
     this.obsLetterDate   = '';
@@ -382,14 +415,19 @@ export class BcasBcasComponent implements OnInit {
       this.toast.show('Please fill all required fields.', 'error');
       return;
     }
+    if (this.selectedPqFiles.length === 0 && this.draftFiles.length === 0) {
+      this.toast.show('Please upload at least one PQ Question & Answer file (PDF).', 'error');
+      return;
+    }
 
-    const unit = this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId));
+    const raw  = this.createForm.getRawValue();
+    const unit = this.units.find(u => Number(u.id) === Number(raw.unitId));
     const fd = new FormData();
-    fd.append('auditName',   this.createForm.getRawValue().name);
-    fd.append('unitId',      String(this.createForm.value.unitId));
+    fd.append('auditName',   raw.name);
+    fd.append('unitId',      String(raw.unitId));
     fd.append('unitName',    unit?.unitName ?? '');
-    fd.append('auditMonth',  this.createForm.value.auditMonth);
-    fd.append('gist',        this.createForm.value.gist);
+    fd.append('auditMonth',  raw.auditMonth);
+    fd.append('gist',        raw.gist);
     fd.append('createdBy',   this.loggedUser?.mstr_name ?? '');
     fd.append('createdById', String(this.loggedUser?.id ?? 0));
     fd.append('casoId',      String(this.casoId));
@@ -472,13 +510,14 @@ export class BcasBcasComponent implements OnInit {
       this.bcasService.promoteBcasDraft(this.draftId).subscribe({ next: onSuccess, error: onError });
     } else {
       // No draft on server (edge case) — create directly
-      const unit = this.units.find(u => Number(u.id) === Number(this.createForm.value.unitId));
+      const raw2 = this.createForm.getRawValue();
+      const unit = this.units.find(u => Number(u.id) === Number(raw2.unitId));
       const fd   = new FormData();
-      fd.append('auditName',   this.createForm.getRawValue().name);
-      fd.append('unitId',      String(this.createForm.value.unitId));
+      fd.append('auditName',   raw2.name);
+      fd.append('unitId',      String(raw2.unitId));
       fd.append('unitName',    unit?.unitName ?? '');
-      fd.append('auditMonth',  this.createForm.value.auditMonth);
-      fd.append('gist',        this.createForm.value.gist);
+      fd.append('auditMonth',  raw2.auditMonth);
+      fd.append('gist',        raw2.gist);
       fd.append('createdBy',   this.loggedUser?.mstr_name ?? '');
       fd.append('createdById', String(this.loggedUser?.id ?? 0));
       fd.append('casoId',      String(this.casoId));
@@ -495,6 +534,16 @@ export class BcasBcasComponent implements OnInit {
   saveAuditStage() {
     if (this.isSubmitting || !this.selectedAudit) return;
     this.showAuditConfirm = false;
+
+    this.updateForm.markAllAsTouched();
+    if (this.updateForm.invalid) {
+      this.toast.show('Please fill all required fields.', 'error');
+      return;
+    }
+    if (!this.selectedFinalReport && !this.selectedAudit.finalReportPath) {
+      this.toast.show('Please upload the Final Audit Report PDF.', 'error');
+      return;
+    }
 
     const fd = new FormData();
     fd.append('auditId',    String(this.selectedAudit.id));
@@ -548,6 +597,12 @@ export class BcasBcasComponent implements OnInit {
       this.toast.show('Please enter observation text for each row.', 'error');
       return;
     }
+    const allStatusFilled = this.observationRows.every(r => r.currentStatus.trim().length > 0);
+    if (!allStatusFilled) {
+      this.obsSubmitAttempted = true;
+      this.toast.show('Please enter current compliance status for each observation.', 'error');
+      return;
+    }
 
     if (!this.selectedAudit?.id) { this.obsFormSaved = true; return; }
 
@@ -582,6 +637,18 @@ export class BcasBcasComponent implements OnInit {
   saveObservations() {
     if (this.isSubmitting || !this.selectedAudit) return;
     this.showObsConfirm = false;
+
+    const allTextFilled   = this.observationRows.every(r => r.observationText.trim().length > 0);
+    const allStatusFilled = this.observationRows.every(r => r.currentStatus.trim().length > 0);
+    if (!allTextFilled) {
+      this.toast.show('Please enter observation text for each row.', 'error');
+      return;
+    }
+    if (!allStatusFilled) {
+      this.obsSubmitAttempted = true;
+      this.toast.show('Please enter current compliance status for each observation.', 'error');
+      return;
+    }
 
     const obsPayload = this.observationRows.map(r => ({
       observationText: r.observationText,
@@ -669,6 +736,7 @@ export class BcasBcasComponent implements OnInit {
       case 'AUDIT_STAGE':        return 'badge-audit';
       case 'OBSERVATION_DRAFT':  return 'badge-obs-draft';
       case 'OBSERVATION_STAGE':  return 'badge-obs';
+      case 'APS_RESPONDED':      return 'badge-aps';
       case 'COMPLETED':          return 'badge-done';
       default:                   return 'badge-secondary';
     }
@@ -680,8 +748,148 @@ export class BcasBcasComponent implements OnInit {
       case 'AUDIT_STAGE':        return 'Audit Stage';
       case 'OBSERVATION_DRAFT':  return 'Obs. Draft';
       case 'OBSERVATION_STAGE':  return 'Observation';
+      case 'APS_RESPONDED':      return 'APS Responded';
       case 'COMPLETED':          return 'Completed';
       default:                   return status;
     }
+  }
+
+  /** Returns which party needs to act next, or null when complete. */
+  getActionBucket(status: string): { label: string; css: string } | null {
+    switch (status) {
+      case 'PQ_STAGE':
+      case 'AUDIT_STAGE':
+      case 'OBSERVATION_DRAFT':  return { label: 'CASO Bucket',     css: 'bucket-caso' };
+      case 'OBSERVATION_STAGE':
+      case 'APS_RESPONDED':      return { label: 'APS HQrs Bucket', css: 'bucket-aps' };
+      case 'COMPLETED':          return { label: 'Completed',        css: 'bucket-done' };
+      default:                   return null;
+    }
+  }
+
+  // ── Open APS response modal (airport CASO views thread and replies) ──────
+  openApsResponseModal(audit: BcasAuditRecord, content: any) {
+    this.apsReplyAudit         = audit;
+    this.casoReplyLetterNo     = '';
+    this.casoReplyLetterDate   = '';
+    this.casoReplyDraftSavedAt = null;
+    this.casoReplies = (audit.observations ?? []).map(o => ({
+      observationId: o.id,
+      obsText:       o.observationText,
+      replyMessage:  '',
+      replyStatus:   o.complianceStatus || '',
+      messages:      o.messages ?? [],
+      isOpen:        o.currentStatus !== 'Compliant' && o.currentStatus !== 'Dropped',
+      replyFile:     null
+    }));
+
+    // Load any saved draft and pre-populate
+    if (audit.id) {
+      this.bcasService.getCasoReplyDraft(audit.id).subscribe({
+        next: (draft: CasoReplyDraft | null) => {
+          if (!draft) return;
+          this.casoReplyLetterNo   = draft.letterNo   ?? '';
+          this.casoReplyLetterDate = draft.letterDate ?? '';
+          draft.obsReplies?.forEach(dr => {
+            const r = this.casoReplies.find(c => c.observationId === dr.observationId);
+            if (r && r.isOpen) {
+              r.replyMessage = dr.replyMessage ?? '';
+              r.replyStatus  = dr.replyStatus  ?? r.replyStatus;
+            }
+          });
+          this.casoReplyDraftSavedAt = 'Draft restored';
+        }
+      });
+    }
+
+    this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false, scrollable: true });
+  }
+
+  saveReplyDraft() {
+    if (!this.apsReplyAudit?.id) return;
+    const draft = {
+      letterNo:   this.casoReplyLetterNo.trim(),
+      letterDate: this.casoReplyLetterDate,
+      obsReplies: this.casoReplies.filter(r => r.isOpen).map(r => ({
+        observationId: r.observationId,
+        replyMessage:  r.replyMessage,
+        replyStatus:   r.replyStatus
+      }))
+    };
+    this.isSavingDraft = true;
+    this.bcasService.saveCasoReplyDraft(this.apsReplyAudit.id, draft).subscribe({
+      next: () => {
+        this.isSavingDraft        = false;
+        this.casoReplyDraftSavedAt = 'Saved at ' + new Date().toLocaleTimeString();
+        this.toast.show('Draft saved. You can continue later.', 'success');
+      },
+      error: (err: any) => {
+        this.isSavingDraft = false;
+        const msg = typeof err?.error === 'string' ? err.error : 'Failed to save draft';
+        this.toast.show(msg, 'error');
+      }
+    });
+  }
+
+  get hasOpenReplies(): boolean {
+    return this.casoReplies.some(r => r.isOpen);
+  }
+
+  onObsFileSelected(event: Event, idx: number) {
+    const input = event.target as HTMLInputElement;
+    this.casoReplies[idx].replyFile = input.files?.[0] ?? null;
+  }
+
+  buildBcasFileUrl(filePath: string): string {
+    return this.baseUrl + 'v1/qcmt/master/bcasfile?fullPath=' + encodeURIComponent(filePath);
+  }
+
+  submitCasoReply(modal: any) {
+    if (!this.apsReplyAudit?.id) return;
+
+    if (!this.casoReplyLetterNo.trim()) {
+      this.toast.show('Please enter the reply letter number.', 'error'); return;
+    }
+    if (!this.casoReplyLetterDate) {
+      this.toast.show('Please enter the reply letter date.', 'error'); return;
+    }
+
+    const openReplies = this.casoReplies.filter(r => r.isOpen);
+    const missing = openReplies.filter(r => !r.replyMessage.trim());
+    if (missing.length > 0) {
+      this.toast.show('Please enter a reply for all pending observations.', 'error'); return;
+    }
+
+    const repliesPayload = openReplies.map(r => ({
+      observationId: r.observationId,
+      replyMessage:  r.replyMessage,
+      replyStatus:   r.replyStatus
+    }));
+
+    const fd = new FormData();
+    fd.append('letterNo',   this.casoReplyLetterNo.trim());
+    fd.append('letterDate', this.casoReplyLetterDate);
+    fd.append('replies',    JSON.stringify(repliesPayload));
+    openReplies.forEach(r => {
+      if (r.replyFile && r.observationId) {
+        fd.append(`file_${r.observationId}`, r.replyFile, r.replyFile.name);
+      }
+    });
+
+    this.isSubmittingReply = true;
+    this.bcasService.submitCasoReply(this.apsReplyAudit.id, fd).subscribe({
+      next: (msg: string) => {
+        this.toast.show(msg || 'Reply submitted to APS HQRs.', 'success');
+        this.isSubmittingReply    = false;
+        this.casoReplyDraftSavedAt = null;
+        modal.dismiss();
+        this.loadAudits();
+      },
+      error: (err: any) => {
+        this.isSubmittingReply = false;
+        const errMsg = typeof err?.error === 'string' ? err.error : (err?.message ?? 'Unknown error');
+        this.toast.show('Failed to submit reply: ' + errMsg, 'error');
+      }
+    });
   }
 }

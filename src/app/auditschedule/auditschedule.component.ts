@@ -15,6 +15,7 @@ import { UnitService } from '../service/unit.service';
 import { UnitDetails } from '../interface/UnitDetails';
 import { UsermanagementService } from '../service/usermanagement.service';
 import { UserRoleDetails } from '../interface/UserRoleDetails';
+import { User } from '../interface/User';
 import { AuditscheduleserviceService } from '../service/auditscheduleservice.service';
 import { AuditTemplateGen } from '../interface/AuditTemplateGen';
 import { ToastService } from '../service/toast.service';

@@ -7,7 +7,7 @@
   </div>
 
   <!-- ── STATUS CARDS ──────────────────────────────────────────────── -->
-  <div class="status-grid">
+  <div class="status-grid" style="grid-template-columns: repeat(5, 1fr)">
     <div class="status-card blue">
       <h4>Total Audits</h4>
       <div class="value-section">
@@ -27,6 +27,13 @@
       <div class="value-section">
         <span class="value">{{ auditStageCount }}</span>
         <i class="fa fa-search"></i>
+      </div>
+    </div>
+    <div class="status-card orange">
+      <h4>APS Responded</h4>
+      <div class="value-section">
+        <span class="value">{{ apsRespondedCount }}</span>
+        <i class="fa fa-reply"></i>
       </div>
     </div>
     <div class="status-card green">
@@ -88,6 +95,13 @@
             <span class="status-badge" [ngClass]="getStatusBadgeClass(audit.status)">
               {{ getStatusLabel(audit.status) }}
             </span>
+            <ng-container *ngIf="getActionBucket(audit.status) as bucket">
+              <br>
+              <span class="action-bucket-badge mt-1" [ngClass]="bucket.css">
+                <i class="fa" [ngClass]="bucket.css === 'bucket-aps' ? 'fa-university' : bucket.css === 'bucket-caso' ? 'fa-building' : 'fa-check-circle'"></i>
+                {{ bucket.label }}
+              </span>
+            </ng-container>
           </td>
           <!-- Actions: buttons shown based on workflow stage -->
           <td>
@@ -118,6 +132,13 @@
                 class="action-btn ab-view-obs" title="View Observations"
                 (click)="openObservationModal(audit, observationModal)">
                 <i class="fa fa-clipboard-list"></i>
+              </button>
+
+              <!-- Step 4: APS has responded — airport can view & reply -->
+              <button *ngIf="audit.status === 'APS_RESPONDED'"
+                class="action-btn ab-reply" title="View APS Response & Reply"
+                (click)="openApsResponseModal(audit, apsResponseModal)">
+                <i class="fa fa-reply"></i>
               </button>
 
             </div>
@@ -195,16 +216,14 @@
           <small>Auto-generated from unit and month.</small>
         </div>
 
-        <!-- Unit -->
+        <!-- Unit (locked to logged-in user's unit) -->
         <div class="col-md-6">
-          <label class="form-label">Unit <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="unitId" (change)="onUnitChange()"
-            [class.is-invalid]="createForm.get('unitId')?.invalid && createForm.get('unitId')?.touched">
-            <option value="" disabled>Select Unit</option>
-            <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
-          </select>
-          <small class="text-muted">Pre-filled from your login unit.</small>
-          <div class="invalid-feedback">Unit is required.</div>
+          <label class="form-label">Unit</label>
+          <div class="form-control bg-light d-flex align-items-center gap-2">
+            <i class="fa fa-building text-secondary"></i>
+            <span class="fw-semibold">{{ selectedUnitName }}</span>
+          </div>
+          <small class="text-muted">Locked to your assigned unit.</small>
         </div>
 
         <!-- Audit Month -->
@@ -255,7 +274,7 @@
 
         <!-- PQ Files -->
         <div class="col-12">
-          <label class="form-label">PQ Question &amp; Answer Files (PDF only)</label>
+          <label class="form-label">PQ Question &amp; Answer Files (PDF only) <span class="text-danger">*</span></label>
 
           <!-- Files already saved to DB from a previous draft save -->
           <div *ngIf="draftFiles.length > 0" class="mb-2">
@@ -280,6 +299,11 @@
           </div>
           <input #pqFileInput type="file" class="d-none" accept=".pdf" multiple
             (change)="onPqFilesSelected($event)">
+          <div *ngIf="createForm.touched && selectedPqFiles.length === 0 && draftFiles.length === 0"
+            class="small text-danger mt-1">
+            <i class="fa fa-exclamation-circle me-1"></i>
+            At least one PQ file is required.
+          </div>
           <div *ngIf="selectedPqFiles.length > 0" class="mt-2">
             <div *ngFor="let f of selectedPqFiles; let i = index"
               class="selected-file-row d-flex align-items-center justify-content-between p-2 border rounded mb-1 bg-light">
@@ -503,7 +527,10 @@
         </div>
 
         <div class="col-12">
-          <label class="form-label">Final Audit Report (PDF)</label>
+          <label class="form-label">
+            Final Audit Report (PDF)
+            <span *ngIf="!selectedAudit?.finalReportPath" class="text-danger">*</span>
+          </label>
           <div class="file-drop-zone" (click)="finalReportInput.click()">
             <i class="fa fa-file-pdf fa-2x text-danger mb-1 d-block"></i>
             <p class="mb-0 small"
@@ -514,9 +541,13 @@
           </div>
           <input #finalReportInput type="file" class="d-none" accept=".pdf"
             (change)="onFinalReportSelected($event)">
-          <small *ngIf="selectedAudit?.finalReportPath" class="text-success">
+          <small *ngIf="selectedAudit?.finalReportPath" class="text-success d-block mt-1">
             <i class="fa fa-check-circle me-1"></i>Final report already uploaded. Upload again to replace.
           </small>
+          <div *ngIf="updateForm.touched && !selectedFinalReport && !selectedAudit?.finalReportPath"
+            class="small text-danger mt-1">
+            <i class="fa fa-exclamation-circle me-1"></i>Final Audit Report PDF is required.
+          </div>
         </div>
 
       </div>
@@ -597,7 +628,7 @@
             </div>
             <div *ngIf="obs.currentStatus" class="obs-cur-status-text mt-1">
               <i class="fa fa-comment-dots me-1 text-secondary"></i>
-              <span class="text-muted small fw-semibold me-1">Current Status:</span>{{ obs.currentStatus }}
+              <span class="text-muted small fw-semibold me-1">Compliance Status Details:</span>{{ obs.currentStatus }}
             </div>
             <div *ngIf="obs.supportingDocPath" class="mt-2">
               <button class="btn btn-sm obs-doc-view-btn"
@@ -690,10 +721,15 @@
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold mb-1">
-                <i class="fa fa-comment-dots me-1 text-secondary"></i>Current Status / Compliance Description
+                <i class="fa fa-comment-dots me-1 text-secondary"></i>Compliance Status Details
+                <span class="text-danger">*</span>
               </label>
               <textarea class="form-control form-control-sm" rows="2" [(ngModel)]="row.currentStatus"
+                [class.is-invalid]="obsSubmitAttempted && !row.currentStatus.trim()"
                 placeholder="Describe current compliance action taken or status update..."></textarea>
+              <div *ngIf="obsSubmitAttempted && !row.currentStatus.trim()" class="invalid-feedback d-block">
+                Current compliance status is required.
+              </div>
             </div>
             <div class="col-12">
               <label class="form-label small fw-bold mb-1">
@@ -782,7 +818,7 @@
             </div>
             <div *ngIf="row.currentStatus" class="obs-cur-status-text mt-1">
               <i class="fa fa-comment-dots me-1 text-secondary"></i>
-              <span class="text-muted small fw-semibold me-1">Current Status:</span>{{ row.currentStatus }}
+              <span class="text-muted small fw-semibold me-1">Compliance Status Details:</span>{{ row.currentStatus }}
             </div>
             <div *ngIf="row.supportingDoc" class="mt-1">
               <span class="badge bg-secondary">
@@ -1087,10 +1123,16 @@
               <span class="status-badge" [ngClass]="formatStatusClass(obs.complianceStatus)">
                 {{ obs.complianceStatus }}
               </span>
+              <!-- Closed indicator -->
+              <span *ngIf="obs.currentStatus === 'Compliant' || obs.currentStatus === 'Dropped'"
+                class="badge ms-1"
+                [ngClass]="obs.currentStatus === 'Compliant' ? 'bg-success' : 'bg-secondary'">
+                <i class="fa fa-lock me-1"></i>{{ obs.currentStatus }}
+              </span>
             </div>
-            <div *ngIf="obs.currentStatus" class="obs-cur-status-text">
+            <div *ngIf="obs.currentStatus && obs.currentStatus !== 'Compliant' && obs.currentStatus !== 'Dropped'" class="obs-cur-status-text">
               <i class="fa fa-comment-dots me-1 text-secondary"></i>
-              <span class="text-muted small fw-semibold me-1">Current Status:</span>{{ obs.currentStatus }}
+              <span class="text-muted small fw-semibold me-1">Compliance Status Details:</span>{{ obs.currentStatus }}
             </div>
             <div *ngIf="obs.supportingDocPath" class="mt-2">
               <button class="btn btn-sm obs-doc-view-btn"
@@ -1098,6 +1140,54 @@
                 <i class="fa fa-paperclip me-1"></i>View Supporting Doc
               </button>
             </div>
+
+            <!-- ── Status change history thread ── -->
+            <p *ngIf="obs.messages && obs.messages.length > 0" class="small fw-bold text-secondary mt-3 mb-1">
+              <i class="fa fa-history me-1"></i> Status Change History
+            </p>
+            <ng-container *ngIf="obs.messages && obs.messages.length > 0">
+              <div class="obs-thread mt-2">
+
+                <div *ngFor="let msg of obs.messages"
+                  class="thread-entry" [ngClass]="msg.sender === 'APS' ? 'thread-aps' : 'thread-caso'">
+                  <div class="thread-avatar" [ngClass]="msg.sender === 'APS' ? 'aps-avatar' : 'caso-avatar'">
+                    <i class="fa" [ngClass]="msg.sender === 'APS' ? 'fa-user-tie' : 'fa-user-shield'"></i>
+                  </div>
+                  <div class="thread-content">
+                    <div class="thread-meta">
+                      <span class="thread-sender-name">{{ msg.sender === 'APS' ? 'APS HQrs' : 'Airport CASO' }}</span>
+                      <span class="text-muted ms-1" style="font-size:10px">{{ msg.senderName }}</span>
+                      <span *ngIf="msg.replyStatus" class="thread-status-chip ms-2"
+                        [ngClass]="msg.replyStatus==='Compliant' ? 'chip-green' : msg.replyStatus==='Dropped' ? 'chip-red' : 'chip-orange'">
+                        {{ msg.replyStatus }}
+                      </span>
+                      <span class="thread-time ms-auto">{{ msg.entryDate }}<span *ngIf="msg.entryTime"> | {{ msg.entryTime }}</span></span>
+                    </div>
+                    <div *ngIf="msg.letterNo" class="thread-letter-info">
+                      <i class="fa fa-envelope me-1"></i>
+                      Letter: <strong>{{ msg.letterNo }}</strong>
+                      <span *ngIf="msg.letterDate"> dated {{ msg.letterDate | date:'dd MMM yyyy' }}</span>
+                    </div>
+                    <div class="thread-text">{{ msg.message }}</div>
+                    <div *ngIf="msg.attachmentStatus === 'Attached' && msg.filePath" class="mt-1">
+                      <button class="btn btn-sm thread-doc-btn"
+                        (click)="openFinalReportViewer(msg.filePath!, fileViewerModal)">
+                        <i class="fa fa-paperclip me-1"></i>{{ msg.fileName || 'View Document' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Awaiting reply indicator -->
+                <div class="thread-waiting"
+                  *ngIf="selectedAudit?.status === 'APS_RESPONDED' && obs.currentStatus !== 'Compliant' && obs.currentStatus !== 'Dropped'">
+                  <i class="fa fa-hourglass-half me-1"></i>
+                  Awaiting your reply on current compliance status
+                </div>
+
+              </div>
+            </ng-container>
+
           </div>
         </div>
 
@@ -1113,6 +1203,185 @@
   </div>
 
 </ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     APS RESPONSE MODAL — airport CASO views APS remarks & replies
+     ═══════════════════════════════════════════════════════════════ -->
+<ng-template #apsResponseModal let-modal>
+  <div class="modal-header" style="background:#7d3cff;color:#fff;padding:14px 18px">
+    <div>
+      <h5 class="modal-title" style="margin:0;font-size:15px">
+        <i class="fa fa-reply me-2"></i>APS HQrs Compliance Response
+      </h5>
+      <small style="color:#d8c9ff;font-size:11px">
+        {{ apsReplyAudit?.auditName }} &nbsp;|&nbsp; {{ apsReplyAudit?.unitName }}
+      </small>
+    </div>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body" style="padding:20px">
+
+    <!-- Draft restored banner -->
+    <div *ngIf="casoReplyDraftSavedAt === 'Draft restored'"
+      class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size:12px">
+      <i class="fa fa-floppy-disk"></i>
+      <span>Your previously saved draft has been restored. Review, complete remaining observations, and submit when ready.</span>
+    </div>
+
+    <!-- ── Your Reply Letter Details ── -->
+    <ng-container *ngIf="hasOpenReplies">
+      <div class="obs-letter-box mb-4">
+        <div class="obs-section-header mb-2">
+          <i class="fa fa-envelope me-2"></i>Your Reply Letter Details
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-bold mb-1">Letter Number <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm"
+              [(ngModel)]="casoReplyLetterNo" placeholder="e.g. CASO/2024/001">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-bold mb-1">Letter Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="casoReplyLetterDate">
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── Observation-wise conversation + reply ── -->
+    <div *ngFor="let r of casoReplies; let i = index" class="obs-view-row mb-4">
+      <div class="obs-number">{{ i + 1 }}</div>
+      <div class="obs-content" style="flex:1">
+        <p class="obs-text mb-2">{{ r.obsText }}</p>
+
+        <!-- Closed badge -->
+        <ng-container *ngIf="!r.isOpen">
+          <span class="badge bg-success mb-2" *ngIf="r.messages.length > 0 && (r.messages[r.messages.length-1].replyStatus === 'Compliant')">
+            <i class="fa fa-check me-1"></i>Compliant
+          </span>
+          <span class="badge bg-secondary mb-2" *ngIf="r.messages.length > 0 && (r.messages[r.messages.length-1].replyStatus === 'Dropped')">
+            <i class="fa fa-ban me-1"></i>Dropped
+          </span>
+        </ng-container>
+
+        <!-- Full chronological conversation thread -->
+        <div class="obs-thread mb-3" *ngIf="r.messages.length > 0">
+          <div *ngFor="let msg of r.messages"
+            class="thread-entry" [ngClass]="msg.sender === 'APS' ? 'thread-aps' : 'thread-caso'">
+            <div class="thread-avatar" [ngClass]="msg.sender === 'APS' ? 'aps-avatar' : 'caso-avatar'">
+              <i class="fa" [ngClass]="msg.sender === 'APS' ? 'fa-user-tie' : 'fa-user-shield'"></i>
+            </div>
+            <div class="thread-content">
+              <div class="thread-meta">
+                <span class="thread-sender-name">{{ msg.sender === 'APS' ? 'APS HQrs' : 'Airport CASO' }}</span>
+                <span class="text-muted ms-1" style="font-size:10px">{{ msg.senderName }}</span>
+                <span *ngIf="msg.replyStatus" class="thread-status-chip ms-2"
+                  [ngClass]="msg.replyStatus==='Compliant' ? 'chip-green' : msg.replyStatus==='Dropped' ? 'chip-red' : 'chip-orange'">
+                  {{ msg.replyStatus }}
+                </span>
+                <span class="thread-time ms-auto">{{ msg.entryDate }}<span *ngIf="msg.entryTime"> | {{ msg.entryTime }}</span></span>
+              </div>
+              <div *ngIf="msg.letterNo" class="thread-letter-info">
+                <i class="fa fa-envelope me-1"></i>
+                Letter: <strong>{{ msg.letterNo }}</strong>
+                <span *ngIf="msg.letterDate"> dated {{ msg.letterDate | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="thread-text">{{ msg.message }}</div>
+              <div *ngIf="msg.attachmentStatus === 'Attached' && msg.filePath" class="mt-1">
+                <button class="btn btn-sm thread-doc-btn"
+                  (click)="openFinalReportViewer(msg.filePath!, fileViewerModal)">
+                  <i class="fa fa-paperclip me-1"></i>{{ msg.fileName || 'View Document' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reply inputs — only for open observations -->
+        <ng-container *ngIf="r.isOpen">
+          <div class="alert alert-warning py-2 px-3 mb-2" style="font-size:12px">
+            <i class="fa fa-exclamation-triangle me-1"></i>
+            This observation is open — please provide your current compliance status.
+          </div>
+          <div class="row g-2">
+            <div class="col-12">
+              <label class="form-label small fw-bold mb-1">
+                Your Reply / Current Compliance Status <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control form-control-sm" rows="2"
+                placeholder="Describe current compliance action taken or status update…"
+                [(ngModel)]="r.replyMessage"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold mb-1">Status Update</label>
+              <select class="form-select form-select-sm" [(ngModel)]="r.replyStatus">
+                <option value="In Progress">In Progress</option>
+                <option value="Compliant">Compliant</option>
+                <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
+                <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
+                <option value="Partially Compliant">Partially Compliant</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold mb-1">
+                <i class="fa fa-paperclip me-1 text-secondary"></i>Supporting Document
+                <span class="text-muted fw-normal">(optional)</span>
+              </label>
+              <input type="file" class="form-control form-control-sm" (change)="onObsFileSelected($event, i)">
+              <small *ngIf="r.replyFile" class="text-success">
+                <i class="fa fa-check me-1"></i>{{ r.replyFile.name }}
+              </small>
+            </div>
+          </div>
+        </ng-container>
+
+      </div>
+    </div>
+
+    <!-- All closed state -->
+    <div *ngIf="!(hasOpenReplies)" class="text-center py-4">
+      <i class="fa fa-check-circle text-success" style="font-size:2.5rem"></i>
+      <p class="mt-2 mb-0 fw-semibold">All observations closed</p>
+      <small class="text-muted">All observations have been marked Compliant or Dropped. No reply required.</small>
+    </div>
+
+  </div>
+
+  <div class="modal-footer" style="padding:10px 18px; flex-wrap:wrap; gap:6px">
+
+    <!-- Draft saved indicator -->
+    <small *ngIf="casoReplyDraftSavedAt" class="text-success me-auto" style="font-size:11px">
+      <i class="fa fa-floppy-disk me-1"></i>{{ casoReplyDraftSavedAt }}
+    </small>
+
+    <div class="d-flex gap-2 ms-auto">
+      <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Cancel</button>
+
+      <!-- Save Draft button — always available when there are open observations -->
+      <button *ngIf="hasOpenReplies"
+        class="btn btn-outline-success btn-sm"
+        [disabled]="isSavingDraft || isSubmittingReply"
+        (click)="saveReplyDraft()">
+        <span *ngIf="isSavingDraft" class="spinner-border spinner-border-sm me-1"></span>
+        <i class="fa fa-floppy-disk me-1" *ngIf="!isSavingDraft"></i>
+        Save Draft
+      </button>
+
+      <!-- Final submit -->
+      <button *ngIf="hasOpenReplies"
+        class="btn btn-primary btn-sm"
+        [disabled]="isSubmittingReply || isSavingDraft"
+        (click)="submitCasoReply(modal)">
+        <span *ngIf="isSubmittingReply" class="spinner-border spinner-border-sm me-1"></span>
+        <i class="fa fa-paper-plane me-1" *ngIf="!isSubmittingReply"></i>
+        Submit to APS HQRs
+      </button>
+    </div>
+
+  </div>
+</ng-template>
+
 
 <!-- ═══════════════════════════════════════════════════════════════
      FILE VIEWER MODAL

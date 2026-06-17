@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { BcasAuditRecord, type BcasObsDraft } from '../interface/BcasAuditRecord';
+import { BcasAuditRecord, type BcasObsDraft, type CasoReplyDraft } from '../interface/BcasAuditRecord';
 
 @Injectable({ providedIn: 'root' })
 export class BcasAuditService {
@@ -82,5 +82,21 @@ export class BcasAuditService {
   // ── APS HQrs compliance review → Send to CASO (with letter) ─────────
   sendToCaso(auditId: number, fd: FormData): Observable<string> {
     return this.http.post(`${this.base}/sendbcastocaso/${auditId}`, fd, { responseType: 'text' });
+  }
+
+  // ── Airport CASO reply to APS compliance remarks (multipart: letter + optional doc) ──
+  submitCasoReply(auditId: number, fd: FormData): Observable<string> {
+    return this.http.post(`${this.base}/submitbcascasoreply/${auditId}`, fd, { responseType: 'text' });
+  }
+
+  // ── CASO reply draft: save and load ──────────────────────────────────────
+  saveCasoReplyDraft(auditId: number, draft: any): Observable<string> {
+    return this.http.post(`${this.base}/savebcascasoreplydraft/${auditId}`, draft, { responseType: 'text' });
+  }
+
+  getCasoReplyDraft(auditId: number): Observable<CasoReplyDraft | null> {
+    return this.http.get<CasoReplyDraft | null>(`${this.base}/getbcascasoreplydraft/${auditId}`).pipe(
+      catchError(() => of(null))
+    );
   }
 }

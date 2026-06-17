@@ -1,9 +1,37 @@
+export interface CasoReplyDraftObs {
+  observationId: number;
+  replyMessage: string;
+  replyStatus: string;
+}
+
+export interface CasoReplyDraft {
+  letterNo: string;
+  letterDate: string;
+  obsReplies: CasoReplyDraftObs[];
+}
+
 export interface BcasAuditFile {
   id?: number;
   fileName: string;
   filePath: string;
   uploadedAt?: string;
   fileType?: string;
+}
+
+export interface BcasObsMessage {
+  id?: number;
+  sender: 'APS' | 'CASO';
+  senderName: string;
+  userId?: number;
+  message: string;
+  replyStatus?: string;
+  letterNo?: string;
+  letterDate?: string;
+  fileName?: string;
+  filePath?: string;
+  attachmentStatus?: string;
+  entryDate?: string;
+  entryTime?: string;
 }
 
 export interface BcasObservation {
@@ -18,6 +46,7 @@ export interface BcasObservation {
   complianceRemark?: string;
   changedBy?: number;
   changedByName?: string;
+  messages?: BcasObsMessage[];
 }
 
 export interface BcasObsDraft {
