@@ -83,4 +83,8 @@ export interface BcasAuditRecord {
   apsLetterNo?: string;
   apsLetterDate?: string;
   apsLetterFiles?: BcasAuditFile[];
+  updatedBy?: number;
+  updatedByName?: string;
+  obsCreatedBy?: number;
+  obsCreatedByName?: string;
 }

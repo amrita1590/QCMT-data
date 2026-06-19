@@ -85,9 +85,8 @@
           <td class="fw-semibold" style="max-width:160px; white-space:normal;">{{ audit.auditName }}</td>
           <td>{{ audit.unitName }}</td>
           <td>
-            <div class="fw-semibold small">{{ audit.casoName || '—' }}</div>
-            <div class="text-muted" style="font-size:11px;">
-              <span class="type-badge me-1">{{ audit.casoRank || '—' }}</span>{{ audit.casoNo || '—' }}
+            <div class="fw-semibold small">
+              {{ audit.casoNo ? audit.casoNo + ', ' : '' }}{{ audit.casoRank ? audit.casoRank + ', ' : '' }}{{ audit.casoName || '—' }}
             </div>
           </td>
           <td>{{ audit.auditMonth ? (audit.auditMonth + '-01' | date:'MMM yyyy') : '—' }}</td>
@@ -336,7 +335,7 @@
           <i class="fa fa-database mt-1 flex-shrink-0"></i>
           <div>
             <div><strong>Draft saved to database.</strong>
-              You can navigate away or log out — your data will be waiting when you return.
+          
             </div>
             <small *ngIf="draftSavedAt" class="draft-date">
               <i class="fa fa-clock me-1"></i>Saved on {{ draftSavedAt | date:'dd MMM yyyy, hh:mm a' }}
@@ -381,8 +380,8 @@
         <div class="row g-2">
           <div class="col-md-4">
             <div class="sum-tile sum-tile-caso">
-              <span class="sum-label">CASO Name</span>
-              <div class="sum-value">{{ casoName || '—' }}</div>
+              <span class="sum-label">CISF No</span>
+              <div class="sum-value">{{ casoNo || '—' }}</div>
             </div>
           </div>
           <div class="col-md-4">
@@ -393,8 +392,8 @@
           </div>
           <div class="col-md-4">
             <div class="sum-tile sum-tile-caso">
-              <span class="sum-label">CISF No</span>
-              <div class="sum-value">{{ casoNo || '—' }}</div>
+              <span class="sum-label">CASO Name</span>
+              <div class="sum-value">{{ casoName || '—' }}</div>
             </div>
           </div>
         </div>
@@ -474,7 +473,7 @@
     <div class="audit-info-box mb-3">
       <i class="fa fa-shield-alt me-2 text-primary"></i>
       <span class="fw-bold">{{ selectedAudit?.auditName }}</span>
-      <span class="ms-3 text-muted small">CASO: {{ selectedAudit?.casoName }}</span>
+      <span class="ms-3 text-muted small">CASO: {{ selectedAudit?.casoNo ? selectedAudit?.casoNo + ', ' : '' }}{{ selectedAudit?.casoRank ? selectedAudit?.casoRank + ', ' : '' }}{{ selectedAudit?.casoName || '—' }}</span>
     </div>
     <form [formGroup]="updateForm" (ngSubmit)="requestAuditConfirm()" class="bcas-schedule-form">
       <div class="row g-3">
@@ -607,7 +606,7 @@
       <i class="fa fa-shield-alt me-2 text-primary"></i>
       <span class="fw-bold">{{ selectedAudit?.auditName }}</span>
       <span class="ms-3 text-muted small">
-        {{ selectedAudit?.casoName }} · {{ selectedAudit?.casoRank }}
+        {{ selectedAudit?.casoNo ? selectedAudit?.casoNo + ', ' : '' }}{{ selectedAudit?.casoRank ? selectedAudit?.casoRank + ', ' : '' }}{{ selectedAudit?.casoName || '—' }}
       </span>
     </div>
 
@@ -704,19 +703,24 @@
               </div>
             </div>
             <div class="col-md-5">
-              <label class="form-label small fw-bold mb-1">Compliance Status</label>
-              <select class="form-select form-select-sm" [(ngModel)]="row.complianceStatus">
-                <option value="Compliant">Compliant</option>
-                <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
-                <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
+              <label class="form-label small fw-bold mb-1">Compliance Status <span class="text-danger">*</span></label>
+              <select class="form-select form-select-sm" [(ngModel)]="row.complianceStatus"
+                [class.is-invalid]="obsSubmitAttempted && !row.complianceStatus">
+                <option value="" disabled>Select Compliance Status</option>
                 <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
+                <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
                 <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
                 <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
+                <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
+                <option value="Compliant">Compliant</option>
               </select>
-              <div class="mt-1">
+              <div class="mt-1" *ngIf="row.complianceStatus">
                 <span class="status-badge" [ngClass]="formatStatusClass(row.complianceStatus)">
                   {{ row.complianceStatus }}
                 </span>
+              </div>
+              <div *ngIf="obsSubmitAttempted && !row.complianceStatus" class="small text-danger mt-1">
+                Compliance status is required.
               </div>
             </div>
             <div class="col-12">

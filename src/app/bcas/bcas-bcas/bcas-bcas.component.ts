@@ -396,7 +396,7 @@ export class BcasBcasComponent implements OnInit {
   }
 
   private newObsRow() {
-    return { observationText: '', remarksType: 'Non Critical', complianceStatus: 'Compliant', currentStatus: '', supportingDoc: null as File | null };
+    return { observationText: '', remarksType: 'Non Critical', complianceStatus: '', currentStatus: '', supportingDoc: null as File | null };
   }
 
   formatStatusClass(status: string): string {
@@ -471,6 +471,7 @@ export class BcasBcasComponent implements OnInit {
     this.draftFiles        = [];
     this.draftSavedAt      = null;
     this.createForm.reset();
+    this.createForm.get('unitId')?.disable();
     this.selectedPqFiles = [];
     this.casoName = '';
     this.casoRank = '';
@@ -597,10 +598,16 @@ export class BcasBcasComponent implements OnInit {
       this.toast.show('Please enter observation text for each row.', 'error');
       return;
     }
+    const allComplianceFilled = this.observationRows.every(r => r.complianceStatus.length > 0);
+    if (!allComplianceFilled) {
+      this.obsSubmitAttempted = true;
+      this.toast.show('Please select compliance status for each observation.', 'error');
+      return;
+    }
     const allStatusFilled = this.observationRows.every(r => r.currentStatus.trim().length > 0);
     if (!allStatusFilled) {
       this.obsSubmitAttempted = true;
-      this.toast.show('Please enter current compliance status for each observation.', 'error');
+      this.toast.show('Please enter compliance status details for each observation.', 'error');
       return;
     }
 
@@ -638,15 +645,22 @@ export class BcasBcasComponent implements OnInit {
     if (this.isSubmitting || !this.selectedAudit) return;
     this.showObsConfirm = false;
 
-    const allTextFilled   = this.observationRows.every(r => r.observationText.trim().length > 0);
-    const allStatusFilled = this.observationRows.every(r => r.currentStatus.trim().length > 0);
+    const allTextFilled       = this.observationRows.every(r => r.observationText.trim().length > 0);
+    const allComplianceFilled = this.observationRows.every(r => r.complianceStatus.length > 0);
+    const allStatusFilled     = this.observationRows.every(r => r.currentStatus.trim().length > 0);
     if (!allTextFilled) {
+      this.obsSubmitAttempted = true;
       this.toast.show('Please enter observation text for each row.', 'error');
+      return;
+    }
+    if (!allComplianceFilled) {
+      this.obsSubmitAttempted = true;
+      this.toast.show('Please select compliance status for each observation.', 'error');
       return;
     }
     if (!allStatusFilled) {
       this.obsSubmitAttempted = true;
-      this.toast.show('Please enter current compliance status for each observation.', 'error');
+      this.toast.show('Please enter compliance status details for each observation.', 'error');
       return;
     }
 
@@ -760,8 +774,8 @@ export class BcasBcasComponent implements OnInit {
       case 'PQ_STAGE':
       case 'AUDIT_STAGE':
       case 'OBSERVATION_DRAFT':  return { label: 'CASO Bucket',     css: 'bucket-caso' };
-      case 'OBSERVATION_STAGE':
-      case 'APS_RESPONDED':      return { label: 'APS HQrs Bucket', css: 'bucket-aps' };
+      case 'OBSERVATION_STAGE':  return { label: 'APS HQrs Bucket', css: 'bucket-aps' };
+      case 'APS_RESPONDED':      return { label: 'CASO Bucket',     css: 'bucket-caso' };
       case 'COMPLETED':          return { label: 'Completed',        css: 'bucket-done' };
       default:                   return null;
     }

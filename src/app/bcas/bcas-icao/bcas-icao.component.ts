@@ -46,6 +46,8 @@ export class BcasIcaoComponent implements OnInit {
   selectedFiles: File[] = [];
   isSubmitting = false;
   loggedUser: User | null = null;
+  selectedAudit: IcaoAuditRecord | null = null;
+  showSubmitConfirm = false;
 
   // pagination & search
   searchText    = '';
@@ -73,10 +75,19 @@ export class BcasIcaoComponent implements OnInit {
     return this.icaoAudits.filter(a => a.files && a.files.length > 0).length;
   }
 
+  get selectedUnitName(): string {
+    return this.units.find(u => Number(u.id) === Number(this.icaoForm.getRawValue().unitId))?.unitName
+      ?? this.loggedUser?.unitmaster?.unitName ?? '—';
+  }
+
   get filteredAudits() {
+    let result = this.icaoAudits;
+    if (this.loggedUser?.unitid != null) {
+      result = result.filter(a => Number(a.unitId) === Number(this.loggedUser!.unitid));
+    }
     const q = this.searchText.toLowerCase().trim();
-    if (!q) return this.icaoAudits;
-    return this.icaoAudits.filter(a =>
+    if (!q) return result;
+    return result.filter(a =>
       a.auditName?.toLowerCase().includes(q) ||
       a.unitName?.toLowerCase().includes(q)  ||
       a.casoName?.toLowerCase().includes(q)  ||
@@ -111,7 +122,7 @@ export class BcasIcaoComponent implements OnInit {
   ) {
     this.icaoForm = this.fb.group({
       name:       new FormControl({ value: '', disabled: true }),
-      unitId:     new FormControl('', [Validators.required]),
+      unitId:     new FormControl({ value: '', disabled: true }),
       auditMonth: new FormControl('', [Validators.required]),
       fromDate:   new FormControl('', [Validators.required]),
       toDate:     new FormControl('', [Validators.required]),
@@ -141,9 +152,9 @@ export class BcasIcaoComponent implements OnInit {
   }
 
   private loadUserProfile() {
-    this.umService.getUserProfileDetails().subscribe({
-      next: (user: User) => {
-        this.loggedUser = user;
+    this.umService.getLoggedUserDetailList().subscribe({
+      next: (users: User[]) => {
+        if (users.length > 0) this.loggedUser = users[0];
         this.profileLoaded = true;
         this.tryAutoFillUnit();
       },
@@ -189,7 +200,7 @@ export class BcasIcaoComponent implements OnInit {
   // ── form logic ─────────────────────────────────────────────────────
 
   private generateName() {
-    const unitId     = this.icaoForm.get('unitId')?.value;
+    const unitId     = this.icaoForm.getRawValue().unitId;
     const auditMonth = this.icaoForm.get('auditMonth')?.value;
     if (unitId && auditMonth) {
       const unit  = this.units.find(u => Number(u.id) === Number(unitId));
@@ -203,7 +214,7 @@ export class BcasIcaoComponent implements OnInit {
   }
 
   onUnitChange() {
-    const unitId = Number(this.icaoForm.get('unitId')?.value);
+    const unitId = Number(this.icaoForm.getRawValue().unitId);
     const unit   = this.units.find(u => u.id === unitId);
     if (!unit) return;
 
@@ -269,6 +280,11 @@ export class BcasIcaoComponent implements OnInit {
 
   // ── modal ──────────────────────────────────────────────────────────
 
+  viewAudit(audit: IcaoAuditRecord, content: any) {
+    this.selectedAudit = audit;
+    this.modalService.open(content, { size: 'lg', centered: true });
+  }
+
   openCreateModal(content: any) {
     this.resetForm();
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
@@ -276,7 +292,9 @@ export class BcasIcaoComponent implements OnInit {
 
   resetForm() {
     this.icaoForm.reset();
+    this.icaoForm.get('unitId')?.disable();
     this.selectedFiles = [];
+    this.showSubmitConfirm = false;
     this.casoName = '';
     this.casoRank = '';
     this.casoNo   = '';
@@ -288,30 +306,36 @@ export class BcasIcaoComponent implements OnInit {
 
   // ── save ───────────────────────────────────────────────────────────
 
-  saveAudit() {
-    if (this.isSubmitting) return;
-
+  confirmSubmit() {
     this.icaoForm.markAllAsTouched();
     if (this.icaoForm.invalid) {
       this.toast.show('Please fill all required fields.', 'error');
       return;
     }
-
     const from = this.icaoForm.value.fromDate;
     const to   = this.icaoForm.value.toDate;
     if (new Date(from) > new Date(to)) {
       this.toast.show('From Date cannot be later than To Date.', 'error');
       return;
     }
+    this.showSubmitConfirm = true;
+  }
 
-    const unit      = this.units.find(u => Number(u.id) === Number(this.icaoForm.value.unitId));
-    const auditName = this.icaoForm.getRawValue().name;
+  saveAudit() {
+    if (this.isSubmitting) return;
+    this.showSubmitConfirm = false;
+
+    const from = this.icaoForm.value.fromDate;
+    const to   = this.icaoForm.value.toDate;
+
+    const raw       = this.icaoForm.getRawValue();
+    const unit      = this.units.find(u => Number(u.id) === Number(raw.unitId));
 
     const fd = new FormData();
-    fd.append('auditName',    auditName);
-    fd.append('unitId',       String(this.icaoForm.value.unitId));
+    fd.append('auditName',    raw.name);
+    fd.append('unitId',       String(raw.unitId));
     fd.append('unitName',     unit?.unitName ?? '');
-    fd.append('auditMonth',   this.icaoForm.value.auditMonth);
+    fd.append('auditMonth',   raw.auditMonth);
     fd.append('fromDate',     from);
     fd.append('toDate',       to);
     fd.append('gist',         this.icaoForm.value.gist);

@@ -59,14 +59,12 @@
           <th>#</th>
           <th>Audit Name</th>
           <th>Unit</th>
-          <th>CASO Name</th>
-          <th>Rank</th>
-          <th>CISF No</th>
+          <th>CASO</th>
           <th>Month</th>
           <th>From</th>
           <th>To</th>
           <th>Created By</th>
-          <th>Documents</th>
+          <th>View</th>
         </tr>
       </thead>
       <tbody>
@@ -74,31 +72,15 @@
           <td>{{ (page - 1) * pageSize + i + 1 }}</td>
           <td class="fw-semibold" style="max-width:180px; white-space:normal;">{{ audit.auditName }}</td>
           <td>{{ audit.unitName }}</td>
-          <td>{{ audit.casoName || '—' }}</td>
-          <td><span class="type-badge">{{ audit.casoRank || '—' }}</span></td>
-          <td>{{ audit.casoNo || '—' }}</td>
+          <td>{{ audit.casoNo ? audit.casoNo + ', ' : '' }}{{ audit.casoRank ? audit.casoRank + ', ' : '' }}{{ audit.casoName || '—' }}</td>
           <td>{{ audit.auditMonth ? (audit.auditMonth + '-01' | date:'MMM yyyy') : '—' }}</td>
           <td>{{ audit.fromDate || '—' }}</td>
           <td>{{ audit.toDate || '—' }}</td>
           <td>{{ audit.createdBy || '—' }}</td>
           <td>
-            <ng-container *ngIf="audit.files && audit.files.length > 0; else noFilesCell">
-              <div class="doc-list">
-                <button *ngFor="let f of audit.files"
-                  class="doc-btn"
-                  (click)="openFileViewer(f, fileViewerModal)"
-                  [title]="f.fileName">
-                  <i class="fa doc-icon-pdf"   *ngIf="getFileType(f.fileName) === 'pdf'"   [class]="'fa-file-pdf'"></i>
-                  <i class="fa doc-icon-img"   *ngIf="getFileType(f.fileName) === 'image'" [class]="'fa-file-image'"></i>
-                  <i class="fa doc-icon-other" *ngIf="getFileType(f.fileName) === 'other'" [class]="'fa-file'"></i>
-                  <span class="doc-name">{{ f.fileName }}</span>
-                  <i class="fa fa-eye doc-eye"></i>
-                </button>
-              </div>
-            </ng-container>
-            <ng-template #noFilesCell>
-              <span class="text-muted small">—</span>
-            </ng-template>
+            <button class="btn btn-sm btn-outline-primary" (click)="viewAudit(audit, detailModal)" title="View Details">
+              <i class="fa fa-eye"></i>
+            </button>
           </td>
         </tr>
       </tbody>
@@ -168,16 +150,14 @@
           <div class="invalid-feedback">Required.</div>
         </div>
 
-        <!-- Unit -->
+        <!-- Unit (locked to logged-in user's unit) -->
         <div class="col-md-6">
-          <label class="form-label">Unit <span class="text-danger">*</span></label>
-          <select class="form-select" formControlName="unitId" (change)="onUnitChange()"
-            [class.is-invalid]="auditForm.get('unitId')?.invalid && auditForm.get('unitId')?.touched">
-            <option value="" disabled>Select Unit</option>
-            <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
-          </select>
-          <small class="text-muted">Pre-filled from your login unit.</small>
-          <div class="invalid-feedback">Unit is required.</div>
+          <label class="form-label">Unit</label>
+          <div class="form-control bg-light d-flex align-items-center gap-2">
+            <i class="fa fa-building text-secondary"></i>
+            <span class="fw-semibold">{{ selectedUnitName }}</span>
+          </div>
+          <small class="text-muted">Locked to your assigned unit.</small>
         </div>
 
         <!-- Created By -->
@@ -355,4 +335,69 @@
     </button>
   </div>
 
+</ng-template>
+
+<!-- ══ DETAIL VIEW MODAL ════════════════════════════════════════════ -->
+<ng-template #detailModal let-modal>
+  <div class="modal-header" style="background:#00897b;color:#fff;padding:14px 18px">
+    <div>
+      <h5 class="modal-title" style="margin:0;font-size:15px">
+        <i class="fa fa-globe me-2"></i>ICAO Audit
+      </h5>
+      <small style="color:#b2ebf2">{{ selectedAudit?.auditName }}</small>
+    </div>
+    <button class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" *ngIf="selectedAudit">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="fw-bold small text-muted mb-1">Unit</div>
+        <div>{{ selectedAudit.unitName }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="fw-bold small text-muted mb-1">Audit Month</div>
+        <div>{{ selectedAudit.auditMonth ? (selectedAudit.auditMonth + '-01' | date:'MMM yyyy') : '—' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="fw-bold small text-muted mb-1">From Date</div>
+        <div>{{ selectedAudit.fromDate || '—' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="fw-bold small text-muted mb-1">To Date</div>
+        <div>{{ selectedAudit.toDate || '—' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="fw-bold small text-muted mb-1">CASO</div>
+        <div>{{ selectedAudit.casoNo ? selectedAudit.casoNo + ', ' : '' }}{{ selectedAudit.casoRank ? selectedAudit.casoRank + ', ' : '' }}{{ selectedAudit.casoName || '—' }}</div>
+      </div>
+      <div class="col-md-6">
+        <div class="fw-bold small text-muted mb-1">Created By</div>
+        <div>{{ selectedAudit.createdBy }}</div>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <div class="fw-bold small text-muted mb-1">Gist / Summary</div>
+      <div class="p-2 bg-light rounded" style="white-space:pre-wrap">{{ selectedAudit.gist || '—' }}</div>
+    </div>
+
+    <div *ngIf="selectedAudit.files && selectedAudit.files.length > 0">
+      <div class="fw-bold small text-muted mb-2">Documents</div>
+      <div class="d-flex flex-wrap gap-2">
+        <button *ngFor="let f of selectedAudit.files"
+          class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+          (click)="openFileViewer(f, fileViewerModal)" [title]="f.fileName">
+          <i class="fa" [ngClass]="{
+            'fa-file-pdf text-danger': getFileType(f.fileName) === 'pdf',
+            'fa-file-image text-primary': getFileType(f.fileName) === 'image',
+            'fa-file-alt': getFileType(f.fileName) === 'other'
+          }"></i>
+          <span>{{ f.fileName }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary btn-sm" (click)="modal.dismiss()">Close</button>
+  </div>
 </ng-template>

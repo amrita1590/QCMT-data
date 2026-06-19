@@ -78,10 +78,10 @@
 .modern-table th {
   font-size: 11.5px; font-weight: 700;
   letter-spacing: 0.5px; text-transform: uppercase;
-  padding: 13px 14px;
+  padding: 13px 14px; border: 1px solid #dee2e6;
 }
 
-.modern-table tbody td { vertical-align: middle; font-size: 0.84rem; padding: 11px 14px; color: #374151; }
+.modern-table tbody td { vertical-align: middle; font-size: 0.84rem; padding: 11px 14px; color: #374151; border: 1px solid #dee2e6; }
 .modern-table tbody tr { transition: background 0.15s; }
 .modern-table tbody tr:hover { background: #f5f8ff; }
 

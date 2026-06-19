@@ -122,10 +122,12 @@
 
 .modern-table th {
   font-size: 14px; font-weight: 700; letter-spacing: .4px;
+  border: 1px solid #dee2e6;
 }
 .modern-table td {
   vertical-align: middle; font-size: 0.85rem;
   padding: 10px 14px; color: #374151;
+  border: 1px solid #dee2e6;
 }
 .modern-table tbody tr:hover { background: #f5f8ff; }
 

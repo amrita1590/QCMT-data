@@ -46,6 +46,7 @@ export class IcaoComponent implements OnInit {
   auditForm: FormGroup;
   selectedFiles: File[] = [];
   isSubmitting = false;
+  selectedAudit: IcaoAuditRecord | null = null;
 
   searchText      = '';
   page            = 1;
@@ -69,10 +70,19 @@ export class IcaoComponent implements OnInit {
   get auditsWithFiles() { return this.audits.filter(a => a.files && a.files.length > 0).length; }
 
   // ── Pagination ─────────────────────────────────────────────────
+  get selectedUnitName(): string {
+    return this.units.find(u => Number(u.id) === Number(this.auditForm.getRawValue().unitId))?.unitName
+      ?? this.loggedUser?.unitmaster?.unitName ?? '—';
+  }
+
   get filteredAudits() {
+    let result = this.audits;
+    if (this.loggedUser?.unitid != null) {
+      result = result.filter(a => Number(a.unitId) === Number(this.loggedUser!.unitid));
+    }
     const q = this.searchText.toLowerCase().trim();
-    if (!q) return this.audits;
-    return this.audits.filter(a =>
+    if (!q) return result;
+    return result.filter(a =>
       a.auditName?.toLowerCase().includes(q) ||
       a.unitName?.toLowerCase().includes(q)  ||
       a.casoName?.toLowerCase().includes(q)  ||
@@ -107,7 +117,7 @@ export class IcaoComponent implements OnInit {
   ) {
     this.auditForm = this.fb.group({
       name:       new FormControl({ value: '', disabled: true }),
-      unitId:     new FormControl('', [Validators.required]),
+      unitId:     new FormControl({ value: '', disabled: true }),
       auditMonth: new FormControl('', [Validators.required]),
       fromDate:   new FormControl('', [Validators.required]),
       toDate:     new FormControl('', [Validators.required]),
@@ -133,9 +143,9 @@ export class IcaoComponent implements OnInit {
   }
 
   private loadUserProfile() {
-    this.umService.getUserProfileDetails().subscribe({
-      next: (user: User) => {
-        this.loggedUser = user;
+    this.umService.getLoggedUserDetailList().subscribe({
+      next: (users: User[]) => {
+        if (users.length > 0) this.loggedUser = users[0];
         this.profileLoaded = true;
         this.tryAutoFillUnit();
       },
@@ -181,7 +191,7 @@ export class IcaoComponent implements OnInit {
   // ── Form helpers ───────────────────────────────────────────────
 
   private generateName() {
-    const unitId     = this.auditForm.get('unitId')?.value;
+    const unitId     = this.auditForm.getRawValue().unitId;
     const auditMonth = this.auditForm.get('auditMonth')?.value;
     if (unitId && auditMonth) {
       const unit = this.units.find(u => Number(u.id) === Number(unitId));
@@ -195,7 +205,7 @@ export class IcaoComponent implements OnInit {
   }
 
   onUnitChange() {
-    const unitId = Number(this.auditForm.get('unitId')?.value);
+    const unitId = Number(this.auditForm.getRawValue().unitId);
     const unit   = this.units.find(u => u.id === unitId);
     if (!unit) return;
     this.casoName = unit.casoName ?? '';
@@ -219,6 +229,11 @@ export class IcaoComponent implements OnInit {
 
   // ── Modal ──────────────────────────────────────────────────────
 
+  viewAudit(audit: IcaoAuditRecord, content: any) {
+    this.selectedAudit = audit;
+    this.modalService.open(content, { size: 'lg', centered: true });
+  }
+
   openCreateModal(content: any) {
     this.resetForm();
     this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
@@ -226,6 +241,7 @@ export class IcaoComponent implements OnInit {
 
   private resetForm() {
     this.auditForm.reset();
+    this.auditForm.get('unitId')?.disable();
     this.selectedFiles = [];
     this.casoName = '';
     this.casoRank = '';
@@ -248,15 +264,16 @@ export class IcaoComponent implements OnInit {
       return;
     }
 
-    const unit = this.units.find(u => Number(u.id) === Number(this.auditForm.value.unitId));
+    const raw  = this.auditForm.getRawValue();
+    const unit = this.units.find(u => Number(u.id) === Number(raw.unitId));
     const fd   = new FormData();
-    fd.append('auditName',   this.auditForm.getRawValue().name);
-    fd.append('unitId',      String(this.auditForm.value.unitId));
+    fd.append('auditName',   raw.name);
+    fd.append('unitId',      String(raw.unitId));
     fd.append('unitName',    unit?.unitName ?? '');
-    fd.append('auditMonth',  this.auditForm.value.auditMonth);
-    fd.append('fromDate',    this.auditForm.value.fromDate);
-    fd.append('toDate',      this.auditForm.value.toDate);
-    fd.append('gist',        this.auditForm.value.gist);
+    fd.append('auditMonth',  raw.auditMonth);
+    fd.append('fromDate',    raw.fromDate);
+    fd.append('toDate',      raw.toDate);
+    fd.append('gist',        raw.gist);
     fd.append('createdBy',   this.loggedUser?.mstr_name ?? '');
     fd.append('createdById', String(this.loggedUser?.id ?? 0));
     fd.append('casoId',      String(this.casoId));

@@ -50,6 +50,10 @@ File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/ap
 - All `localStorage` access is guarded by `isPlatformBrowser(platformId)` for SSR compatibility
 - `provideHttpClient(withFetch())` is required in `app.config.ts` to suppress Angular SSR warning NG02801
 
+### User Profile Endpoints (important distinction)
+- `getUserProfileDetails()` → `/v1/qcmt/auth/userprofile` — JWT-Auth service. Returns user without `unitid` (auth DB doesn't store unit assignments).
+- `getLoggedUserDetailList()` → `/v1/qcmt/master/loginuserdetail` — Master service. Returns `User[]` (single-element array) with `unitid` from `UserDetailsMaster`. **Use this one** when you need the logged-in user's unit.
+
 ### User Roles
 Three roles used throughout the audit workflow:
 - **APS HQrs** — admin/HQ, creates audits, manages observations
@@ -69,7 +73,28 @@ Four independent audit workflows plus one aggregated APS HQrs view:
 
 IQCU is the most complex: it has a multi-stage workflow (schedule → questionnaire → CASO response → observations → audit board → report).
 
-BCAS has a draft save/update pattern (`/savebcasauditdraft`, `/updatebcasauditdraft`, `/getbcasauditdraft`); the get returns HTTP 204 (no body) when no draft exists — handled with `catchError(() => of(null))` in `BcasAuditService`.
+BCAS has a multi-stage workflow with conversation threading:
+
+| Stage | Status | Action owner | What happens |
+|---|---|---|---|
+| 1 — PQ | `PQ_STAGE` | CASO Bucket | APS creates audit with PQ files |
+| 2 — Audit | `AUDIT_STAGE` | CASO Bucket | APS adds dates, letter, final report PDF (mandatory) |
+| 3 — Observations | `OBSERVATION_STAGE` | APS HQrs Bucket | APS adds observations (compliance status details mandatory per obs), sends to CASO |
+| 4 — APS Responded | `APS_RESPONDED` | APS HQrs Bucket | APS sends compliance letter; CASO replies per-observation |
+| Done | `COMPLETED` | — | All observations resolved |
+
+BCAS draft patterns — the get endpoints return HTTP 204 (no body) when no draft exists, handled with `catchError(() => of(null))`:
+- Audit creation draft: `/savebcasauditdraft`, `/updatebcasauditdraft`, `/getbcasauditdraft`
+- Observation draft: `/savebcasobservationdraft/{id}`, `/getbcasobservationdraft/{id}`
+- CASO reply draft: `/savebcascasoreplydraft/{id}`, `/getbcascasoreplydraft/{id}` (stored as JSON in `BcasAuditMaster.casoReplyDraftJson` TEXT column)
+
+BCAS conversation threading: Each observation has an append-only `messages[]` array of `BcasObsMessage` records (`BcasObsMessageMaster` in backend). Messages are created by `sendbcastocaso` (APS formal action) and `submitbcascasoreply` (CASO reply). `saveBcasObsCompliance` (progress save) only updates flat fields, never creates message records — this avoids duplicate APS entries.
+
+BCAS per-observation file uploads use `file_{observationId}` as the FormData key. Backend extracts via `MultipartHttpServletRequest.getFile("file_" + observationId)`.
+
+BCAS unit locking: The `unitId` form control is disabled — locked to the logged-in user's assigned unit. Uses `getRawValue()` (not `form.value`) to read disabled control values. Audit list is filtered to `loggedUser.unitid` in the `filteredAudits` getter. After `form.reset()`, `unitId` must be re-disabled (`get('unitId')?.disable()`) because Angular's `reset()` re-enables controls.
+
+BCAS user tracking on `BcasAuditMaster`: `createdBy`/`createdById` (Stage 1), `updatedBy`/`updatedByName` (Stage 2 — who submitted final report), `obsCreatedBy`/`obsCreatedByName` (Stage 3 — who submitted observations). Backend `formatDisplayName(UserDetailsMaster)` formats all stored names as "CISFNo, Rank, Name".
 
 ### Service Patterns
 Services use two patterns for cross-component communication:
@@ -107,8 +132,11 @@ src/app/
 ├── audit-board-caso/         # CASO view of audit board
 ├── iqcu-audit/               # IQCU audit form (audit-schedule/, auditors/)
 ├── iqcuaudit/                # IQCU audit list (iqcuauditlist/)
-├── bcas/                     # BCAS audit (bcas-bcas/, bcas-icao/, bcas-internal/)
-├── icao/                     # ICAO audit
+├── bcas/                     # Tabbed container: bcas-bcas/, bcas-icao/, bcas-internal/
+│   ├── bcas-bcas/            #   BCAS audit sub-component (the main BCAS workflow)
+│   ├── bcas-icao/            #   ICAO audit sub-component (CASO creates ICAO here)
+│   └── bcas-internal/        #   Internal audit sub-component
+├── icao/                     # Standalone ICAO audit (separate /icao route — DUPLICATE of bcas-icao)
 ├── internal-audit/           # CISF Internal audit; models in internal-audit.model.ts
 ├── otherauditapshqrsdesk/    # APS HQrs tabbed view of BCAS + ICAO + Internal audits
 ├── dashboard/                # Dashboard with Chart.js doughnut chart
@@ -117,6 +145,16 @@ src/app/
 ├── pipe/                     # filter-pipe for search/filter
 └── toast/                    # Toast notification service + component
 ```
+
+### Important Gotchas
+
+**Dual ICAO/Internal components**: The `/bcas` route renders `BcasComponent` which contains three tab sub-components: `BcasBcasComponent`, `BcasIcaoComponent`, `BcasInternalComponent`. There are ALSO standalone route components `IcaoComponent` (`/icao`) and `InternalAuditComponent` (`/internalaudit`). When making changes to ICAO or Internal Audit, you must update BOTH the `/bcas` sub-component AND the standalone component — they are separate codebases with duplicated logic.
+
+**Unit locking**: BCAS (`bcas-bcas`) and ICAO (`bcas-icao`, `icao`) lock the unit to the logged-in user's assigned unit. The `unitId` form control is disabled at construction. After any `form.reset()`, you must re-disable it. Always use `getLoggedUserDetailList()` (Master service) — never `getUserProfileDetails()` (Auth service) — to get `unitid`.
+
+**CASO name display format**: All user names stored in the backend use `formatDisplayName()` which returns "CISFNo, Rank, Name". Frontend table displays should use the same order: `{{ casoNo }}, {{ casoRank }}, {{ casoName }}`.
+
+**ICAO submit confirmation**: The ICAO create form (`bcas-icao`) uses a two-step submit: `confirmSubmit()` validates and shows a warning alert, then `saveAudit()` performs the actual submission. The button reads "Submit to APS HQrs" (not "Save Audit").
 
 ### Styling
 - Bootstrap 5 + ng-bootstrap for modals, tables, forms
