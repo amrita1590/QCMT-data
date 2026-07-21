@@ -169,12 +169,12 @@
           <tbody>
             <tr *ngFor="let a of pagedInternal(); let i = index">
               <td class="text-muted" style="font-size:12px">{{ (internalPage-1)*pageSize + i + 1 }}</td>
-              <td><strong>{{ a.auditRefNo }}</strong></td>
-              <td>{{ a.unit.unitName }}</td>
-              <td>{{ a.auditFromDate }}</td>
+              <td><strong>{{ a.auditName }}</strong></td>
+              <td>{{ a.unitName }}</td>
+              <td>{{ a.auditMonth }}</td>
               <td>{{ a.auditorName }}</td>
               <td><span class="status-badge" [ngClass]="internalBadge(a.status)">{{ a.status }}</span></td>
-              <td style="font-size:12px">{{ a.auditToDate }}</td>
+              <td style="font-size:12px">{{ a.createdAt }}</td>
               <td>
                 <button class="view-btn green-view" (click)="viewInternal(a, internalModal)" title="View Details">
                   <i class="fa fa-eye"></i>
@@ -680,7 +680,7 @@
   <div class="modal-header modal-hdr-green">
     <div>
       <h5 class="modal-title"><i class="fa fa-building me-2"></i>Internal Audit</h5>
-      <small style="color:#b3e8d8">{{ selectedInternal?.auditRefNo }}</small>
+      <small style="color:#b3e8d8">{{ selectedInternal?.auditName }}</small>
     </div>
     <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
   </div>
@@ -690,19 +690,17 @@
         {{ selectedInternal.status }}
       </span>
       <span class="text-muted" style="font-size:12px">
-        Ref: {{ selectedInternal.auditRefNo }} &nbsp;|&nbsp; Type: {{ selectedInternal.auditType }}
+        {{ selectedInternal.auditName }} &nbsp;|&nbsp; {{ selectedInternal.auditMonth }}
       </span>
     </div>
     <div class="detail-grid">
-      <div class="d-field"><span class="d-label">Unit</span><span class="d-val">{{ selectedInternal.unit.unitName }}</span></div>
-      <div class="d-field"><span class="d-label">Airport Code</span><span class="d-val">{{ selectedInternal.unit.airportCode || '—' }}</span></div>
-      <div class="d-field"><span class="d-label">From Date</span><span class="d-val">{{ selectedInternal.auditFromDate }}</span></div>
-      <div class="d-field"><span class="d-label">To Date</span><span class="d-val">{{ selectedInternal.auditToDate }}</span></div>
-      <div class="d-field"><span class="d-label">Auditor</span><span class="d-val">{{ selectedInternal.auditorName }}</span></div>
-      <div class="d-field"><span class="d-label">Auditor Rank</span><span class="d-val">{{ selectedInternal.auditorRank || '—' }}</span></div>
+      <div class="d-field"><span class="d-label">Unit</span><span class="d-val">{{ selectedInternal.unitName }}</span></div>
+      <div class="d-field"><span class="d-label">CASO</span><span class="d-val">{{ selectedInternal.casoNo }}, {{ selectedInternal.casoRank }}, {{ selectedInternal.casoName }}</span></div>
+      <div class="d-field"><span class="d-label">Auditor</span><span class="d-val">{{ selectedInternal.auditorNo }}, {{ selectedInternal.auditorRank }}, {{ selectedInternal.auditorName }}</span></div>
+      <div class="d-field"><span class="d-label">IG/DIG</span><span class="d-val">{{ selectedInternal.igUserName || '—' }}</span></div>
     </div>
     <div class="mt-3" *ngIf="selectedInternal.reportFiles?.length">
-      <p class="d-label mb-1">Report Files ({{ selectedInternal.reportFiles.length }})</p>
+      <p class="d-label mb-1">Report Files ({{ selectedInternal.reportFiles?.length }})</p>
       <div class="file-list">
         <div class="file-chip file-chip-btn" *ngFor="let f of selectedInternal.reportFiles"
           [class.file-chip-no-path]="!f.filePath"
@@ -717,7 +715,7 @@
       </div>
     </div>
     <div class="mt-3" *ngIf="selectedInternal.observations?.length">
-      <p class="d-label mb-1">Observations ({{ selectedInternal.observations.length }})</p>
+      <p class="d-label mb-1">Observations ({{ selectedInternal.observations?.length }})</p>
       <div class="obs-item" *ngFor="let o of selectedInternal.observations; let i = index">
         <div class="obs-num">{{ i+1 }}</div>
         <div class="obs-body">

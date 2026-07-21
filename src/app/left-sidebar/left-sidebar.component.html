@@ -5,7 +5,7 @@
   <!-- Logo -->
   <div class="logo-container">
     <button class="logo" (click)="toggleCollapse()">
-      <i class="fal fa-bars"></i>
+      <i class="fas fa-bars"></i>
     </button>
     @if (!isLeftSidebarCollapsed()) {
         <div class="logo-text">
@@ -14,7 +14,7 @@
     
 </div>
       <button class="btn-close" (click)="closeSidenav()">
-        <i class="fal fa-times close-icon"></i>
+        <i class="fas fa-times close-icon"></i>
       </button>
     }
   </div>
@@ -39,11 +39,11 @@
   <!-- Profile Section -->
   <div class="sidenav-profile">
     <div class="profile-info" *ngIf="!isLeftSidebarCollapsed()">
-      <i class="fal fa-user-circle profile-icon"></i>
+      <i class="fas fa-user-circle profile-icon"></i>
       <span class="profile-name">{{ usernameData }}</span>
     </div>
     <button class="logout-btn" (click)="logout()">
-      <i class="fal fa-sign-out-alt"></i>
+      <i class="fas fa-sign-out-alt"></i>
       <span *ngIf="!isLeftSidebarCollapsed()">Logout</span>
     </button>
   </div>

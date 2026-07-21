@@ -14,7 +14,7 @@ export const APP_CONSTANTS = {
     },
 
     FILES: {
-        BASE_URL: "http://192.168.10.5:8060/"
+        BASE_URL: "http://192.168.11.8:8060/"
     },
     NOTIFICATION: {
         PRE_QUESTIONNAIRE: 'Auditor: {auditorName} has sent PQs of {auditname}  to CASO:  {casoName}.',
@@ -23,8 +23,8 @@ export const APP_CONSTANTS = {
         SENT_TO_AUDITOR: 'CASO: {casoName} has forwarded response to PQs of {auditname} to Auditor: {auditorName} for review.',        
         NEW_AUDIT_CREATED: 'A new audit {auditname} has been created by APS HQRs. CASO: {casoName} & Auditor : {auditorName}.',        
         AUDIT_COMPLETED: 'Audit - {auditname} process completed and closed successfully by APS HQRs {userName}.',        
-        CASO_OBSERVATION_REQUIRED: 'APS HQrs has sent the observations raised during audit of  {auditname}  to CASO: {casoName}.',   
-        APS_COMPLIANCE_RESPONSE_CASO_OBSERVATION_REQUIRED: 'APS HQrs has sent response to the compliance of audit observations-  {auditname} , submitted by CASO: {casoName}.',     
+        CASO_OBSERVATION_REQUIRED: 'APS HQRs has sent the observations raised during audit of  {auditname}  to CASO: {casoName}.',   
+        APS_COMPLIANCE_RESPONSE_CASO_OBSERVATION_REQUIRED: 'APS HQRs has sent response to the compliance of audit observations-  {auditname} , submitted by CASO: {casoName}.',     
         APS_OBSERVATION_REVIEW_REQUIRED: 'Observation compliance status submitted by CASO - {casoName} to APS HQRs for {auditname} , Auditor: {auditorName}.',        
         APS_TO_AUDITOR: 'Audit - {auditname} has been sent back by APS HQRs for correction and resubmission.',
         AUDITOR_TO_APS: 'Auditor: {auditorName} has submitted the final audit report for {auditname} (CASO: {casoName} ) to APS HQRs.'

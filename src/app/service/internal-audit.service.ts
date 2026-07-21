@@ -1,73 +1,71 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import {
-  InternalAuditObservation,
-  InternalAuditQuestion,
-  InternalAuditResponse,
-  InternalAuditSchedule
-} from '../internal-audit/internal-audit.model';
+import { InternalAuditRecord } from '../interface/InternalAuditRecord';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InternalAuditService {
-  private saveInternalAuditUrl = '/v1/qcmt/master/saveinternalaudit';
-  private getInternalAuditUrl = '/v1/qcmt/master/getinternalaudits';
-  private saveQuestionnaireUrl = '/v1/qcmt/master/saveinternalauditquestions';
-  private submitUnitResponseUrl = '/v1/qcmt/master/submitinternalauditresponse';
-  private submitReportUrl = '/v1/qcmt/master/submitinternalauditreport';
-  private saveObservationUrl = '/v1/qcmt/master/saveinternalauditobservations';
-  private submitComplianceUrl = '/v1/qcmt/master/submitinternalauditcompliance';
+  private base = '/v1/qcmt/master';
 
   private refreshListSource = new Subject<void>();
   refreshList$ = this.refreshListSource.asObservable();
 
-  constructor(private http: HttpClient) {
-    console.log('Inside Internal Audit Service !!');
-  }
+  constructor(private http: HttpClient) {}
 
   triggerRefresh() {
     this.refreshListSource.next();
   }
 
-  getInternalAudits(): Observable<InternalAuditSchedule[]> {
-    return this.http.get<InternalAuditSchedule[]>(this.getInternalAuditUrl);
+  getInternalAudits(): Observable<InternalAuditRecord[]> {
+    return this.http.get<InternalAuditRecord[]>(`${this.base}/getinternalaudits`);
   }
 
-  saveInternalAudit(audit: InternalAuditSchedule): Observable<any> {
-    return this.http.post(this.saveInternalAuditUrl, audit, { responseType: 'text' });
+  saveInternalAudit(fd: FormData): Observable<any> {
+    return this.http.post(`${this.base}/saveinternalaudit`, fd, { responseType: 'text' });
   }
 
-  saveQuestionnaire(auditId: number, questions: InternalAuditQuestion[]): Observable<any> {
-    return this.http.post(this.saveQuestionnaireUrl, { auditId, questions }, { responseType: 'text' });
+  saveQuestionnaire(auditId: number, questions: any[]): Observable<any> {
+    return this.http.post(`${this.base}/saveinternalauditquestions`, { auditId, questions }, { responseType: 'text' });
   }
 
-  submitUnitResponse(auditId: number, responses: InternalAuditResponse[]): Observable<any> {
-    return this.http.post(this.submitUnitResponseUrl, { auditId, responses }, { responseType: 'text' });
+  submitUnitResponse(auditId: number, responses: any[]): Observable<any> {
+    return this.http.post(`${this.base}/submitinternalauditresponse`, { auditId, responses }, { responseType: 'text' });
   }
 
-  submitAuditReport(auditId: number, reportData: any): Observable<any> {
-    return this.http.post(this.submitReportUrl, reportData, {
-      reportProgress: true,
-      observe: 'events',
-      responseType: 'text'
-    });
+  submitAuditReport(auditId: number, fd: FormData): Observable<any> {
+    return this.http.post(`${this.base}/submitinternalauditreport`, fd, { responseType: 'text' });
   }
 
-  saveObservations(auditId: number, observations: InternalAuditObservation[]): Observable<any> {
-    return this.http.post(this.saveObservationUrl, { auditId, observations }, { responseType: 'text' });
+  saveObservations(auditId: number, observations: any[]): Observable<any> {
+    return this.http.post(`${this.base}/saveinternalauditobservations`, { auditId, observations }, { responseType: 'text' });
   }
 
-  submitCompliance(auditId: number, observationId: number, complianceDetails: string): Observable<any> {
+  submitCompliance(auditId: number, observationId: number, complianceDetails: string, status: string): Observable<any> {
+    return this.http.post(`${this.base}/submitinternalauditcompliance`,
+      { auditId, observationId, complianceDetails, status }, { responseType: 'text' });
+  }
+
+  requestCompliance(auditId: number, remarks: string): Observable<any> {
     return this.http.post(
-      this.submitComplianceUrl,
-      { auditId, observationId, complianceDetails },
-      { responseType: 'text' }
-    );
+      `${this.base}/requestinternalauditcompliance?auditId=${auditId}&remarks=${encodeURIComponent(remarks)}`,
+      null, { responseType: 'text' });
+  }
+
+  submitFinalCompliance(fd: FormData): Observable<any> {
+    return this.http.post(`${this.base}/submitinternalauditfinalcompliance`, fd, { responseType: 'text' });
+  }
+
+  deleteInternalAuditFile(fileId: number): Observable<any> {
+    return this.http.post(`${this.base}/deleteinternalauditfile?fileId=${fileId}`, null, { responseType: 'text' });
+  }
+
+  deleteInternalAudit(id: number): Observable<any> {
+    return this.http.post(`${this.base}/deleteinternalaudit?id=${id}`, null, { responseType: 'text' });
   }
 
   getInternalAuditFile(fullPath: string): Observable<Blob> {
-    return this.http.get(`/v1/qcmt/master/internalauditfile?fullPath=${encodeURIComponent(fullPath)}`, { responseType: 'blob' });
+    return this.http.get(`${this.base}/internalauditfile?fullPath=${encodeURIComponent(fullPath)}`, { responseType: 'blob' });
   }
 }

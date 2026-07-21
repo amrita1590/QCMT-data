@@ -31,6 +31,7 @@ export class UnitmasterComponent {
         this.unitDetailsForm = this.fb.group({
           id : new FormControl(''),
           unitName:new FormControl('', [Validators.required, Validators.minLength(2), Validators.maxLength(20)]),
+          unitType: new FormControl('', [Validators.required]),
           casoId: ['', Validators.required],
           addDetails:new FormControl(''), zone:new FormControl(''), sector:new FormControl(''),isActive: [1], isAirport:new FormControl('')
         });

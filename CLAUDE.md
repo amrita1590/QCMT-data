@@ -40,7 +40,7 @@ All API calls are proxied through the API Gateway at `http://localhost:8060`:
 
 Eureka service registry runs on port 8761. The `proxy.conf.json` handles dev-time routing — in production, the gateway is accessed directly.
 
-File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/app/constants/app.constants.ts): `http://192.168.10.5:8060/`.
+File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/app/constants/app.constants.ts): `http://192.168.11.8:8060/`.
 
 ### Auth Flow
 - `UsermanagementService` stores the JWT in `localStorage` under key `jwtToken`
@@ -49,6 +49,16 @@ File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/ap
 - On 401, the interceptor redirects to `/login`
 - All `localStorage` access is guarded by `isPlatformBrowser(platformId)` for SSR compatibility
 - `provideHttpClient(withFetch())` is required in `app.config.ts` to suppress Angular SSR warning NG02801
+- Login form includes a math-based captcha (addition/subtraction) with a 60-second timer — captcha must pass before credentials are submitted
+
+### App Layout
+`AppComponent.shouldShowHeader()` splits the UI into two layouts:
+- **Public pages** (`/`, `/about`, `/contact`, `/login`, `/updatepassword`, `/privacy`, `/terms`) — show `HeaderComponent` (top nav only)
+- **Authenticated pages** — show `LeftSidebarComponent` (responsive: collapses below 768px) + `MainComponent`
+`ToastComponent` is always rendered at the app root level.
+
+### SSR Security Headers
+`src/server.ts` sets security headers on every response: HSTS, X-Content-Type-Options, X-Frame-Options (DENY), CSP, Referrer-Policy, Permissions-Policy. The CSP `connect-src` whitelist must include any API server the app calls — update it when the file server base URL changes.
 
 ### User Profile Endpoints (important distinction)
 - `getUserProfileDetails()` → `/v1/qcmt/auth/userprofile` — JWT-Auth service. Returns user without `unitid` (auth DB doesn't store unit assignments).
@@ -68,7 +78,7 @@ Four independent audit workflows plus one aggregated APS HQrs view:
 | IQCU | `/iqcu`, `/iqcuauditlist` | `AuditscheduleserviceService` | `/v1/qcmt/master/saveaudittemplates`, etc. |
 | BCAS | `/bcas` | `BcasAuditService` | `/v1/qcmt/master/savebcasaudit`, etc. |
 | ICAO | `/icao` | `IcaoService` | `/v1/qcmt/master/saveicaoaudit`, etc. |
-| Internal | `/internalaudit` | `InternalAuditService` | `/v1/qcmt/master/saveinternalaudit`, etc. |
+| Internal | `/internalaudit` | `InternalAuditService` + `InternalAuditFacade` | `/v1/qcmt/master/saveinternalaudit`, etc. |
 | Other Audits (APS desk) | `/otherauditapshqrsdesk` | BCAS + ICAO + Internal services | Aggregates all three in tabbed view |
 
 IQCU is the most complex: it has a multi-stage workflow (schedule → questionnaire → CASO response → observations → audit board → report).
@@ -80,7 +90,7 @@ BCAS has a multi-stage workflow with conversation threading:
 | 1 — PQ | `PQ_STAGE` | CASO Bucket | APS creates audit with PQ files |
 | 2 — Audit | `AUDIT_STAGE` | CASO Bucket | APS adds dates, letter, final report PDF (mandatory) |
 | 3 — Observations | `OBSERVATION_STAGE` | APS HQrs Bucket | APS adds observations (compliance status details mandatory per obs), sends to CASO |
-| 4 — APS Responded | `APS_RESPONDED` | APS HQrs Bucket | APS sends compliance letter; CASO replies per-observation |
+| 4 — APS Responded | `APS_RESPONDED` | CASO Bucket | APS has sent compliance letter; CASO must reply per-observation |
 | Done | `COMPLETED` | — | All observations resolved |
 
 BCAS draft patterns — the get endpoints return HTTP 204 (no body) when no draft exists, handled with `catchError(() => of(null))`:
@@ -95,6 +105,22 @@ BCAS per-observation file uploads use `file_{observationId}` as the FormData key
 BCAS unit locking: The `unitId` form control is disabled — locked to the logged-in user's assigned unit. Uses `getRawValue()` (not `form.value`) to read disabled control values. Audit list is filtered to `loggedUser.unitid` in the `filteredAudits` getter. After `form.reset()`, `unitId` must be re-disabled (`get('unitId')?.disable()`) because Angular's `reset()` re-enables controls.
 
 BCAS user tracking on `BcasAuditMaster`: `createdBy`/`createdById` (Stage 1), `updatedBy`/`updatedByName` (Stage 2 — who submitted final report), `obsCreatedBy`/`obsCreatedByName` (Stage 3 — who submitted observations). Backend `formatDisplayName(UserDetailsMaster)` formats all stored names as "CISFNo, Rank, Name".
+
+Internal Audit uses the `InternalAuditFacade` pattern — a `providedIn: 'root'` service that owns all state (audits list, forms, user lists) and is shared across the 7 tab sub-components. The parent `InternalAuditComponent` calls `facade.init()` on `ngOnInit`. The model is `InternalAuditRecord` (not the old `InternalAuditSchedule` which was removed).
+
+CISF Airport Sector hierarchy determines IG/DIG dropdown filtering:
+- 2 Sectors (APS I, APS II) headed by IG
+- 4 Zones (NZ, WZ, SZ, ENEZ) headed by DIG
+- Units fall under Zones, which fall under Sectors
+
+IG/DIG dropdown filtering logic (`InternalAuditFacade.igDigUserList`):
+- `unitType === 'DIG Unit'` → shows users from the **same sector** as logged-in user
+- `unitType === 'Unit'` → shows users whose unit type is **"Zone"**
+- Otherwise → shows all users
+
+Internal Audit creation form follows the BCAS pattern: audit name auto-generated (`UnitName - Internal Audit - Month Year`), unit locked to logged-in user, CASO auto-filled from unit, file upload restricted to PDF/Word (.pdf/.doc/.docx). The backend `saveinternalaudit` endpoint accepts `multipart/form-data` (not JSON). `fromDate`/`toDate` are not set at creation — they are updated in a later workflow stage by another user.
+
+Backend entity: `InternalAuditMaster` with `@OneToMany` relationships to `InternalAuditQuestionMaster`, `InternalAuditResponseMaster`, `InternalAuditFileMaster`, `InternalAuditObservationMaster`, and an `@ElementCollection` for `complianceTrail`. Controller is `InternalAuditController` (separate from `MasterController`).
 
 ### Service Patterns
 Services use two patterns for cross-component communication:
@@ -156,8 +182,14 @@ src/app/
 
 **ICAO submit confirmation**: The ICAO create form (`bcas-icao`) uses a two-step submit: `confirmSubmit()` validates and shows a warning alert, then `saveAudit()` performs the actual submission. The button reads "Submit to APS HQrs" (not "Save Audit").
 
+**CSP ↔ file server URL sync**: When the file server base URL in `app.constants.ts` changes, you must also update the `connect-src` directive in `src/server.ts` to match — otherwise the browser will block API/file requests in production SSR mode. The CSP also needs `frame-src 'self' blob:` for the PDF file viewer (blob URLs rendered in iframes).
+
+**Font Awesome Free only**: The project uses `@fortawesome/fontawesome-free` (v7). Use `fas` (solid), `far` (regular), or `fab` (brands) prefixes — never `fal` (light), which requires Font Awesome Pro and will render as blank/broken icons.
+
+**Unit Master `unitType` field**: The `UnitDetails` interface, `UnitMaster` entity (both QCMT-Master and JWT-Auth), `UnitMasterBean`, and `UnitMasterBeanConverter` all carry `unitType`. The dropdown values are: ADG HQ, Sector, Zone, DIG Unit, Unit. When adding new fields to master entities, remember to update all four layers: interface (frontend) → bean → converter → entity (backend, both services if shared).
+
 ### Styling
 - Bootstrap 5 + ng-bootstrap for modals, tables, forms
-- Bootstrap Icons + Font Awesome for icons
+- Bootstrap Icons + Font Awesome Free (use `fas`/`far`/`fab` prefixes only)
 - jQuery and Popper.js included as global scripts (legacy, used via Bootstrap)
 - Custom styles in [src/styles.css](src/styles.css)

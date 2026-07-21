@@ -16,6 +16,7 @@
           <th>Sl No</th>
           <th>CASO Name</th>
           <th>Unit</th>
+          <th>Unit Type</th>
            <th>Zone</th>
             <th>Sector</th>
             <th>Is ASG Unit</th>
@@ -30,6 +31,7 @@
           <td>{{ (page - 1) * pageSize + i + 1 }}</td> <!-- Serial number -->
           <td>{{ user.casoName }}</td>
           <td>{{ user.unitName }}</td>
+          <td>{{ user.unitType }}</td>
           <td>{{ user.zone }}</td>
           <td>{{ user.sector }}</td>
           <td>{{ user.isAirport ? 'Yes' : 'No' }}</td>

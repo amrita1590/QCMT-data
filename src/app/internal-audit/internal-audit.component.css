@@ -1,37 +1,185 @@
-.nav-tabs .nav-link {
-  cursor: pointer;
-  font-weight: 500;
+/* ── page wrapper ────────────────────────────────────── */
+.ia-page { padding: 0; font-family: "Inter", sans-serif; }
+
+.ia-page-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid #e5ebf3;
+}
+.ia-page-title  { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.ia-page-subtitle { font-size: 13px; color: #6b7280; margin-top: 3px; }
+
+/* ── inbox section ───────────────────────────────────── */
+.inbox-section { margin-bottom: 32px; }
+
+.inbox-section-header {
+  padding: 14px 20px;
+  border-radius: 12px 12px 0 0;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.auditor-header { background: linear-gradient(135deg, #2970ff, #1d4ed8); color: #fff; }
+.igdig-header   { background: linear-gradient(135deg, #7e22ce, #581c87); color: #fff; }
+
+.inbox-section-title {
+  font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.inbox-section-subtitle { font-size: 12px; opacity: 0.85; }
+
+.count-pill {
+  background: rgba(255,255,255,0.25);
+  color: #fff; font-size: 11px; font-weight: 700;
+  padding: 2px 10px; border-radius: 20px;
 }
 
-.status-card {
-  border-left-width: 5px;
-}
-
-.status-card h3 {
-  color: #172033;
-  font-weight: 700;
-}
-
-.audit-list-item {
+/* ── table ───────────────────────────────────────────── */
+.bcas-schedule-table {
   background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  color: #243244;
-  display: block;
-  margin-bottom: 10px;
-  padding: 12px;
-  text-align: left;
-  width: 100%;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  overflow: hidden;
 }
+.bcas-schedule-table .table { margin: 0; }
 
-.audit-list-item:hover,
-.audit-list-item.active {
-  background: #eef5ff;
-  border-color: #0d6efd;
+.modern-table th {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  padding: 12px 13px;
 }
+.modern-table tbody td {
+  vertical-align: middle; font-size: 0.83rem;
+  padding: 10px 13px; color: #374151;
+}
+.modern-table tbody tr:hover { background: #f5f8ff; }
 
-.audit-list-item small {
-  color: #6c757d;
-  display: block;
-  margin-top: 2px;
+.thead-auditor { background: #2970ff; color: #fff; }
+.thead-igdig   { background: #7e22ce; color: #fff; }
+.thead-auditor th, .thead-igdig th { border: 1px solid rgba(255,255,255,0.2); }
+
+/* ── status chips ────────────────────────────────────── */
+.status-chips { display: flex; flex-direction: column; gap: 4px; }
+
+.bucket-chip {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 20px; font-size: 10.5px; font-weight: 700;
+  white-space: nowrap;
+}
+.chip-auditor { background: #dbeafe; color: #1d4ed8; }
+.chip-igdig   { background: #f3e8ff; color: #7e22ce; }
+
+.stage-chip {
+  display: inline-block; padding: 2px 10px;
+  border-radius: 20px; font-size: 10.5px; font-weight: 600;
+}
+.stage-normal { background: #f1f5f9; color: #475569; }
+
+/* ── user line ───────────────────────────────────────── */
+.user-line { font-size: 12px; color: #374151; }
+
+/* ── observation chips ───────────────────────────────── */
+.obs-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.obs-type-chip {
+  font-size: 10px; font-weight: 700; padding: 1px 8px;
+  border-radius: 20px; white-space: nowrap;
+}
+.obs-critical { background: #fee2e2; color: #b91c1c; }
+.obs-moderate { background: #fef3c7; color: #92400e; }
+.obs-minor    { background: #d1fae5; color: #065f46; }
+.obs-count    { font-size: 11px; color: #6b7280; margin-left: 4px; }
+
+/* ── doc link ────────────────────────────────────────── */
+.doc-link { margin-bottom: 4px; }
+.doc-link button { font-size: 11px; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── file section (reused from bcas-internal) ────────── */
+.file-section-card { border: 1.5px solid #d0ddef; border-radius: 12px; overflow: hidden; background: #fff; }
+.file-section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 16px; background: #f0f6ff; border-bottom: 1px solid #d0ddef;
+  font-size: 13px; font-weight: 700; color: #003f7f;
+}
+.file-list { display: flex; flex-direction: column; }
+.file-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #eef1f6; }
+.file-item:last-child { border-bottom: none; }
+.file-item.pending .file-icon { color: #ff9800; }
+.file-icon { font-size: 20px; flex-shrink: 0; width: 24px; text-align: center; }
+.file-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.file-name { font-size: 13px; font-weight: 600; color: #1a1a2e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-info { font-size: 11px; color: #6b7280; }
+.file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.file-empty { display: flex; align-items: center; gap: 8px; padding: 14px 16px; color: #9ca3af; font-size: 13px; }
+.file-empty i { font-size: 16px; }
+.file-upload-area { display: flex; align-items: center; padding: 10px 16px; border-top: 1px dashed #c8d8f0; background: #f8fbff; }
+.upload-btn { cursor: pointer; font-size: 13px; font-weight: 600; color: #2970ff; margin: 0; }
+.upload-btn:hover { color: #0040cc; }
+.btn-file-remove { background: none; border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 4px 8px; color: #9ca3af; cursor: pointer; }
+.btn-file-remove:hover { background: #ffe5e5; border-color: #d93025; color: #d93025; }
+
+/* ── modal headers ───────────────────────────────────── */
+.modal-header-blue {
+  background: linear-gradient(135deg, #2970ff, #1d4ed8);
+  color: #fff; border-radius: 4px 4px 0 0; padding: 16px 20px;
+}
+.modal-header-purple {
+  background: linear-gradient(135deg, #7e22ce, #581c87);
+  color: #fff; border-radius: 4px 4px 0 0; padding: 16px 20px;
+}
+.modal-header-blue .modal-title,
+.modal-header-purple .modal-title { color: #fff; font-weight: 700; font-size: 15px; }
+.modal-header-blue .btn-close,
+.modal-header-purple .btn-close { filter: invert(1) brightness(2); }
+
+/* ── summary modal (reused pattern) ─────────────────── */
+.summary-modal { display: flex; flex-direction: column; max-height: 88vh; }
+.summary-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #009b75, #006b52);
+  color: #fff; border-radius: 4px 4px 0 0; flex-shrink: 0;
+}
+.summary-header-left { display: flex; align-items: flex-start; gap: 14px; }
+.summary-icon { width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.summary-title { font-size: 15px; font-weight: 700; color: #fff; margin: 0; }
+.summary-meta-line { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.summary-body { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+.summary-footer { padding: 14px 22px; border-top: 1px solid #e5ebf3; background: #fafcff; flex-shrink: 0; display: flex; justify-content: flex-end; }
+.summary-section { background: #fff; border: 1.5px solid #e5ebf3; border-radius: 12px; overflow: hidden; }
+.summary-section-title { padding: 10px 16px; background: #f0f6ff; font-size: 13px; font-weight: 700; color: #003f7f; border-bottom: 1px solid #d0ddef; display: flex; align-items: center; }
+
+/* ── observation detail in summary ──────────────────── */
+.obs-detail-row { padding: 12px 16px; border-bottom: 1px solid #f0f4f8; }
+.obs-detail-row:last-child { border-bottom: none; }
+.obs-detail-header { display: flex; align-items: center; margin-bottom: 6px; }
+.obs-detail-text { font-size: 13.5px; color: #1a1a2e; margin: 0; }
+.obs-remarks { font-size: 12px; color: #6b7280; font-style: italic; margin: 4px 0 0; }
+
+/* ── trail ───────────────────────────────────────────── */
+.trail-list { display: flex; flex-direction: column; padding: 12px 16px; gap: 0; }
+.trail-item { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+.trail-item:last-child { border-bottom: none; }
+.trail-dot { width: 8px; height: 8px; border-radius: 50%; background: #009b75; flex-shrink: 0; margin-top: 5px; }
+.trail-text { font-size: 12.5px; color: #374151; line-height: 1.5; }
+
+/* ── empty states ────────────────────────────────────── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 60px 24px;
+  background: #fff; border-radius: 14px; border: 1.5px dashed #c8d8f0;
+  color: #6b7280; text-align: center;
+}
+.empty-state i { font-size: 2.5rem; color: #a5b4fc; }
+.empty-state p { margin: 0; font-size: 14px; }
+
+.empty-state-inline {
+  display: flex; align-items: center; gap: 10px;
+  padding: 24px 20px; background: #f8fbff;
+  border-radius: 0 0 14px 14px; color: #9ca3af; font-size: 13px;
+}
+.empty-state-inline i { font-size: 18px; }
+
+/* ── obs sl badge (in summary) ───────────────────────── */
+.obs-sl {
+  width: 22px; height: 22px; background: #009b75; color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
 }

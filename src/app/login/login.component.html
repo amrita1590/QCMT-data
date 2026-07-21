@@ -73,7 +73,35 @@
           }
         </div>
 
-        <button type="submit" class="login-button" [disabled]="loginDetailsForm.invalid">
+        <div class="captcha-box" [class.captcha-expired]="captchaExpired">
+          <div class="captcha-question">
+            <i class="bi bi-shield-check"></i>
+            @if (!captchaExpired) {
+              <span class="captcha-expr">{{ captchaNum1 }} {{ captchaOperator }} {{ captchaNum2 }} = ?</span>
+              <span class="captcha-countdown" [class.captcha-warn]="captchaTimer <= 10">
+                <i class="bi bi-clock"></i> {{ captchaTimer }}s
+              </span>
+            } @else {
+              <span class="captcha-expr captcha-expired-text">CAPTCHA expired</span>
+            }
+            <button type="button" class="captcha-refresh" (click)="generateCaptcha()" [title]="captchaExpired ? 'Get new CAPTCHA' : 'New question'">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+          @if (!captchaExpired) {
+            <input type="number" class="captcha-input" [(ngModel)]="captchaInput" [ngModelOptions]="{standalone: true}"
+              placeholder="Enter answer" autocomplete="off">
+          } @else {
+            <div class="captcha-expired-msg">
+              <i class="bi bi-exclamation-triangle"></i> Time expired. Click <strong>refresh</strong> to get a new question.
+            </div>
+          }
+          @if (captchaError) {
+            <span class="field-error">Incorrect answer. Please try again.</span>
+          }
+        </div>
+
+        <button type="submit" class="login-button" [disabled]="loginDetailsForm.invalid || !captchaInput || captchaExpired">
           <i class="bi bi-box-arrow-in-right"></i>
           Sign In Securely
         </button>

@@ -4,13 +4,8 @@ export type InternalAuditObservationType = 'Critical' | 'Moderate' | 'Non-Critic
 
 export type InternalAuditComplianceStatus = 'Pending' | 'Compliant' | 'Non-Compliant' | 'Dropped';
 
-export interface InternalAuditUnit {
-  id: number;
-  unitName: string;
-  airportCode: string;
-}
-
 export interface InternalAuditFile {
+  id?: number;
   name: string;
   size: number;
   type: string;
@@ -43,25 +38,43 @@ export interface InternalAuditObservation {
   complianceDetails: string;
 }
 
-export interface InternalAuditSchedule {
-  id: number;
-  auditRefNo: string;
-  auditType: string;
-  auditFromDate: string;
-  auditToDate: string;
+export interface InternalAuditRecord {
+  id?: number;
+  auditName: string;
+  auditMonth: string;
+
+  unitId: number;
+  unitName: string;
+
+  casoId: number;
+  casoName: string;
+  casoRank: string;
+  casoNo: string;
+
+  auditorId: number;
   auditorName: string;
   auditorRank: string;
-  unit: InternalAuditUnit;
-  status: InternalAuditStatus;
-  questions: InternalAuditQuestion[];
-  responses: InternalAuditResponse[];
-  reportFiles: InternalAuditFile[];
-  observations: InternalAuditObservation[];
-  complianceTrail: string[];
-}
+  auditorNo: string;
 
-export interface InternalAuditStageCard {
-  label: string;
-  status: InternalAuditStatus;
-  border: string;
+  gist: string;
+
+  igUserId: number;
+  igUserName: string;
+  igUserRank?: string;
+  igUserNo?: string;
+
+  fromDate?: string;
+  toDate?: string;
+
+  status: string;
+  createdBy?: string;
+  createdById?: number;
+  createdAt?: string;
+
+  files?: InternalAuditFile[];
+  questions?: InternalAuditQuestion[];
+  responses?: InternalAuditResponse[];
+  reportFiles?: InternalAuditFile[];
+  observations?: InternalAuditObservation[];
+  complianceTrail?: string[];
 }

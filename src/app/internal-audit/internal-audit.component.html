@@ -1,135 +1,329 @@
-<div class="container-fluid mt-3">
+<div class="ia-page">
 
-  <div class="card shadow-sm mb-3">
-    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
-      <div>
-        <h4 class="mb-0">Internal Audit Management</h4>
-        <small class="text-muted">Schedule, questionnaire, report, observation and compliance tracking</small>
-      </div>
-      <span class="badge bg-primary">Quality Control & Compliance</span>
+  <!-- Page Header -->
+  <div class="ia-page-header">
+    <div class="ia-page-title">
+      <i class="fas fa-building me-2"></i>Internal Audit — My Inbox
     </div>
+    <div class="ia-page-subtitle">View and respond to internal audits assigned to you</div>
   </div>
 
-  <div class="alert alert-success" *ngIf="internalAuditFacade.status">
-    {{ internalAuditFacade.statusMsg }}
+  <!-- No role message -->
+  <div class="empty-state" *ngIf="!isAuditor && !isIgDig">
+    <i class="fas fa-lock"></i>
+    <p>
+      You do not have an Auditor or IG/DIG role assigned to any audit.<br>
+      <span class="text-muted small">Contact your administrator if you believe this is incorrect.</span>
+    </p>
   </div>
 
-  <div class="row g-3 mb-3">
-    <div class="col-md" *ngFor="let card of internalAuditFacade.stageCards">
-      <div class="card status-card h-100" [ngClass]="card.border">
-        <div class="card-body py-3">
-          <small class="text-muted">{{ card.label }}</small>
-          <h3 class="mb-0">{{ internalAuditFacade.countByStatus(card.status) }}</h3>
+  <!-- ══ AUDITOR INBOX ═══════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="isAuditor">
+    <div class="inbox-section">
+      <div class="inbox-section-header auditor-header">
+        <div class="inbox-section-title">
+          <i class="fas fa-user-check me-2"></i>Auditor Inbox
+          <span class="count-pill">{{ auditorInboxAudits.length }}</span>
+        </div>
+        <div class="inbox-section-subtitle">Audits assigned to you — submit your report to proceed</div>
+      </div>
+
+      <div class="bcas-schedule-table" *ngIf="auditorInboxAudits.length > 0; else noAuditorAudits">
+        <table class="table table-hover table-bordered align-middle modern-table mb-0">
+          <thead class="thead-auditor">
+            <tr>
+              <th>#</th>
+              <th>Audit Name</th>
+              <th>Unit</th>
+              <th>Month</th>
+              <th>CASO</th>
+              <th>IG / DIG</th>
+              <th>Stage</th>
+              <th>Documents</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let audit of auditorInboxAudits; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td class="fw-semibold">{{ audit.auditName }}</td>
+              <td>{{ audit.unitName }}</td>
+              <td>{{ formatMonth(audit.auditMonth) }}</td>
+              <td>
+                <span class="user-line">
+                  {{ audit.casoNo }} · {{ audit.casoRank }} · {{ audit.casoName }}
+                </span>
+              </td>
+              <td>
+                <span class="user-line">
+                  {{ audit.igUserNo }} · {{ audit.igUserRank }} · {{ audit.igUserName }}
+                </span>
+              </td>
+              <td>
+                <div class="status-chips">
+                  <span class="bucket-chip chip-auditor">Auditor Bucket</span>
+                  <span class="stage-chip stage-normal">Planned</span>
+                </div>
+              </td>
+              <td class="text-center">
+                <span *ngIf="!audit.reportFiles?.length" class="text-muted small">None</span>
+                <div *ngFor="let f of audit.reportFiles" class="doc-link">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="viewFile(f)">
+                    <i class="fas fa-eye me-1"></i>{{ f.name }}
+                  </button>
+                </div>
+              </td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-primary"
+                  (click)="openSubmitReportModal(audit, submitReportModal)">
+                  <i class="fas fa-upload me-1"></i> Submit Report
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noAuditorAudits>
+        <div class="empty-state-inline">
+          <i class="fas fa-inbox"></i>
+          <span>No audits pending your report.</span>
+        </div>
+      </ng-template>
+    </div>
+  </ng-container>
+
+  <!-- ══ IG/DIG INBOX ════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="isIgDig">
+    <div class="inbox-section">
+      <div class="inbox-section-header igdig-header">
+        <div class="inbox-section-title">
+          <i class="fas fa-user-shield me-2"></i>IG / DIG Inbox
+          <span class="count-pill">{{ igDigInboxAudits.length }}</span>
+        </div>
+        <div class="inbox-section-subtitle">Observation lists sent to you — review and request compliance</div>
+      </div>
+
+      <div class="bcas-schedule-table" *ngIf="igDigInboxAudits.length > 0; else noIgDigAudits">
+        <table class="table table-hover table-bordered align-middle modern-table mb-0">
+          <thead class="thead-igdig">
+            <tr>
+              <th>#</th>
+              <th>Audit Name</th>
+              <th>Unit</th>
+              <th>Month</th>
+              <th>CASO</th>
+              <th>Auditor</th>
+              <th>Observations</th>
+              <th>Stage</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let audit of igDigInboxAudits; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td class="fw-semibold">{{ audit.auditName }}</td>
+              <td>{{ audit.unitName }}</td>
+              <td>{{ formatMonth(audit.auditMonth) }}</td>
+              <td>
+                <span class="user-line">
+                  {{ audit.casoNo }} · {{ audit.casoRank }} · {{ audit.casoName }}
+                </span>
+              </td>
+              <td>
+                <span class="user-line">
+                  {{ audit.auditorNo }} · {{ audit.auditorRank }} · {{ audit.auditorName }}
+                </span>
+              </td>
+              <td>
+                <div *ngIf="audit.observations?.length; else noObs" class="obs-summary">
+                  <span *ngFor="let o of audit.observations" class="obs-type-chip"
+                    [ngClass]="o.type === 'Critical' ? 'obs-critical' :
+                               o.type === 'Moderate' ? 'obs-moderate' : 'obs-minor'">
+                    {{ o.type }}
+                  </span>
+                  <span class="obs-count">{{ audit.observations!.length }} item(s)</span>
+                </div>
+                <ng-template #noObs><span class="text-muted small">—</span></ng-template>
+              </td>
+              <td>
+                <div class="status-chips">
+                  <span class="bucket-chip chip-igdig">IG/DIG Bucket</span>
+                  <span class="stage-chip stage-normal">Observation Review</span>
+                </div>
+              </td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-outline-primary me-1"
+                  (click)="openSummaryModal(audit, summaryModal)">
+                  <i class="fas fa-eye me-1"></i> Details
+                </button>
+                <button class="btn btn-sm btn-warning"
+                  (click)="openRequestComplianceModal(audit, requestComplianceModal)">
+                  <i class="fas fa-paper-plane me-1"></i> Request Compliance
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noIgDigAudits>
+        <div class="empty-state-inline">
+          <i class="fas fa-inbox"></i>
+          <span>No observation lists pending your review.</span>
+        </div>
+      </ng-template>
+    </div>
+  </ng-container>
+
+
+  <!-- ══ SUBMIT REPORT MODAL (Auditor) ══════════════════════════════════════ -->
+  <ng-template #submitReportModal let-modal>
+    <div class="modal-header modal-header-blue">
+      <h5 class="modal-title">
+        <i class="fas fa-upload me-2"></i>Submit Audit Report
+        <span class="fw-normal ms-2">— {{ actionAudit?.auditName }}</span>
+      </h5>
+      <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info small py-2">
+        <i class="fas fa-info-circle me-1"></i>
+        Upload your completed audit report. Once submitted, the audit moves to the
+        <strong>CASO Bucket</strong> for observation.
+      </div>
+
+      <div class="file-section-card mt-3">
+        <div class="file-section-header">
+          <span><i class="fas fa-paperclip me-2"></i>Report Documents</span>
+          <small class="text-muted">PDF / Word</small>
+        </div>
+        <div class="file-list" *ngIf="reportFiles.length > 0">
+          <div class="file-item pending" *ngFor="let f of reportFiles; let i = index">
+            <div class="file-icon pending-icon">
+              <i class="fas fa-file-pdf" *ngIf="f.name.toLowerCase().endsWith('.pdf')"></i>
+              <i class="fas fa-file-word" *ngIf="!f.name.toLowerCase().endsWith('.pdf')"></i>
+            </div>
+            <div class="file-meta">
+              <span class="file-name">{{ f.name }}</span>
+              <span class="file-info">{{ (f.size / 1024).toFixed(1) }} KB</span>
+            </div>
+            <div class="file-actions">
+              <button type="button" class="btn-file-remove" (click)="removeReportFile(i)">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="file-empty" *ngIf="reportFiles.length === 0">
+          <i class="fas fa-folder-open"></i><span>No files attached</span>
+        </div>
+        <div class="file-upload-area">
+          <label class="upload-btn" for="reportFileInput">
+            <i class="fas fa-plus-circle me-2"></i> Attach Report Files
+            <span class="text-danger ms-1">*</span>
+          </label>
+          <input id="reportFileInput" type="file" class="d-none" multiple
+            accept=".pdf,.doc,.docx" (change)="onReportFilesSelected($event)">
         </div>
       </div>
     </div>
-  </div>
-
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item" *ngFor="let tab of internalAuditFacade.tabs">
-      <button type="button"
-        class="nav-link"
-        [class.active]="internalAuditFacade.activeTab === tab[0]"
-        (click)="internalAuditFacade.setTab(tab[0])">
-        {{ tab[1] }}
+    <div class="modal-footer border-0">
+      <button class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+      <button class="btn btn-primary" [disabled]="isSubmittingReport || reportFiles.length === 0"
+        (click)="submitAuditorReport()">
+        <span *ngIf="isSubmittingReport" class="spinner-border spinner-border-sm me-1"></span>
+        <i class="fas fa-paper-plane me-1" *ngIf="!isSubmittingReport"></i>
+        Submit Report
       </button>
-    </li>
-  </ul>
+    </div>
+  </ng-template>
 
-  <div class="row g-3">
-    <div class="col-lg-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold">Internal Audit List</div>
-        <div class="card-body">
-          <div class="row g-2 mb-3">
-            <div class="col-12">
-              <input class="form-control"
-                placeholder="Search ref / unit / auditor"
-                [(ngModel)]="internalAuditFacade.searchText">
-            </div>
-            <div class="col-12">
-              <select class="form-select" [(ngModel)]="internalAuditFacade.selectedStatus">
-                <option value="">All Status</option>
-                <option>Planned</option>
-                <option>In Progress</option>
-                <option>Completed</option>
-                <option>Action Required</option>
-                <option>Closed</option>
-              </select>
-            </div>
-          </div>
+  <!-- ══ REQUEST COMPLIANCE MODAL (IG/DIG) ══════════════════════════════════ -->
+  <ng-template #requestComplianceModal let-modal>
+    <div class="modal-header modal-header-purple">
+      <h5 class="modal-title">
+        <i class="fas fa-clipboard-check me-2"></i>Request Compliance
+        <span class="fw-normal ms-2">— {{ actionAudit?.auditName }}</span>
+      </h5>
+      <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning small py-2">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        This will send a compliance request to <strong>CASO</strong>. The audit will move back to
+        <strong>CASO Bucket</strong> for compliance submission.
+      </div>
 
-          <button type="button"
-            class="audit-list-item"
-            *ngFor="let audit of internalAuditFacade.filteredAudits"
-            [class.active]="internalAuditFacade.selectedAuditId === audit.id"
-            (click)="internalAuditFacade.selectAudit(audit)">
-            <span class="fw-semibold">{{ audit.auditRefNo }}</span>
-            <small>{{ audit.unit.unitName }}</small>
-            <span class="badge mt-2" [ngClass]="internalAuditFacade.statusBadge[audit.status]">
-              {{ audit.status }}
-            </span>
-          </button>
-
-          <div class="text-muted text-center border rounded p-3" *ngIf="internalAuditFacade.filteredAudits.length === 0">
-            No internal audit found.
-          </div>
-        </div>
+      <div class="mt-3">
+        <label class="form-label fw-semibold small">Remarks / Instructions for CASO</label>
+        <textarea class="form-control" rows="4"
+          placeholder="Specify what compliance is required or any observations that need addressing..."
+          [(ngModel)]="complianceRemarks"></textarea>
       </div>
     </div>
-
-    <div class="col-lg-8">
-      <app-internal-audit-schedule
-        *ngIf="internalAuditFacade.activeTab === 'schedule'"
-        [auditForm]="internalAuditFacade.auditForm"
-        [units]="internalAuditFacade.units"
-        (saveAudit)="internalAuditFacade.saveAudit()">
-      </app-internal-audit-schedule>
-
-      <app-internal-audit-questionnaire
-        *ngIf="internalAuditFacade.activeTab === 'questionnaire'"
-        [audit]="internalAuditFacade.selectedAudit"
-        [questionnaireForm]="internalAuditFacade.questionnaireForm"
-        (saveQuestionnaire)="internalAuditFacade.saveQuestionnaire()">
-      </app-internal-audit-questionnaire>
-
-      <app-internal-audit-unit-response
-        *ngIf="internalAuditFacade.activeTab === 'response'"
-        [audit]="internalAuditFacade.selectedAudit"
-        [responseForm]="internalAuditFacade.responseForm"
-        (submitResponse)="internalAuditFacade.submitUnitResponse()">
-      </app-internal-audit-unit-response>
-
-      <app-internal-audit-report
-        *ngIf="internalAuditFacade.activeTab === 'report'"
-        [audit]="internalAuditFacade.selectedAudit"
-        [reportForm]="internalAuditFacade.reportForm"
-        (reportFilesSelected)="internalAuditFacade.onReportFilesSelected($event)"
-        (submitReport)="internalAuditFacade.submitReport()">
-      </app-internal-audit-report>
-
-      <app-internal-audit-observation
-        *ngIf="internalAuditFacade.activeTab === 'observation'"
-        [audit]="internalAuditFacade.selectedAudit"
-        [observationForm]="internalAuditFacade.observationForm"
-        (saveObservations)="internalAuditFacade.saveObservations()">
-      </app-internal-audit-observation>
-
-      <app-internal-audit-compliance
-        *ngIf="internalAuditFacade.activeTab === 'compliance'"
-        [audit]="internalAuditFacade.selectedAudit"
-        [selectedObservation]="internalAuditFacade.selectedObservation"
-        [selectedObservationId]="internalAuditFacade.selectedObservationId"
-        [complianceForm]="internalAuditFacade.complianceForm"
-        (observationSelected)="internalAuditFacade.selectObservation($event)"
-        (submitCompliance)="internalAuditFacade.submitCompliance()">
-      </app-internal-audit-compliance>
-
-      <app-internal-audit-summary
-        *ngIf="internalAuditFacade.activeTab === 'summary'"
-        [audit]="internalAuditFacade.selectedAudit"
-        [statusBadge]="internalAuditFacade.statusBadge">
-      </app-internal-audit-summary>
+    <div class="modal-footer border-0">
+      <button class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+      <button class="btn btn-warning" [disabled]="isRequestingCompliance"
+        (click)="requestCompliance()">
+        <span *ngIf="isRequestingCompliance" class="spinner-border spinner-border-sm me-1"></span>
+        <i class="fas fa-paper-plane me-1" *ngIf="!isRequestingCompliance"></i>
+        Request Compliance
+      </button>
     </div>
-  </div>
+  </ng-template>
+
+  <!-- ══ SUMMARY MODAL ══════════════════════════════════════════════════════ -->
+  <ng-template #summaryModal let-modal>
+    <div class="summary-modal" *ngIf="selectedSummary">
+      <div class="summary-header">
+        <div class="summary-header-left">
+          <div class="summary-icon"><i class="fas fa-file-alt"></i></div>
+          <div>
+            <h5 class="summary-title">{{ selectedSummary.auditName }}</h5>
+            <div class="summary-meta-line">
+              <span class="text-muted">{{ formatMonth(selectedSummary.auditMonth) }}</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+      </div>
+      <div class="summary-body">
+
+        <div class="summary-section">
+          <div class="summary-section-title"><i class="fas fa-list-ul me-2"></i>Observations ({{ selectedSummary.observations?.length || 0 }})</div>
+          <div *ngIf="selectedSummary.observations?.length; else noObsDetail">
+            <div class="obs-detail-row" *ngFor="let o of selectedSummary.observations; let i = index">
+              <div class="obs-detail-header">
+                <span class="obs-sl">{{ o.slNo }}</span>
+                <span class="obs-type-chip ms-2"
+                  [ngClass]="o.type === 'Critical' ? 'obs-critical' :
+                             o.type === 'Moderate' ? 'obs-moderate' : 'obs-minor'">
+                  {{ o.type }}
+                </span>
+              </div>
+              <p class="obs-detail-text">{{ o.observation }}</p>
+              <p class="obs-remarks" *ngIf="o.remarks">{{ o.remarks }}</p>
+            </div>
+          </div>
+          <ng-template #noObsDetail>
+            <div class="p-3 text-muted small">No observations recorded yet.</div>
+          </ng-template>
+        </div>
+
+        <div class="summary-section" *ngIf="selectedSummary.complianceTrail?.length">
+          <div class="summary-section-title"><i class="fas fa-stream me-2"></i>Activity Trail</div>
+          <div class="trail-list">
+            <div class="trail-item" *ngFor="let entry of selectedSummary.complianceTrail">
+              <div class="trail-dot"></div>
+              <div class="trail-text">{{ entry }}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="summary-footer">
+        <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Close</button>
+      </div>
+    </div>
+  </ng-template>
+
 </div>

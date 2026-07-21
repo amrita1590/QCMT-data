@@ -20,12 +20,13 @@ import { AuditBoardCasoComponent } from './audit-board-caso/audit-board-caso.com
 import { PageNotFoundComponentComponent } from './404/page-not-found-component/page-not-found-component.component';
 import { IcaoComponent } from './icao/icao.component';
 import { BcasComponent } from './bcas/bcas.component';
-import { InternalAuditComponent } from './internal-audit/internal-audit.component';
+
 import { IqcuAuditComponent } from './iqcu-audit/iqcu-audit.component';
 import { ChangepasswordComponent } from './register/changepassword/changepassword.component';
 import { ChangepasswordpageComponent } from './changepassword/changepasswordpage/changepasswordpage.component';
 import { IqcuauditlistComponent } from './iqcuaudit/iqcuauditlist/iqcuauditlist.component';
 import { OtherauditapshqrsdeskComponent } from './otherauditapshqrsdesk/otherauditapshqrsdesk.component';
+import { InternalAuditComponent } from './internal-audit/internal-audit.component';
 
 
 export const routes: Routes = [
@@ -48,10 +49,10 @@ export const routes: Routes = [
     {path: 'auditboard', component: AuditboardComponent, canActivate: [AuthGuard]},
     {path: 'auditboardcaso', component: AuditBoardCasoComponent, canActivate: [AuthGuard]},
     {path: 'iqcu', component: IqcuAuditComponent, canActivate: [AuthGuard]},
-    {path: 'internalaudit', component: InternalAuditComponent, canActivate: [AuthGuard]},
     {path: 'bcas', component: BcasComponent, canActivate: [AuthGuard]},
     {path: 'icao', component: IcaoComponent, canActivate: [AuthGuard]},
     {path: 'iqcuauditlist', component: IqcuauditlistComponent, canActivate: [AuthGuard]},
     {path: 'otherauditapshqrsdesk', component: OtherauditapshqrsdeskComponent, canActivate: [AuthGuard]},
+    {path: 'iaudit', component: InternalAuditComponent, canActivate: [AuthGuard]},
     {path: '**', component: PageNotFoundComponentComponent, canActivate: [AuthGuard]}
 ];

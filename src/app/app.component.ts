@@ -4,7 +4,6 @@ import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { NgIf } from '@angular/common';
 import { LeftSidebarComponent } from './left-sidebar/left-sidebar.component';
 import { MainComponent } from './main/main.component';
 import { isPlatformBrowser } from '@angular/common';
@@ -31,9 +30,7 @@ export class AppComponent implements OnInit {
   isLeftSidebarCollapsed = signal<boolean>(false);
   screenWidth = signal<number>(0); // Initialize to 0
 
-  constructor(private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {
-    console.log("I am inside App");
-  }
+  constructor(private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   shouldShowHeader(): boolean {
     this.curURL = this.router.url;
@@ -59,7 +56,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.screenWidth.set(window.innerWidth); // Set initial screen width
+      this.screenWidth.set(window.innerWidth);
       this.isLeftSidebarCollapsed.set(this.screenWidth() < 768);
     }
   }

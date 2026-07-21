@@ -5,7 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BcasAuditRecord } from '../interface/BcasAuditRecord';
 import { IcaoAuditRecord } from '../interface/IcaoAuditRecord';
-import { InternalAuditSchedule } from '../internal-audit/internal-audit.model';
+import { InternalAuditRecord } from '../interface/InternalAuditRecord';
 import { BcasAuditService } from '../service/bcas-audit.service';
 import { IcaoService } from '../service/icao.service';
 import { InternalAuditService } from '../service/internal-audit.service';
@@ -25,7 +25,7 @@ export interface UnifiedResult {
   unit: string;
   date: string;
   status: string;
-  original: BcasAuditRecord | IcaoAuditRecord | InternalAuditSchedule;
+  original: BcasAuditRecord | IcaoAuditRecord | InternalAuditRecord;
 }
 
 @Component({
@@ -40,7 +40,7 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
   activeTab: TabType = 'BCAS';
 
   bcasAudits:     BcasAuditRecord[]       = [];
-  internalAudits: InternalAuditSchedule[] = [];
+  internalAudits: InternalAuditRecord[] = [];
   icaoAudits:     IcaoAuditRecord[]       = [];
 
   readonly currentYear = new Date().getFullYear();
@@ -71,7 +71,7 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
   isSubmitting = false;
 
   selectedBcas:     BcasAuditRecord | null       = null;
-  selectedInternal: InternalAuditSchedule | null = null;
+  selectedInternal: InternalAuditRecord | null = null;
   selectedIcao:     IcaoAuditRecord | null       = null;
 
   obsCompliances: ObsCompliance[] = [];
@@ -132,7 +132,7 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
   // ── Year-filtered base arrays (used by totals + filtered getters)
   get yearBcas()     { return this.bcasAudits.filter(a => this.isCurrentYear(a.createdAt)); }
   get yearIcao()     { return this.icaoAudits.filter(a => this.isCurrentYear(a.createdAt)); }
-  get yearInternal() { return this.internalAudits.filter(a => this.isCurrentYear(a.auditFromDate)); }
+  get yearInternal() { return this.internalAudits.filter(a => this.isCurrentYear(a.createdAt)); }
 
   // ── Totals (current year only) ────────────────────────────────
   get bcasTotal()    { return this.yearBcas.length; }
@@ -157,10 +157,10 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
     const q = this.internalSearch.toLowerCase().trim();
     if (!q) return this.yearInternal;
     return this.yearInternal.filter(a =>
-      a.auditRefNo?.toLowerCase().includes(q)     ||
-      a.unit.unitName?.toLowerCase().includes(q)  ||
-      a.auditorName?.toLowerCase().includes(q)    ||
-      a.auditFromDate?.includes(q)
+      a.auditName?.toLowerCase().includes(q)     ||
+      a.unitName?.toLowerCase().includes(q)      ||
+      a.auditorName?.toLowerCase().includes(q)   ||
+      a.auditMonth?.includes(q)
     );
   }
 
@@ -219,9 +219,9 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
                        date: a.createdAt ?? '', status: a.status, original: a }));
     }
     if (!type || type === 'Internal') {
-      this.internalAudits.filter(a => inRange(a.auditFromDate)).forEach(a =>
-        results.push({ auditType: 'Internal', displayName: a.auditRefNo, unit: a.unit.unitName,
-                       date: a.auditFromDate, status: a.status, original: a }));
+      this.internalAudits.filter(a => inRange(a.createdAt)).forEach(a =>
+        results.push({ auditType: 'Internal', displayName: a.auditName, unit: a.unitName,
+                       date: a.createdAt ?? '', status: a.status, original: a }));
     }
 
     results.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
@@ -275,7 +275,7 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
     this.modalService.open(tpl, { size: 'xl', scrollable: true, backdrop: 'static' });
   }
 
-  viewInternal(audit: InternalAuditSchedule, tpl: any) {
+  viewInternal(audit: InternalAuditRecord, tpl: any) {
     this.selectedInternal = audit;
     this.modalService.open(tpl, { size: 'lg', scrollable: true, backdrop: 'static' });
   }
@@ -292,7 +292,7 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
   ) {
     if (r.auditType === 'BCAS')     this.viewBcas(r.original as BcasAuditRecord, bcasTpl);
     if (r.auditType === 'ICAO')     this.viewIcao(r.original as IcaoAuditRecord, icaoTpl);
-    if (r.auditType === 'Internal') this.viewInternal(r.original as InternalAuditSchedule, internalTpl);
+    if (r.auditType === 'Internal') this.viewInternal(r.original as InternalAuditRecord, internalTpl);
   }
 
   setComplianceStatus(idx: number, status: 'Compliant' | 'Dropped') {
