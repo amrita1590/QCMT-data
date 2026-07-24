@@ -229,7 +229,8 @@ if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
       // ---------------------------
       const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
       const oversizedFiles: string[] = [];
-if (!this.auditorResponseFilesTemp||this.auditorResponseFilesTemp.length === 0) {
+      const hasAtLeastOneFile = !!this.auditorResponseFilesTemp?.some(f => f.uploadDocFile || f.id !== 0);
+      if (!hasAtLeastOneFile) {
         this.toast.show(
           `Please upload an Audit Report file`,
           "error"
@@ -329,7 +330,16 @@ if (!this.auditorResponseFilesTemp||this.auditorResponseFilesTemp.length === 0) 
           }
         },
         error: (err) => {
-          this.toast.show("Error uploading data! "+err, "error");
+          let message = "Error uploading data.";
+          try {
+            const parsed = typeof err.error === 'string' ? JSON.parse(err.error) : err.error;
+            if (parsed?.message) {
+              message = parsed.message;
+            }
+          } catch {
+            // response wasn't JSON — fall back to the generic message
+          }
+          this.toast.show(message, "error");
           console.error(err);
           return;
         }

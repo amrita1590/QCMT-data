@@ -78,7 +78,7 @@ Four independent audit workflows plus one aggregated APS HQrs view:
 | IQCU | `/iqcu`, `/iqcuauditlist` | `AuditscheduleserviceService` | `/v1/qcmt/master/saveaudittemplates`, etc. |
 | BCAS | `/bcas` | `BcasAuditService` | `/v1/qcmt/master/savebcasaudit`, etc. |
 | ICAO | `/icao` | `IcaoService` | `/v1/qcmt/master/saveicaoaudit`, etc. |
-| Internal | `/internalaudit` | `InternalAuditService` + `InternalAuditFacade` | `/v1/qcmt/master/saveinternalaudit`, etc. |
+| Internal | `/iaudit` | `InternalAuditService` | `/v1/qcmt/master/saveinternalaudit`, etc. |
 | Other Audits (APS desk) | `/otherauditapshqrsdesk` | BCAS + ICAO + Internal services | Aggregates all three in tabbed view |
 
 IQCU is the most complex: it has a multi-stage workflow (schedule → questionnaire → CASO response → observations → audit board → report).
@@ -106,17 +106,16 @@ BCAS unit locking: The `unitId` form control is disabled — locked to the logge
 
 BCAS user tracking on `BcasAuditMaster`: `createdBy`/`createdById` (Stage 1), `updatedBy`/`updatedByName` (Stage 2 — who submitted final report), `obsCreatedBy`/`obsCreatedByName` (Stage 3 — who submitted observations). Backend `formatDisplayName(UserDetailsMaster)` formats all stored names as "CISFNo, Rank, Name".
 
-Internal Audit uses the `InternalAuditFacade` pattern — a `providedIn: 'root'` service that owns all state (audits list, forms, user lists) and is shared across the 7 tab sub-components. The parent `InternalAuditComponent` calls `facade.init()` on `ngOnInit`. The model is `InternalAuditRecord` (not the old `InternalAuditSchedule` which was removed).
+Internal Audit (`InternalAuditComponent`, route `/iaudit`) is a single flat standalone component — it injects `InternalAuditService`, `UnitService`, `UsermanagementService` directly (no facade/shared-state layer). Model is `InternalAuditRecord` (defined in `src/app/interface/InternalAuditRecord.ts`, like every other model — there is no longer a separate co-located model file for Internal Audit).
 
-CISF Airport Sector hierarchy determines IG/DIG dropdown filtering:
+Internal Audit workflow moves through named "buckets" carried in the `status` string field: **Auditor Bucket** → **IG/DIG Bucket** → **CASO Bucket** (compliance/observation stages) → closed. `isAuditor`/`isIgDig` getters on the component derive the current user's role from `auditorList` membership and unit `unitType` (`Zone`/`Sector`) respectively — there's no separate RBAC-driven role flag for this module.
+
+CISF Airport Sector hierarchy underlies IG/DIG-related filtering:
 - 2 Sectors (APS I, APS II) headed by IG
 - 4 Zones (NZ, WZ, SZ, ENEZ) headed by DIG
 - Units fall under Zones, which fall under Sectors
 
-IG/DIG dropdown filtering logic (`InternalAuditFacade.igDigUserList`):
-- `unitType === 'DIG Unit'` → shows users from the **same sector** as logged-in user
-- `unitType === 'Unit'` → shows users whose unit type is **"Zone"**
-- Otherwise → shows all users
+The `/bcas` → `bcas-internal` sub-component keeps its own `igDigUserList` getter (unit `unitType === 'Zone' || 'Sector'`) — this logic is duplicated per-component now, not shared, so check both places when changing IG/DIG eligibility rules.
 
 Internal Audit creation form follows the BCAS pattern: audit name auto-generated (`UnitName - Internal Audit - Month Year`), unit locked to logged-in user, CASO auto-filled from unit, file upload restricted to PDF/Word (.pdf/.doc/.docx). The backend `saveinternalaudit` endpoint accepts `multipart/form-data` (not JSON). `fromDate`/`toDate` are not set at creation — they are updated in a later workflow stage by another user.
 
@@ -134,7 +133,7 @@ File uploads that need progress tracking use `{ reportProgress: true, observe: '
 - **`ToastService`** (`service/toast.service.ts`) — call `toastService.show(message, type, duration)` where `type` is `'success' | 'error' | 'warning' | 'info'`; the `ToastComponent` renders `ToastService.toasts` directly (no Observable needed)
 
 ### Models / Interfaces
-All TypeScript interfaces live in [src/app/interface/](src/app/interface/) **except** Internal Audit models, which are co-located in [src/app/internal-audit/internal-audit.model.ts](src/app/internal-audit/internal-audit.model.ts) and export typed unions for status and observation types.
+All TypeScript interfaces live in [src/app/interface/](src/app/interface/), including Internal Audit's (`InternalAuditRecord.ts`, exporting typed unions for status/observation types) — there is no per-module exception anymore.
 
 ### Key Files
 - [src/app/app.routes.ts](src/app/app.routes.ts) — all routes; every protected route uses `canActivate: [AuthGuard]`
@@ -163,7 +162,7 @@ src/app/
 │   ├── bcas-icao/            #   ICAO audit sub-component (CASO creates ICAO here)
 │   └── bcas-internal/        #   Internal audit sub-component
 ├── icao/                     # Standalone ICAO audit (separate /icao route — DUPLICATE of bcas-icao)
-├── internal-audit/           # CISF Internal audit; models in internal-audit.model.ts
+├── internal-audit/           # Standalone Internal Audit (/iaudit route — DUPLICATE of bcas-internal); flat component, no facade
 ├── otherauditapshqrsdesk/    # APS HQrs tabbed view of BCAS + ICAO + Internal audits
 ├── dashboard/                # Dashboard with Chart.js doughnut chart
 ├── header/                   # Navigation header
@@ -174,7 +173,9 @@ src/app/
 
 ### Important Gotchas
 
-**Dual ICAO/Internal components**: The `/bcas` route renders `BcasComponent` which contains three tab sub-components: `BcasBcasComponent`, `BcasIcaoComponent`, `BcasInternalComponent`. There are ALSO standalone route components `IcaoComponent` (`/icao`) and `InternalAuditComponent` (`/internalaudit`). When making changes to ICAO or Internal Audit, you must update BOTH the `/bcas` sub-component AND the standalone component — they are separate codebases with duplicated logic.
+**Dual ICAO/Internal components**: The `/bcas` route renders `BcasComponent` which contains three tab sub-components: `BcasBcasComponent`, `BcasIcaoComponent`, `BcasInternalComponent`. There are ALSO standalone route components `IcaoComponent` (`/icao`) and `InternalAuditComponent` (`/iaudit`). When making changes to ICAO or Internal Audit, you must update BOTH the `/bcas` sub-component AND the standalone component — they are separate codebases with duplicated logic.
+
+**Orphaned components**: `src/app/adminauditschedule/` and `src/app/student/` exist in the tree but aren't part of the audit domain — `adminauditschedule` isn't referenced in `app.routes.ts` or anywhere else (dead code), and `student`/`settings` are routed (`/student`, `/settings`, both behind `AuthGuard`) but are generic scaffolding-style pages unrelated to the CISF audit workflow. Don't assume either reflects current architecture patterns.
 
 **Unit locking**: BCAS (`bcas-bcas`) and ICAO (`bcas-icao`, `icao`) lock the unit to the logged-in user's assigned unit. The `unitId` form control is disabled at construction. After any `form.reset()`, you must re-disable it. Always use `getLoggedUserDetailList()` (Master service) — never `getUserProfileDetails()` (Auth service) — to get `unitid`.
 
