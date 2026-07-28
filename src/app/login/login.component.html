@@ -27,91 +27,157 @@
         <span>Enter your registered credentials to continue.</span>
       </div>
 
-      <form [formGroup]="loginDetailsForm" (ngSubmit)="onLogin(loginDetailsForm.value)">
-        @if (status) {
-          <div class="error-banner" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            Invalid Email or Password
-          </div>
-        }
-
-        <div class="form-field">
-          <label for="username">
-            <i class="bi bi-person-fill"></i>
-            Email Address
-          </label>
-          <input
-            type="email"
-            formControlName="username"
-            id="username"
-            autocomplete="username"
-            placeholder="Enter registered email address"
-          >
-          @if (loginDetailsForm.get('username')?.invalid && (loginDetailsForm.get('username')?.dirty || loginDetailsForm.get('username')?.touched)) {
-            @if (loginDetailsForm.get('username')?.hasError('required')) {
-              <span class="field-error">Email is required.</span>
-            }
-          }
-        </div>
-
-        <div class="form-field">
-          <label for="password">
-            <i class="bi bi-key-fill"></i>
-            Password
-          </label>
-          <input
-            type="password"
-            formControlName="password"
-            id="password"
-            autocomplete="current-password"
-            placeholder="Enter password"
-          >
-          @if (loginDetailsForm.get('password')?.invalid && (loginDetailsForm.get('password')?.dirty || loginDetailsForm.get('password')?.touched)) {
-            @if (loginDetailsForm.get('password')?.hasError('required')) {
-              <span class="field-error">Password is required.</span>
-            }
-          }
-        </div>
-
-        <div class="captcha-box" [class.captcha-expired]="captchaExpired">
-          <div class="captcha-question">
-            <i class="bi bi-shield-check"></i>
-            @if (!captchaExpired) {
-              <span class="captcha-expr">{{ captchaNum1 }} {{ captchaOperator }} {{ captchaNum2 }} = ?</span>
-              <span class="captcha-countdown" [class.captcha-warn]="captchaTimer <= 10">
-                <i class="bi bi-clock"></i> {{ captchaTimer }}s
-              </span>
-            } @else {
-              <span class="captcha-expr captcha-expired-text">CAPTCHA expired</span>
-            }
-            <button type="button" class="captcha-refresh" (click)="generateCaptcha()" [title]="captchaExpired ? 'Get new CAPTCHA' : 'New question'">
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
-          </div>
-          @if (!captchaExpired) {
-            <input type="number" class="captcha-input" [(ngModel)]="captchaInput" [ngModelOptions]="{standalone: true}"
-              placeholder="Enter answer" autocomplete="off">
-          } @else {
-            <div class="captcha-expired-msg">
-              <i class="bi bi-exclamation-triangle"></i> Time expired. Click <strong>refresh</strong> to get a new question.
+      @if (!otpStep) {
+        <form [formGroup]="loginDetailsForm" (ngSubmit)="onLogin(loginDetailsForm.value)">
+          @if (status) {
+            <div class="error-banner" role="alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              Invalid Email or Password
             </div>
           }
-          @if (captchaError) {
-            <span class="field-error">Incorrect answer. Please try again.</span>
-          }
-        </div>
 
-        <button type="submit" class="login-button" [disabled]="loginDetailsForm.invalid || !captchaInput || captchaExpired">
-          <i class="bi bi-box-arrow-in-right"></i>
-          Sign In Securely
-        </button>
+          <div class="form-field">
+            <label for="username">
+              <i class="bi bi-person-fill"></i>
+              Email Address
+            </label>
+            <input
+              type="email"
+              formControlName="username"
+              id="username"
+              autocomplete="username"
+              placeholder="Enter registered email address"
+            >
+            @if (loginDetailsForm.get('username')?.invalid && (loginDetailsForm.get('username')?.dirty || loginDetailsForm.get('username')?.touched)) {
+              @if (loginDetailsForm.get('username')?.hasError('required')) {
+                <span class="field-error">Email is required.</span>
+              }
+            }
+          </div>
 
-        <div class="support-links">
-          <a routerLink="/contact">Forgot password?</a>
-          <span></span>
-          <a routerLink="/contact">Contact Help Desk</a>
+          <div class="form-field">
+            <label for="password">
+              <i class="bi bi-key-fill"></i>
+              Password
+            </label>
+            <input
+              type="password"
+              formControlName="password"
+              id="password"
+              autocomplete="current-password"
+              placeholder="Enter password"
+            >
+            @if (loginDetailsForm.get('password')?.invalid && (loginDetailsForm.get('password')?.dirty || loginDetailsForm.get('password')?.touched)) {
+              @if (loginDetailsForm.get('password')?.hasError('required')) {
+                <span class="field-error">Password is required.</span>
+              }
+            }
+          </div>
+
+          <div class="captcha-box" [class.captcha-expired]="captchaExpired">
+            <div class="captcha-question">
+              <i class="bi bi-shield-check"></i>
+              @if (!captchaExpired) {
+                <span class="captcha-expr">{{ captchaNum1 }} {{ captchaOperator }} {{ captchaNum2 }} = ?</span>
+                <span class="captcha-countdown" [class.captcha-warn]="captchaTimer <= 10">
+                  <i class="bi bi-clock"></i> {{ captchaTimer }}s
+                </span>
+              } @else {
+                <span class="captcha-expr captcha-expired-text">CAPTCHA expired</span>
+              }
+              <button type="button" class="captcha-refresh" (click)="generateCaptcha()" [title]="captchaExpired ? 'Get new CAPTCHA' : 'New question'">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+            @if (!captchaExpired) {
+              <input type="number" class="captcha-input" [(ngModel)]="captchaInput" [ngModelOptions]="{standalone: true}"
+                placeholder="Enter answer" autocomplete="off">
+            } @else {
+              <div class="captcha-expired-msg">
+                <i class="bi bi-exclamation-triangle"></i> Time expired. Click <strong>refresh</strong> to get a new question.
+              </div>
+            }
+            @if (captchaError) {
+              <span class="field-error">Incorrect answer. Please try again.</span>
+            }
+          </div>
+
+          <button type="submit" class="login-button" [disabled]="loginDetailsForm.invalid || !captchaInput || captchaExpired">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Sign In Securely
+          </button>
+
+          <div class="support-links">
+            <a routerLink="/contact">Forgot password?</a>
+            <span></span>
+            <a routerLink="/contact">Contact Help Desk</a>
+          </div>
+        </form>
+      } @else {
+        <div class="otp-box">
+          <div class="otp-header">
+            <i class="bi bi-shield-lock-fill"></i>
+            <div>
+              <strong>Two-factor verification</strong>
+              @if (deliveryType === 'SANDESH_SMS') {
+                <span>OTP sent to {{ maskedMobile }}</span>
+              } @else {
+                <span>OTP sent to {{ maskedEmail }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="otp">
+              <i class="bi bi-key-fill"></i>
+              One-Time Password
+            </label>
+            <input
+              type="text"
+              id="otp"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="one-time-code"
+              placeholder="Enter 6-digit OTP"
+              [(ngModel)]="otpInput"
+              [ngModelOptions]="{standalone: true}"
+              [disabled]="verifying"
+            >
+            @if (otpError) {
+              <span class="field-error">{{ otpError }}</span>
+            }
+            @if (attemptsRemaining !== null) {
+              <span class="otp-attempts">{{ attemptsRemaining }} attempt(s) remaining</span>
+            }
+          </div>
+
+          <button type="button" class="login-button" [disabled]="!otpInput || verifying" (click)="onVerifyOtp()">
+            @if (verifying) {
+              <span class="spinner" aria-hidden="true"></span>
+              Verifying...
+            } @else {
+              <i class="bi bi-check-circle-fill"></i>
+              Verify OTP
+            }
+          </button>
+
+          <div class="otp-resend-row">
+            <button type="button" class="otp-resend-btn" [disabled]="!resendExpired || sendingOtp" (click)="onResendOtp()">
+              @if (sendingOtp) {
+                <span class="spinner" aria-hidden="true"></span>
+              }
+              Resend OTP
+            </button>
+            @if (!resendExpired) {
+              <span class="otp-countdown"><i class="bi bi-clock"></i> {{ resendTimer }}s</span>
+            }
+          </div>
+
+          <div class="support-links">
+            <a (click)="backToLogin()">Back to login</a>
+          </div>
         </div>
-      </form>
+      }
 
       <div class="policy-links">
         <a routerLink="/terms" target="_blank">Terms of Use</a>

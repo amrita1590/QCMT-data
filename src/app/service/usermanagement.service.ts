@@ -9,6 +9,7 @@ import { ChangePassword } from '../interface/ChangePassword';
 import { UserRoles } from '../interface/UserRoles';
 import { UserRoleDetails } from '../interface/UserRoleDetails';
 import { NotificationBean } from '../interface/NotificationBean';
+import { OtpActionResponse } from '../interface/OtpActionResponse';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +19,9 @@ export class UsermanagementService {
   private token: string | null = null;
   private registerUrl = '/v1/qcmt/auth/register'; // Use the proxy path
   private loginUrl = '/v1/qcmt/auth/login';
+  private sendOtpUrl = '/v1/qcmt/auth/send-otp';
+  private resendOtpUrl = '/v1/qcmt/auth/resend-otp';
+  private verifyOtpUrl = '/v1/qcmt/auth/verify-otp';
   private userDetails = '/v1/qcmt/master/userdetails';
   private userAuditDetails = '/v1/qcmt/master/audituserlist';
    private registeruserUrl = '/v1/qcmt/master/saveusermaster';
@@ -111,25 +115,53 @@ export class UsermanagementService {
   userLogin(login: Login): Observable<any> {
     return this.http.post(this.loginUrl, login, { responseType: 'text' }).pipe(
       tap(response => {
-        if(response.includes("updatepassword")) {
-          console.log('Received token:', response);
-          response.split("-");
-          this.token = response.split("-")[1];
-          if (isPlatformBrowser(this.platformId)) {
-            localStorage.setItem('jwtToken', this.token);
-          }
-          this.isLoggedIn = true;
-        } else {
-          console.log('Received token:', response);
-          this.token = response;
-          if (isPlatformBrowser(this.platformId)) {
-            localStorage.setItem('jwtToken', this.token);
-          }
-          this.isLoggedIn = true;
+        // An OTP_REQUIRED JSON payload is handled by the caller (LoginComponent) - only a
+        // plain-token / "updatepassword-<token>" response represents a completed login here.
+        if (this.isOtpRequiredResponse(response)) {
+          return;
         }
+        this.storeLoginToken(response);
       })
     );
-  } 
+  }
+
+  /** True when /login (or /verify-otp) returned an OTP_REQUIRED challenge instead of a token. */
+  isOtpRequiredResponse(response: string): boolean {
+    try {
+      const parsed = JSON.parse(response);
+      return parsed && parsed.status === 'OTP_REQUIRED';
+    } catch {
+      return false;
+    }
+  }
+
+  private storeLoginToken(response: string): void {
+    if (response.includes("updatepassword")) {
+      console.log('Received token:', response);
+      this.token = response.split("-")[1];
+    } else {
+      console.log('Received token:', response);
+      this.token = response;
+    }
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('jwtToken', this.token);
+    }
+    this.isLoggedIn = true;
+  }
+
+  sendOtp(sessionId: string, deliveryType: string): Observable<OtpActionResponse> {
+    return this.http.post<OtpActionResponse>(this.sendOtpUrl, { sessionId, deliveryType });
+  }
+
+  resendOtp(sessionId: string): Observable<OtpActionResponse> {
+    return this.http.post<OtpActionResponse>(this.resendOtpUrl, { sessionId });
+  }
+
+  verifyOtp(sessionId: string, otp: string): Observable<any> {
+    return this.http.post(this.verifyOtpUrl, { sessionId, otp }, { responseType: 'text' }).pipe(
+      tap(response => this.storeLoginToken(response))
+    );
+  }
 
   getToken(): string | null {
     if (isPlatformBrowser(this.platformId)) {

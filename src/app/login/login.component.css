@@ -326,6 +326,99 @@ form {
   padding: 6px 0;
 }
 
+/* ── OTP verification step ──────────────────────── */
+.otp-box {
+  margin-bottom: 18px;
+}
+
+.otp-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid #cbd5de;
+  border-radius: 4px;
+  background: #f6f8fa;
+}
+
+.otp-header > i {
+  color: #0b4c86;
+  font-size: 1.3rem;
+}
+
+.otp-header strong {
+  display: block;
+  color: #0b3969;
+  font-size: .84rem;
+}
+
+.otp-header span {
+  display: block;
+  margin-top: 3px;
+  color: #536776;
+  font-size: .78rem;
+}
+
+.otp-attempts {
+  display: block;
+  margin-top: 6px;
+  color: #a24322;
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.otp-resend-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.otp-resend-btn {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  color: #0b4c86;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.otp-resend-btn:disabled {
+  color: #9aa7b0;
+  cursor: not-allowed;
+}
+
+.otp-countdown {
+  color: #697783;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, .5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+.otp-resend-btn .spinner {
+  border: 2px solid rgba(11, 76, 134, .3);
+  border-top-color: #0b4c86;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .login-button {
   display: flex;
   gap: 9px;
@@ -373,6 +466,7 @@ form {
 
 a {
   color: #0b4c86;
+  cursor: pointer;
   font-size: .75rem;
   font-weight: 700;
   text-decoration: none;

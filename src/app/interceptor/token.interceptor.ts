@@ -10,9 +10,13 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = umService.getToken();
 
-  const isLoginOrRegister = req.url.includes('/auth/login') || req.url.includes('/auth/register');
-  if (isLoginOrRegister) {
-    // Skip adding the Authorization header
+  const isPublicAuthEndpoint = req.url.includes('/auth/login')
+    || req.url.includes('/auth/register')
+    || req.url.includes('/auth/send-otp')
+    || req.url.includes('/auth/resend-otp')
+    || req.url.includes('/auth/verify-otp');
+  if (isPublicAuthEndpoint) {
+    // Skip adding the Authorization header - no JWT exists yet at this stage of login
     return next(req);
   }
 

@@ -6,6 +6,8 @@ import { UsermanagementService } from '../service/usermanagement.service';
 import { Login } from '../interface/Login';
 import { Router } from '@angular/router';
 
+const OTP_RESEND_SECONDS = 30;
+
 @Component({
   selector: 'app-login',
   imports: [RouterLink, ReactiveFormsModule, FormsModule],
@@ -27,6 +29,22 @@ export class LoginComponent implements OnDestroy {
     captchaExpired = false;
     captchaTimer = 60;
     private captchaInterval: any = null;
+
+    // OTP verification step - shown in place of the form after password validation succeeds
+    // while authentication.otp.enabled=true on the backend; untouched when OTP is disabled.
+    otpStep = false;
+    sessionId = '';
+    deliveryType = '';
+    maskedEmail: string | null = null;
+    maskedMobile: string | null = null;
+    otpInput = '';
+    otpError = '';
+    attemptsRemaining: number | null = null;
+    verifying = false;
+    sendingOtp = false;
+    resendTimer = 0;
+    resendExpired = true;
+    private resendInterval: any = null;
 
     constructor(private fb: FormBuilder, private umService: UsermanagementService, private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {
       this.loginDetailsForm = this.fb.group({
@@ -68,6 +86,7 @@ export class LoginComponent implements OnDestroy {
 
     ngOnDestroy() {
       if (this.captchaInterval) clearInterval(this.captchaInterval);
+      if (this.resendInterval) clearInterval(this.resendInterval);
     }
 
     onLogin(login:Login) {
@@ -80,11 +99,11 @@ export class LoginComponent implements OnDestroy {
         if (this.loginDetailsForm.valid) {
           this.umService.userLogin(login).subscribe({
             next: (response) => {
-              if(response.includes("updatepassword")) {
-                this.router.navigate(['/updatepassword']);
-              } else {
-                this.router.navigate(['/dashboard']);
+              if (this.umService.isOtpRequiredResponse(response)) {
+                this.beginOtpStep(JSON.parse(response));
+                return;
               }
+              this.navigateAfterAuthSuccess(response);
             },
             error: (error) => {
               console.error('Login failed:', error);
@@ -95,8 +114,106 @@ export class LoginComponent implements OnDestroy {
               }, 10000); // 10000 milliseconds = 10 seconds
             }
           });
-          this.clearFields();   
-        }  
+          this.clearFields();
+        }
+    }
+
+    private navigateAfterAuthSuccess(response: string) {
+      if (response.includes("updatepassword")) {
+        this.router.navigate(['/updatepassword']);
+      } else {
+        this.router.navigate(['/dashboard']);
+      }
+    }
+
+    private beginOtpStep(challenge: { sessionId: string; deliveryType: string; maskedEmail: string | null; maskedMobile: string | null }) {
+      this.otpStep = true;
+      this.sessionId = challenge.sessionId;
+      this.deliveryType = challenge.deliveryType;
+      this.maskedEmail = challenge.maskedEmail;
+      this.maskedMobile = challenge.maskedMobile;
+      this.otpInput = '';
+      this.otpError = '';
+      this.attemptsRemaining = null;
+      this.startResendTimer(OTP_RESEND_SECONDS);
+    }
+
+    onVerifyOtp() {
+      if (!this.otpInput || this.verifying) {
+        return;
+      }
+      this.verifying = true;
+      this.otpError = '';
+      this.umService.verifyOtp(this.sessionId, this.otpInput).subscribe({
+        next: (response) => {
+          this.verifying = false;
+          this.navigateAfterAuthSuccess(response);
+        },
+        error: (error) => {
+          this.verifying = false;
+          const parsed = this.parseOtpError(error);
+          this.otpError = parsed.message;
+          this.attemptsRemaining = parsed.attemptsRemaining;
+          this.otpInput = '';
+        }
+      });
+    }
+
+    onResendOtp() {
+      if (!this.resendExpired || this.sendingOtp) {
+        return;
+      }
+      this.sendingOtp = true;
+      this.umService.resendOtp(this.sessionId).subscribe({
+        next: (response) => {
+          this.sendingOtp = false;
+          this.sessionId = response.sessionId;
+          this.otpInput = '';
+          this.otpError = '';
+          this.attemptsRemaining = null;
+          this.startResendTimer(response.resendIntervalSeconds || OTP_RESEND_SECONDS);
+        },
+        error: (error) => {
+          this.sendingOtp = false;
+          const parsed = this.parseOtpError(error);
+          this.otpError = parsed.message;
+        }
+      });
+    }
+
+    backToLogin() {
+      this.otpStep = false;
+      if (this.resendInterval) clearInterval(this.resendInterval);
+    }
+
+    private parseOtpError(error: any): { message: string; attemptsRemaining: number | null } {
+      const raw = error?.error;
+      if (typeof raw === 'string') {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.message) {
+            const match = /(\d+) attempt\(s\) remaining/.exec(parsed.message);
+            return { message: parsed.message, attemptsRemaining: match ? Number(match[1]) : null };
+          }
+        } catch {
+          // Not JSON - fall through to the generic message below.
+        }
+      }
+      return { message: 'Something went wrong. Please try again.', attemptsRemaining: null };
+    }
+
+    private startResendTimer(seconds: number) {
+      if (this.resendInterval) clearInterval(this.resendInterval);
+      this.resendTimer = seconds;
+      this.resendExpired = false;
+      if (!isPlatformBrowser(this.platformId)) return;
+      this.resendInterval = setInterval(() => {
+        this.resendTimer--;
+        if (this.resendTimer <= 0) {
+          clearInterval(this.resendInterval);
+          this.resendExpired = true;
+        }
+      }, 1000);
     }
 
     ngOnInit() {
