@@ -17,6 +17,7 @@ const OTP_RESEND_SECONDS = 30;
 
 export class LoginComponent implements OnDestroy {
     status = false;
+    loginErrorMessage = 'Invalid Email or Password';
     login: Login[] = [];
     loginDetailsForm: FormGroup;
 
@@ -107,7 +108,7 @@ export class LoginComponent implements OnDestroy {
             },
             error: (error) => {
               console.error('Login failed:', error);
-              // Handle login error (e.g., show an error message)
+              this.loginErrorMessage = this.resolveLoginErrorMessage(error);
               this.status = true;
               setTimeout(() => {
                 this.status = false; // Hide the div after 10 seconds
@@ -116,6 +117,20 @@ export class LoginComponent implements OnDestroy {
           });
           this.clearFields();
         }
+    }
+
+    /**
+     * /login returns 401 for bad credentials, but 502 specifically means the OTP couldn't be
+     * sent on any configured channel (credentials were fine) - these need different messages
+     * so the user isn't told their password is wrong when the real problem is OTP delivery.
+     */
+    private resolveLoginErrorMessage(error: any): string {
+      if (error?.status === 502) {
+        return typeof error.error === 'string' && error.error
+          ? error.error
+          : 'Unable to send OTP at this time. Please try again shortly.';
+      }
+      return 'Invalid Email or Password';
     }
 
     private navigateAfterAuthSuccess(response: string) {

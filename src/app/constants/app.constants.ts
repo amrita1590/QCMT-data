@@ -14,7 +14,8 @@ export const APP_CONSTANTS = {
     },
 
     FILES: {
-        BASE_URL: "http://192.168.11.8:8060/"
+        BASE_URL: "http://192.168.3.199:8060/"
+
     },
     NOTIFICATION: {
         PRE_QUESTIONNAIRE: 'Auditor: {auditorName} has sent PQs of {auditname}  to CASO:  {casoName}.',

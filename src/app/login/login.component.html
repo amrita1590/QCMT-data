@@ -32,7 +32,7 @@
           @if (status) {
             <div class="error-banner" role="alert">
               <i class="bi bi-exclamation-triangle-fill"></i>
-              Invalid Email or Password
+              {{ loginErrorMessage }}
             </div>
           }
 
@@ -119,10 +119,11 @@
             <i class="bi bi-shield-lock-fill"></i>
             <div>
               <strong>Two-factor verification</strong>
-              @if (deliveryType === 'SANDESH_SMS') {
-                <span>OTP sent to {{ maskedMobile }}</span>
-              } @else {
+              @if (maskedEmail) {
                 <span>OTP sent to {{ maskedEmail }}</span>
+              }
+              @if (maskedMobile) {
+                <span>OTP sent to {{ maskedMobile }}</span>
               }
             </div>
           </div>

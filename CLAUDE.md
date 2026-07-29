@@ -44,12 +44,19 @@ File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/ap
 
 ### Auth Flow
 - `UsermanagementService` stores the JWT in `localStorage` under key `jwtToken`
-- `tokenInterceptor` (functional interceptor) attaches `Authorization: Bearer <token>` to every request except `/auth/login` and `/auth/register`
+- `tokenInterceptor` (functional interceptor) attaches `Authorization: Bearer <token>` to every request except `/auth/login`, `/auth/register`, `/auth/send-otp`, `/auth/resend-otp`, `/auth/verify-otp`
 - `AuthGuard` checks token presence via `UsermanagementService.getToken()`
 - On 401, the interceptor redirects to `/login`
 - All `localStorage` access is guarded by `isPlatformBrowser(platformId)` for SSR compatibility
 - `provideHttpClient(withFetch())` is required in `app.config.ts` to suppress Angular SSR warning NG02801
 - Login form includes a math-based captcha (addition/subtraction) with a 60-second timer — captcha must pass before credentials are submitted
+
+**Optional OTP second factor**: `/v1/qcmt/auth/login` is gated server-side by the JWT-Auth service's `authentication.otp.enabled` flag (backend-only config, not in this repo). The response is always `ResponseEntity<String>` either way, so `UsermanagementService.userLogin()` and `LoginComponent` must handle both shapes from the *same* endpoint:
+- **OTP disabled** (default): response is the legacy plain JWT string, or `"updatepassword-<token>"` — unchanged, original behavior.
+- **OTP enabled**: response is a JSON-stringified `{"status":"OTP_REQUIRED", sessionId, deliveryType, maskedEmail, maskedMobile, message}`. `UsermanagementService.isOtpRequiredResponse()` detects this via a try/parse; `LoginComponent` then shows an inline OTP step (`otpStep` flag, no route change, no redirect) instead of navigating.
+- `UsermanagementService.sendOtp()` / `resendOtp()` / `verifyOtp()` call `/auth/send-otp`, `/auth/resend-otp`, `/auth/verify-otp`. `verifyOtp()`'s success response is byte-identical in shape to a normal `/login` success (plain token or `updatepassword-<token>`), so `LoginComponent` reuses the same post-login navigation logic for both.
+- Each resend/send issues a **new** `sessionId` — `LoginComponent` must update its stored `sessionId` from the response before the next call, the old one becomes invalid.
+- The token-storing logic itself lives in `UsermanagementService`'s private `storeLoginToken()`, shared by both `userLogin()` and `verifyOtp()`.
 
 ### App Layout
 `AppComponent.shouldShowHeader()` splits the UI into two layouts:
