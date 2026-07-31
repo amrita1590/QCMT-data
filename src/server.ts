@@ -31,7 +31,7 @@ app.use((_req, res, next) => {
     "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
     "img-src 'self' data: blob:; " +
     "frame-src 'self' blob:; " +
-    "connect-src 'self' http://localhost:8060 http://192.168.11.8:8060; " +
+    "connect-src 'self' http://localhost:8060 http://192.168.3.199:8060; " +
     "frame-ancestors 'none';"
   );
   next();

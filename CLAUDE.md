@@ -57,6 +57,7 @@ File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/ap
 - `UsermanagementService.sendOtp()` / `resendOtp()` / `verifyOtp()` call `/auth/send-otp`, `/auth/resend-otp`, `/auth/verify-otp`. `verifyOtp()`'s success response is byte-identical in shape to a normal `/login` success (plain token or `updatepassword-<token>`), so `LoginComponent` reuses the same post-login navigation logic for both.
 - Each resend/send issues a **new** `sessionId` — `LoginComponent` must update its stored `sessionId` from the response before the next call, the old one becomes invalid.
 - The token-storing logic itself lives in `UsermanagementService`'s private `storeLoginToken()`, shared by both `userLogin()` and `verifyOtp()`.
+- `/login`'s error responses are distinguished by status code, not just caught generically: 401 means bad credentials ("Invalid Email or Password"), 502 means credentials were fine but OTP failed to send on every configured channel (backend can be configured to send on multiple channels, e.g. email + SMS, at once — see `LoginComponent.resolveLoginErrorMessage()`). Conflating the two would misleadingly tell a user their password is wrong when the real problem is OTP delivery.
 
 ### App Layout
 `AppComponent.shouldShowHeader()` splits the UI into two layouts:

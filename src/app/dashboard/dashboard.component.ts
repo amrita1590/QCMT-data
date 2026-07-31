@@ -77,15 +77,11 @@ export class DashboardComponent {
     }, 1000); // update every 1 second
     const today = new Date();
 
-    // To Date = Today
-    this.toDate = this.formatDate(today);
+    // Default range: Jan 1 - Dec 31 of the current year
+    this.fromDate = this.formatDate(new Date(today.getFullYear(), 0, 1));
+    this.toDate = this.formatDate(new Date(today.getFullYear(), 11, 31));
 
-    // From Date = 1 year back
-    const lastYear = new Date();
-    lastYear.setFullYear(today.getFullYear() - 1);
-
-    this.fromDate = this.formatDate(lastYear);
-    this.getDashboardData(this.fromDate, this.toDate);   
+    this.getDashboardData(this.fromDate, this.toDate);
     
     this.umService.getNotificatinList().subscribe({
       next: (data) => {
@@ -284,8 +280,7 @@ export class DashboardComponent {
 
     if (this.dateError) return;
 
-    console.log('Filtering from', this.fromDate, 'to', this.toDate);
-    // Call API here
+    this.getDashboardData(this.fromDate, this.toDate);
     this.modalService.dismissAll();
   }
 
