@@ -32,7 +32,7 @@ export class ChangepasswordComponent {
       newPassword: ['', [
         Validators.required,
         Validators.minLength(8),
-        Validators.pattern('^(?=.*[@$\\-_!%*?&])[A-Za-z\\d$\\-_!%*?&]{8,}$')
+        Validators.pattern('^(?=.*[@$\\-_!%*?&])[A-Za-z\\d@$\\-_!%*?&]{8,}$')
       ]],
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordMatchValidator });

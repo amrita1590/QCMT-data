@@ -18,6 +18,7 @@ import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { AuditBoardScheduleTemplate } from '../interface/AuditBoardScheduleTemplate';
 import { UsermanagementService } from '../service/usermanagement.service';
+import { DownloadService } from '../service/download.service';
 
 @Component({
   selector: 'app-auditorresponseform',
@@ -56,7 +57,7 @@ export class AuditorresponseformComponent {
   private modalRef: NgbModalRef | null = null;
   isEditMode: boolean = false;
 
-  constructor(private fb: FormBuilder, private auditService: AuditscheduleserviceService, private modalService: NgbModal, private questionsService: QuestionsService, private toast: ToastService, private umService: UsermanagementService) {
+  constructor(private fb: FormBuilder, private auditService: AuditscheduleserviceService, private modalService: NgbModal, private questionsService: QuestionsService, private toast: ToastService, private umService: UsermanagementService, private downloadService: DownloadService) {
     this.reviewForm = this.fb.group({auditFromDate: [''], auditToDate: [''],
       letterDate: [''],
       letterNumber: ['']
@@ -181,6 +182,11 @@ if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
       const fullPath = `${normalizedPath}/${documentName}`;
     //console.log("Building download URL for:", fullPath);
     return this.baseUrl + 'v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(fullPath);
+  }
+
+  /** /auditfile now requires auth - a plain <a href> can't carry the Bearer token, so downloads go through this instead. */
+  downloadFile(path: string, documentName: string) {
+    this.downloadService.downloadAuditFile(path, documentName);
   }
   viewBoardTemplate(content: any) {
       const id = this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId;

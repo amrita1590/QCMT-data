@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { UsermanagementService } from '../service/usermanagement.service';
 import { Login } from '../interface/Login';
 import { Router } from '@angular/router';
+import * as forge from 'node-forge';
 
 const OTP_RESEND_SECONDS = 30;
 
@@ -21,10 +22,10 @@ export class LoginComponent implements OnDestroy {
     login: Login[] = [];
     loginDetailsForm: FormGroup;
 
+    captchaId = '';
     captchaNum1 = 0;
     captchaNum2 = 0;
     captchaOperator = '+';
-    captchaAnswer = 0;
     captchaInput = '';
     captchaError = false;
     captchaExpired = false;
@@ -52,23 +53,78 @@ export class LoginComponent implements OnDestroy {
         username:new FormControl('', [Validators.required]),
         password:new FormControl('', [Validators.required])
       });
-      this.generateCaptcha();
+      // SSR-safe: the backend isn't reachable during build-time prerendering, so fetching a
+      // captcha challenge here must stay browser-only like every other HTTP/localStorage call.
+      if (isPlatformBrowser(this.platformId)) {
+        this.generateCaptcha();
+        this.fetchPublicKey();
+      }
     }
 
+    private publicKey: forge.pki.rsa.PublicKey | null = null;
+
+    /**
+     * RSA public key used to encrypt the password before it ever leaves the browser - protects
+     * the password specifically even without TLS in place yet (see CLAUDE.md). This is not a
+     * substitute for TLS: other request/response data is still unprotected in transit.
+     *
+     * Uses node-forge rather than the native window.crypto.subtle: SubtleCrypto is only
+     * available in a "secure context" (HTTPS, or the special localhost/127.0.0.1 exception) -
+     * it silently doesn't exist on a plain-HTTP IP address like the deployed environment here,
+     * which is exactly why this worked on localhost during development but failed in
+     * production ("Unable to secure your credentials right now"). node-forge does the same
+     * RSA-OAEP/SHA-256 math in pure JS, with no such restriction - matches the OAEPParameterSpec
+     * on the backend exactly (SHA-256 for both the main digest and MGF1).
+     */
+    private fetchPublicKey() {
+      this.umService.getLoginPublicKey().subscribe({
+        next: (response) => {
+          try {
+            const der = forge.util.decode64(response.publicKey);
+            const asn1 = forge.asn1.fromDer(der);
+            this.publicKey = forge.pki.publicKeyFromAsn1(asn1) as forge.pki.rsa.PublicKey;
+          } catch (e) {
+            console.error('Failed to parse login public key:', e);
+          }
+        },
+        error: (error) => {
+          console.error('Failed to load login public key:', error);
+        }
+      });
+    }
+
+    private encryptPassword(password: string): string {
+      if (!this.publicKey) {
+        throw new Error('Encryption key not ready');
+      }
+      const encrypted = this.publicKey.encrypt(forge.util.encodeUtf8(password), 'RSA-OAEP', {
+        md: forge.md.sha256.create(),
+        mgf1: { md: forge.md.sha256.create() }
+      });
+      return forge.util.encode64(encrypted);
+    }
+
+    /**
+     * The challenge (and its answer) is issued by the backend now - /login verifies the
+     * submitted answer server-side, so a script calling the API directly can't skip it the
+     * way it could when the answer only ever existed in this component.
+     */
     generateCaptcha() {
-      this.captchaNum1 = Math.floor(Math.random() * 20) + 1;
-      this.captchaNum2 = Math.floor(Math.random() * 15) + 1;
-      const ops = ['+', '-'];
-      this.captchaOperator = ops[Math.floor(Math.random() * ops.length)];
-      if (this.captchaOperator === '+') this.captchaAnswer = this.captchaNum1 + this.captchaNum2;
-      else if (this.captchaOperator === '-') {
-        if (this.captchaNum1 < this.captchaNum2) [this.captchaNum1, this.captchaNum2] = [this.captchaNum2, this.captchaNum1];
-        this.captchaAnswer = this.captchaNum1 - this.captchaNum2;
-      } else this.captchaAnswer = this.captchaNum1 * this.captchaNum2;
-      this.captchaInput = '';
-      this.captchaError = false;
-      this.captchaExpired = false;
-      this.startCaptchaTimer();
+      this.umService.getCaptcha().subscribe({
+        next: (challenge) => {
+          this.captchaId = challenge.captchaId;
+          this.captchaNum1 = challenge.num1;
+          this.captchaNum2 = challenge.num2;
+          this.captchaOperator = challenge.operator;
+          this.captchaInput = '';
+          this.captchaError = false;
+          this.captchaExpired = false;
+          this.startCaptchaTimer();
+        },
+        error: (error) => {
+          console.error('Failed to load captcha:', error);
+        }
+      });
     }
 
     private startCaptchaTimer() {
@@ -91,14 +147,25 @@ export class LoginComponent implements OnDestroy {
     }
 
     onLogin(login:Login) {
-        if (Number(this.captchaInput) !== this.captchaAnswer) {
+        // The correct answer is no longer known client-side - /login verifies it server-side.
+        // This is just the same "did you fill it in" guard the disabled submit button already enforces.
+        if (!this.captchaInput || this.captchaExpired) {
           this.captchaError = true;
-          this.generateCaptcha();
           return;
         }
         this.captchaError = false;
         if (this.loginDetailsForm.valid) {
-          this.umService.userLogin(login).subscribe({
+          let encryptedPassword: string;
+          try {
+            encryptedPassword = this.encryptPassword(login.password);
+          } catch (e) {
+            console.error('Failed to encrypt password:', e);
+            this.loginErrorMessage = 'Unable to secure your credentials right now. Please refresh and try again.';
+            this.status = true;
+            setTimeout(() => { this.status = false; }, 10000);
+            return;
+          }
+          this.umService.userLogin({ ...login, password: encryptedPassword }, this.captchaId, this.captchaInput).subscribe({
             next: (response) => {
               if (this.umService.isOtpRequiredResponse(response)) {
                 this.beginOtpStep(JSON.parse(response));
@@ -109,6 +176,10 @@ export class LoginComponent implements OnDestroy {
             error: (error) => {
               console.error('Login failed:', error);
               this.loginErrorMessage = this.resolveLoginErrorMessage(error);
+              if (error?.status === 400) {
+                // Captcha was wrong/expired - a fresh challenge is required for the next attempt.
+                this.generateCaptcha();
+              }
               this.status = true;
               setTimeout(() => {
                 this.status = false; // Hide the div after 10 seconds
@@ -120,15 +191,24 @@ export class LoginComponent implements OnDestroy {
     }
 
     /**
-     * /login returns 401 for bad credentials, but 502 specifically means the OTP couldn't be
-     * sent on any configured channel (credentials were fine) - these need different messages
-     * so the user isn't told their password is wrong when the real problem is OTP delivery.
+     * /login distinguishes failure reasons by status code: 401 bad credentials, 502 OTP delivery
+     * failure (credentials were fine), 400 bad/expired captcha, 423 account locked (repeated
+     * failed attempts), 429 too many attempts from this network. Conflating any of these would
+     * misleadingly tell the user their password is wrong when it isn't.
      */
     private resolveLoginErrorMessage(error: any): string {
+      const serverMessage = typeof error?.error === 'string' && error.error ? error.error : null;
       if (error?.status === 502) {
-        return typeof error.error === 'string' && error.error
-          ? error.error
-          : 'Unable to send OTP at this time. Please try again shortly.';
+        return serverMessage ?? 'Unable to send OTP at this time. Please try again shortly.';
+      }
+      if (error?.status === 400) {
+        return serverMessage ?? 'Invalid or expired CAPTCHA. Please try again.';
+      }
+      if (error?.status === 423) {
+        return serverMessage ?? 'Account is temporarily locked due to multiple failed login attempts. Please try again later.';
+      }
+      if (error?.status === 429) {
+        return serverMessage ?? 'Too many login attempts. Please try again later.';
       }
       return 'Invalid Email or Password';
     }

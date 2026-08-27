@@ -310,8 +310,8 @@
               <td>{{ f.remarks }}</td>
               <td class="text-center">
                 <a class="btn btn-sm btn-outline-primary px-3"
-                   [href]="buildDownloadUrl(f.filePath, f.documentName)"
-                   target="_blank">
+                   href="javascript:void(0)"
+                   (click)="downloadFile(f.filePath, f.documentName)">
                   <i class="fa-solid fa-download me-1"></i> Download
                 </a>
               </td>
@@ -436,8 +436,8 @@
                 </div>
 
                 <div *ngIf="msg.attachmentStatus === 'Attached'" class="attach">
-                  <a class="no-underline" [href]="buildDownloadUrl(msg.filePath, msg.fileName)"
-                   target="_blank">
+                  <a class="no-underline" href="javascript:void(0)"
+                   (click)="downloadFile(msg.filePath, msg.fileName)">
                   📎 {{msg.fileName}}
                   </a>
                 </div>
@@ -768,8 +768,8 @@
               <td>{{ f.remarks }}</td>
               <td class="text-center">
                 <a class="btn btn-sm btn-outline-primary px-3"
-                  [href]="buildDownloadUrl(f.filePath || '', f.documentName || '')"
-                  target="_blank">
+                  href="javascript:void(0)"
+                  (click)="downloadFile(f.filePath || '', f.documentName || '')">
                   <i class="fa-solid fa-download me-1"></i> Download
                 </a>
               </td>
@@ -980,8 +980,8 @@
                     </div>
                   </td>
                   <td><div *ngIf="component.filePath" class="file-name">
-                      <a [href]="buildDownloadUrl(component.filePath, component.documentName)"
-                        target="_blank">
+                      <a href="javascript:void(0)"
+                        (click)="downloadFile(component.filePath, component.documentName)">
                         {{component.documentName}}
                       </a>
                       </div>

@@ -1,13 +1,41 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { ToastService } from './toast.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DownloadService {
+  constructor(private http: HttpClient, private toastService: ToastService) {}
+
+  /**
+   * Fetches an audit file as an authenticated blob and saves it to disk. /auditfile now
+   * requires a valid Bearer token (tokenInterceptor attaches it automatically here, unlike a
+   * plain `<a href>` which can't carry custom headers) - this replaces the old pattern of
+   * binding an anchor tag directly to a raw `?fullPath=` download URL.
+   */
+  downloadAuditFile(fullPath: string, documentName: string) {
+    if (!fullPath || !documentName) {
+      console.error('Invalid path or document name for download.');
+      return;
+    }
+    const normalizedPath = fullPath.replace(/[\\/]+$/, '').replace(/\\/g, '/');
+    const filePath = `${normalizedPath}/${documentName}`;
+    // Relative path (not APP_CONSTANTS.FILES.BASE_URL) - this goes through HttpClient, which is
+    // subject to CORS, unlike the raw <a href> this replaced. A relative path stays same-origin
+    // (proxied in dev, same-origin routing in prod), matching every other HttpClient call in the
+    // app - see BcasAuditService.getBcasFile() for the same working pattern.
+    const url = '/v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(filePath);
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob: Blob) => saveAs(blob, documentName),
+      error: () => this.toastService.show('Failed to download file.', 'error')
+    });
+  }
+
   // CSV from array of objects
   downloadCsv(filename: string, data: any[], columns?: string[]) {
     if (!data || !data.length) {

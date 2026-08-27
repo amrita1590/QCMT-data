@@ -34,6 +34,7 @@ import { AuditorQuestions } from '../interface/auditor-questions';
 import { AuditorResponseFilesTemp } from '../interface/AuditorResponseFilesTemp';
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { APP_CONSTANTS } from '../constants/app.constants';
+import { DownloadService } from '../service/download.service';
 
 @Component({
   selector: 'app-audit-board-caso',
@@ -141,9 +142,9 @@ export class AuditBoardCasoComponent {
  auditorQuestions!: AuditorQuestions;
    selectedTemplateId!: number;
    selectedTemplateStatus!: string;
-  constructor(private fb: FormBuilder, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService) {        
+  constructor(private fb: FormBuilder, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService, private downloadService: DownloadService) {
 
-  }  
+  }
 
   ngOnInit() {
     this.getCASOAuditDetails();
@@ -304,6 +305,11 @@ export class AuditBoardCasoComponent {
       const fullPath = `${normalizedPath}/${documentName}`;
     //console.log("Building download URL for:", fullPath);
     return this.baseUrl + 'v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(fullPath);
+  }
+
+  /** /auditfile now requires auth - a plain <a href> can't carry the Bearer token, so downloads go through this instead. */
+  downloadFile(path: string, documentName: string) {
+    this.downloadService.downloadAuditFile(path, documentName);
   }
 
   getCASOFileDetailsDetails(id: number) {

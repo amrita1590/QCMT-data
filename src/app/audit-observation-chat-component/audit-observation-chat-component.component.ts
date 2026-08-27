@@ -8,6 +8,7 @@ import { ToastService } from '../service/toast.service';
 import { AuditObservationComponentMessage } from '../interface/AuditObservationComponentMessage';
 import { RefreshService } from '../service/refresh.service';
 import { APP_CONSTANTS } from '../constants/app.constants';
+import { DownloadService } from '../service/download.service';
 
 @Component({
   selector: 'app-audit-observation-chat-component',
@@ -23,9 +24,9 @@ export class AuditObservationChatComponentComponent {
   observationMessages: AuditObservationComponentMessage[] = [];
   csfFile: File | null = null
 
-  constructor(private auditService: AuditscheduleserviceService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService) {        
+  constructor(private auditService: AuditscheduleserviceService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService, private downloadService: DownloadService) {
 
-  } 
+  }
 
   ngOnInit() {
     this.refreshService.refresh$.subscribe(() => {
@@ -64,6 +65,11 @@ export class AuditObservationChatComponentComponent {
       const fullPath = `${normalizedPath}/${documentName}`;
     //console.log("Building download URL for:", fullPath);
     return this.baseUrl + 'v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(fullPath);
+  }
+
+  /** /auditfile now requires auth - a plain <a href> can't carry the Bearer token, so downloads go through this instead. */
+  downloadFile(path: string, documentName: string) {
+    this.downloadService.downloadAuditFile(path, documentName);
   }
 
   parseDateTime(dateStr: string) {

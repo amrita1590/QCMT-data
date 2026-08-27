@@ -10,6 +10,7 @@ import { UserRoles } from '../interface/UserRoles';
 import { UserRoleDetails } from '../interface/UserRoleDetails';
 import { NotificationBean } from '../interface/NotificationBean';
 import { OtpActionResponse } from '../interface/OtpActionResponse';
+import { CaptchaChallenge } from '../interface/CaptchaChallenge';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,8 @@ export class UsermanagementService {
   private token: string | null = null;
   private registerUrl = '/v1/qcmt/auth/register'; // Use the proxy path
   private loginUrl = '/v1/qcmt/auth/login';
+  private captchaUrl = '/v1/qcmt/auth/captcha';
+  private publicKeyUrl = '/v1/qcmt/auth/publickey';
   private sendOtpUrl = '/v1/qcmt/auth/send-otp';
   private resendOtpUrl = '/v1/qcmt/auth/resend-otp';
   private verifyOtpUrl = '/v1/qcmt/auth/verify-otp';
@@ -28,6 +31,7 @@ export class UsermanagementService {
   private updatePassword = '/v1/qcmt/auth/changePassword'; // Use the proxy path
   private userProfileDetails = '/v1/qcmt/auth/userprofile';
   private updateuserprofile = '/v1/qcmt/auth/updateuserprofile';
+  private logoutUrl = '/v1/qcmt/auth/logout';
   isLoggedIn: boolean = false;
 
   private loginuserdetail = '/v1/qcmt/master/loginuserdetail';
@@ -112,8 +116,11 @@ export class UsermanagementService {
     return this.http.post<any>(this.updatePassword, userData);
   }
 
-  userLogin(login: Login): Observable<any> {
-    return this.http.post(this.loginUrl, login, { responseType: 'text' }).pipe(
+  userLogin(login: Login, captchaId: string, captchaAnswer: string): Observable<any> {
+    return this.http.post(this.loginUrl, login, {
+      responseType: 'text',
+      headers: { 'X-Captcha-Id': captchaId, 'X-Captcha-Answer': captchaAnswer }
+    }).pipe(
       tap(response => {
         // An OTP_REQUIRED JSON payload is handled by the caller (LoginComponent) - only a
         // plain-token / "updatepassword-<token>" response represents a completed login here.
@@ -123,6 +130,16 @@ export class UsermanagementService {
         this.storeLoginToken(response);
       })
     );
+  }
+
+  /** Backend-issued math-captcha challenge for /login - the answer is never sent to the client. */
+  getCaptcha(): Observable<CaptchaChallenge> {
+    return this.http.get<CaptchaChallenge>(this.captchaUrl);
+  }
+
+  /** RSA public key used to encrypt the password before /login - see LoginComponent.encryptPassword(). */
+  getLoginPublicKey(): Observable<{ publicKey: string }> {
+    return this.http.get<{ publicKey: string }>(this.publicKeyUrl);
   }
 
   /** True when /login (or /verify-otp) returned an OTP_REQUIRED challenge instead of a token. */
@@ -176,6 +193,21 @@ export class UsermanagementService {
 
   // Method to logout
   logout(): void {
+    // Fire while the token is still attached (tokenInterceptor reads it via getToken()) so the
+    // server clears activeToken - best-effort, local session is cleared either way below.
+    if (this.getToken()) {
+      this.http.post(this.logoutUrl, {}).subscribe({ error: () => {} });
+    }
+    this.clearSession();
+  }
+
+  /**
+   * Clears only the client-side session, without calling /logout. Used when the server has
+   * already invalidated this token (e.g. a 401 from a superseded session) - the stale token's
+   * signature is still otherwise valid, so calling /logout with it would clear activeToken for
+   * whichever session currently owns it, which may be a newer login, not this one.
+   */
+  clearSession(): void {
     this.token = null;
     this.isLoggedIn = false;
     if (isPlatformBrowser(this.platformId)) {

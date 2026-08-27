@@ -32,6 +32,7 @@ import { AuditorQuestions } from '../interface/auditor-questions';
 import { AuditorResponseFilesTemp } from '../interface/AuditorResponseFilesTemp';
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { NotificationBean } from '../interface/NotificationBean';
+import { DownloadService } from '../service/download.service';
 
 @Component({
   selector: 'app-auditschedule',
@@ -128,7 +129,7 @@ export class AuditscheduleComponent {
   allObservations: any[] = [];
   chatObservationStatus: string = '';
 
-  constructor(private fb: FormBuilder, private categoryService: CategoryService, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService) {        
+  constructor(private fb: FormBuilder, private categoryService: CategoryService, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService, private downloadService: DownloadService) {
       this.auditTemplateForm = this.fb.group({
         id : new FormControl(''),
         unitId:new FormControl('', [Validators.required]),
@@ -1454,6 +1455,11 @@ loadQuestions() {
       const fullPath = `${normalizedPath}/${documentName}`;
       //console.log("Building download URL for:", fullPath);
       return this.baseUrl + 'v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(fullPath);
+    }
+
+    /** /auditfile now requires auth - a plain <a href> can't carry the Bearer token, so downloads go through this instead. */
+    downloadFile(path: string, documentName: string) {
+      this.downloadService.downloadAuditFile(path, documentName);
     }
 
     

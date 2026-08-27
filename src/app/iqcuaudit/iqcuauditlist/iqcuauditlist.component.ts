@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuditObservationChatComponentComponent } from '../../audit-observation-chat-component/audit-observation-chat-component.component';
 import { APP_CONSTANTS } from '../../constants/app.constants';
+import { DownloadService } from '../../service/download.service';
 import { AuditorResponseFilesTemp } from '../../interface/AuditorResponseFilesTemp';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { AuditSchedule } from '../../interface/AuditSchedule';
@@ -129,10 +130,9 @@ loggedUser:User | null = null;
   allObservations: any[] = [];
   chatObservationStatus: string = '';
 
-  constructor(private fb: FormBuilder, private categoryService: CategoryService, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService) {        
-     
-      
-  }  
+  constructor(private fb: FormBuilder, private categoryService: CategoryService, private auditService: AuditscheduleserviceService, private questionsService: QuestionsService, private unitDetails: UnitService, private umService: UsermanagementService, private modalService: NgbModal, private toast: ToastService, private refreshService: RefreshService, private downloadService: DownloadService) {
+
+  }
   
   auditorQuestions!: AuditorQuestions;
   selectedTemplateId!: number;
@@ -1173,6 +1173,11 @@ loadQuestions() {
       const fullPath = `${normalizedPath}\\${documentName}`;
       //console.log("Building download URL for:", fullPath);
       return this.baseUrl + 'v1/qcmt/master/auditfile?fullPath=' + encodeURIComponent(fullPath);
+    }
+
+    /** /auditfile now requires auth - a plain <a href> can't carry the Bearer token, so downloads go through this instead. */
+    downloadFile(path: string, documentName: string) {
+      this.downloadService.downloadAuditFile(path, documentName);
     }
 
     
