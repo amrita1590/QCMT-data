@@ -10,6 +10,7 @@ import { AuditObservation } from '../interface/AuditObservation';
 import { AuditObservationComponentMessage } from '../interface/AuditObservationComponentMessage';
 import { AuditorQuestions } from '../interface/auditor-questions';
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
+import { AuditObservationStatusHistory } from '../interface/AuditObservationStatusHistory';
 
 @Injectable({
   providedIn: 'root'
@@ -46,6 +47,7 @@ export class AuditscheduleserviceService {
   private submitAuditObservationMessageAPSUrl ='/v1/qcmt/master/submitobservationmessageaps';
   private getAuditObservationMessagesUrl ='/v1/qcmt/master/getobservationmessagesbyobservationid';
   private updateAuditObservationComponentStatusUrl ='/v1/qcmt/master/updateauditobservationcomponentstatus';
+  private getObservationStatusHistoryUrl ='/v1/qcmt/master/getobservationstatushistory';
 
   private deleteAuditorResponseFileUrl = '/v1/qcmt/master/deleteauditorresponsefile';
   private saveAuditorRemarksCASOUrl ='/v1/qcmt/master/sendbackttocasoremarks';
@@ -190,6 +192,10 @@ deleteQuestion(questionId: number) {
    updateAuditObservationComponentStatus(id: number, status: string):Observable<any> {
       const payload = { id, status };
       return this.http.post(this.updateAuditObservationComponentStatusUrl, payload, { responseType: 'text' });
+   }
+
+   getObservationStatusHistory(id: number):Observable<AuditObservationStatusHistory[]> {
+      return this.http.post<AuditObservationStatusHistory[]>(this.getObservationStatusHistoryUrl, { id });
    }
 
    deleteExistingFileData(id: number):Observable<any> {

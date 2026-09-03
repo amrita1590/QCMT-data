@@ -33,6 +33,7 @@ import { AuditorResponseFilesTemp } from '../interface/AuditorResponseFilesTemp'
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { NotificationBean } from '../interface/NotificationBean';
 import { DownloadService } from '../service/download.service';
+import { AuditObservationStatusHistory } from '../interface/AuditObservationStatusHistory';
 
 @Component({
   selector: 'app-auditschedule',
@@ -125,6 +126,14 @@ export class AuditscheduleComponent {
 
   selectedTab: 'active' | 'dropped' = 'active';
   filterCriticality = '';
+  statusHistoryList: AuditObservationStatusHistory[] = [];
+  showStatusHistory: boolean = false;
+
+  unitSearchText: string = '';
+  showUnitDropdown: boolean = false;
+
+  auditorSearchText: string = '';
+  showAuditorDropdown: boolean = false;
   // Assume API filled this
   allObservations: any[] = [];
   chatObservationStatus: string = '';
@@ -300,6 +309,61 @@ console.log("Generated Audit Name:", auditName);
 
       console.log("CASO Name::::" + this.casoName);
       console.log("CASO ID Name::::" + this.casoId);
+  }
+
+  get filteredUnits(): UnitDetails[] {
+    const search = (this.unitSearchText || '').toLowerCase().trim();
+    if (!search) return this.units;
+    return this.units.filter(u => u.unitName.toLowerCase().includes(search));
+  }
+
+  onUnitSearchFocus() {
+    this.showUnitDropdown = true;
+    this.unitSearchText = '';
+  }
+
+  onUnitSearchBlur() {
+    this.auditTemplateForm.get('unitId')?.markAsTouched();
+    setTimeout(() => {
+      this.showUnitDropdown = false;
+      const selected = this.units.find(u => u.id === Number(this.auditTemplateForm.get('unitId')?.value));
+      this.unitSearchText = selected ? selected.unitName : '';
+    }, 150);
+  }
+
+  selectUnit(unit: UnitDetails) {
+    this.auditTemplateForm.get('unitId')?.setValue(unit.id);
+    this.unitSearchText = unit.unitName;
+    this.showUnitDropdown = false;
+    this.onUnitChange();
+  }
+
+  get filteredAuditors(): UserRoleDetails[] {
+    const search = (this.auditorSearchText || '').toLowerCase().trim();
+    if (!search) return this.auditorList;
+    return this.auditorList.filter(a =>
+      `${a.cisfno} ${a.rank} ${a.name}`.toLowerCase().includes(search)
+    );
+  }
+
+  onAuditorSearchFocus() {
+    this.showAuditorDropdown = true;
+    this.auditorSearchText = '';
+  }
+
+  onAuditorSearchBlur() {
+    this.auditTemplateForm.get('auditorId')?.markAsTouched();
+    setTimeout(() => {
+      this.showAuditorDropdown = false;
+      const selected = this.auditorList.find(a => a.id === Number(this.auditTemplateForm.get('auditorId')?.value));
+      this.auditorSearchText = selected ? `${selected.cisfno} ${selected.rank} ${selected.name}` : '';
+    }, 150);
+  }
+
+  selectAuditor(auditor: UserRoleDetails) {
+    this.auditTemplateForm.get('auditorId')?.setValue(auditor.id);
+    this.auditorSearchText = `${auditor.cisfno} ${auditor.rank} ${auditor.name}`;
+    this.showAuditorDropdown = false;
   }
 
  onCategoryChange(rowIndex: number) {
@@ -611,6 +675,10 @@ if (this.auditorList && this.auditorList.length > 0) {
      this.listenForNameChanges();
     this.casoName = template.casoName;
     this.casoId = template.casoId;
+    this.unitSearchText = template.unitName;
+    this.showUnitDropdown = false;
+    this.auditorSearchText = template.auditorName;
+    this.showAuditorDropdown = false;
 
     this.auditComponent = template.auditScheduleList || [];
     this.rows = [];
@@ -714,6 +782,10 @@ listenForNameChanges() {
     this.auditTemplateForm.reset();
     this.tempStatus = "SAVED";
     this.btnName = "Create";
+    this.unitSearchText = '';
+    this.showUnitDropdown = false;
+    this.auditorSearchText = '';
+    this.showAuditorDropdown = false;
     this.auditComponent = [
       { id: 0, index: 1, category: 0, categoryName: '', template: 0, templateName: '', information: '', createdBy: '', entryDate: '', status: '' },
       { id: 0, index: 2, category: 0, categoryName: '', template: 0, templateName: '', information: '', createdBy: '', entryDate: '', status: '' }
@@ -1269,19 +1341,39 @@ listenForNameChanges() {
             this.auditObservation = res;
             this.auditObservation.auditObservationComponent = this.auditObservation.auditObservationComponent.sort((a, b) => a.id - b.id);
         });
-        this.modalRef?.close(); 
+        this.loadStatusHistory(id);
+        this.modalRef?.close();
       },
       error: (err) => {
         this.toast.show(`Error updating status to ${status}: ${err}`, 'error');
         console.error(err);
       }
     });
-  } 
+  }
+
+  get reversedStatusHistoryList(): AuditObservationStatusHistory[] {
+    return this.statusHistoryList.slice().reverse();
+  }
+
+  loadStatusHistory(id: number) {
+    this.auditService.getObservationStatusHistory(id).subscribe({
+      next: (data) => {
+        this.statusHistoryList = data;
+      },
+      error: (err) => {
+        this.toast.show('Failed to fetch status change history' + err, 'error');
+        console.error('Failed to fetch status change history', err);
+      }
+    });
+  }
 
   viewObservation(content: any, id: number) {
-    console.log(":::::::::::::::"+id);    
+    console.log(":::::::::::::::"+id);
     this.chatObservationStatus = '';
     this.auditObservationComponentBean = this.auditObservation?.auditObservationComponent.find(o => o.id === id) ?? null;
+    this.statusHistoryList = [];
+    this.showStatusHistory = false;
+    this.loadStatusHistory(id);
     this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
   }
 

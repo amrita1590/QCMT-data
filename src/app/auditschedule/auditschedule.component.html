@@ -252,10 +252,19 @@
 
                     <div class="col-md-3">
                     <label class="form-label">Unit Details</label>
-                    <select class="form-select" formControlName="unitId" (change)="onUnitChange()">
-                        <option value="" disabled selected>Select Unit</option>
-                        <option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option>
-                    </select>
+                    <div class="search-select-wrapper">
+                        <input type="text" class="form-control" placeholder="Search & select unit"
+                               [(ngModel)]="unitSearchText" [ngModelOptions]="{standalone: true}"
+                               (focus)="onUnitSearchFocus()" (blur)="onUnitSearchBlur()"
+                               [class.is-invalid]="auditTemplateForm.get('unitId')?.invalid && auditTemplateForm.get('unitId')?.touched"
+                               autocomplete="off" />
+                        <div class="search-dropdown-list" *ngIf="showUnitDropdown">
+                            <div class="search-dropdown-item" *ngFor="let unit of filteredUnits" (mousedown)="selectUnit(unit)">
+                                {{ unit.unitName }}
+                            </div>
+                            <div class="search-dropdown-item text-muted" *ngIf="filteredUnits.length === 0">No matching unit</div>
+                        </div>
+                    </div>
                     <ul class="hint-text">
                         <li>Provide unit details</li>
                         <li>This helps organize audits by unit</li>
@@ -288,10 +297,19 @@
                     
                     <div class="col-md-3">
                     <label class="form-label">Auditor Name</label>
-                     <select class="form-select" formControlName="auditorId">
-                        <option value="" disabled selected>Select Auditor</option>
-                        <option *ngFor="let auditor of auditorList" [value]="auditor.id">{{ auditor.cisfno }}&nbsp;{{ auditor.rank }}&nbsp;{{ auditor.name }}</option>
-                    </select>
+                    <div class="search-select-wrapper">
+                        <input type="text" class="form-control" placeholder="Search & select auditor"
+                               [(ngModel)]="auditorSearchText" [ngModelOptions]="{standalone: true}"
+                               (focus)="onAuditorSearchFocus()" (blur)="onAuditorSearchBlur()"
+                               [class.is-invalid]="auditTemplateForm.get('auditorId')?.invalid && auditTemplateForm.get('auditorId')?.touched"
+                               autocomplete="off" />
+                        <div class="search-dropdown-list" *ngIf="showAuditorDropdown">
+                            <div class="search-dropdown-item" *ngFor="let auditor of filteredAuditors" (mousedown)="selectAuditor(auditor)">
+                                {{ auditor.cisfno }}&nbsp;{{ auditor.rank }}&nbsp;{{ auditor.name }}
+                            </div>
+                            <div class="search-dropdown-item text-muted" *ngIf="filteredAuditors.length === 0">No matching auditor</div>
+                        </div>
+                    </div>
                     <ul class="hint-text">
                         <li>Provide auditor name</li>
                         <li>This helps organize audits by auditor</li>
@@ -788,11 +806,29 @@
           <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
           <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
         </select>    
-        <button class="btn btn-success me-2" (click)="updateStatus(chatObservationStatus, auditObservationComponentBean?.id)">&nbsp;OK</button>    
+        <button class="btn btn-success me-2" (click)="updateStatus(chatObservationStatus, auditObservationComponentBean?.id)">&nbsp;OK</button>
       </div>
     </div>
   </div>
-    
+
+  <div class="modal-body pt-2" *ngIf="statusHistoryList.length">
+    <h6 class="fw-semibold text-dark mb-2" style="cursor:pointer;" (click)="showStatusHistory = !showStatusHistory">
+      <i class="fa-solid me-2 text-primary" [ngClass]="showStatusHistory ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+      <i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i> Status Change History
+    </h6>
+    <div class="timeline" *ngIf="showStatusHistory">
+      <div class="time-item" *ngFor="let h of reversedStatusHistoryList">
+        <div class="time-role">{{ h.changedByName }}</div>
+        <div class="time-content">
+          <div class="message">
+            Changed status from "{{ h.previousStatus || 'N/A' }}" to "{{ h.newStatus }}"
+          </div>
+          <div class="time">{{ h.changedAt }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
     <div class="modal-body pt-2">
         <app-audit-observation-chat-component [data]="auditObservationComponentBean"></app-audit-observation-chat-component>
     </div>

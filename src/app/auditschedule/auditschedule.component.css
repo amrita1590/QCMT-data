@@ -4,6 +4,36 @@
   background: #f5f7fb;
 }
 
+/* Searchable select dropdown (unit, auditor, etc.) */
+.search-select-wrapper {
+  position: relative;
+}
+
+.search-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1060;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.search-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.search-dropdown-item:hover {
+  background: #f0f4ff;
+}
+
 /* Top Navigation */
 .top-nav {
   display: flex;

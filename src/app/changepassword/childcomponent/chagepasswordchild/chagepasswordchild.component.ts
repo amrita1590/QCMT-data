@@ -83,12 +83,12 @@ export class ChagepasswordchildComponent {
     if (this.changePasswordForm.invalid) return;
 
     if (this.changePasswordForm.get('newPassword')?.value !== this.changePasswordForm.get('confirmPassword')?.value) {
-      this.settingsComponent.showToastMessage('Passwords do not match', 'error');
+      this.toast.show('Passwords do not match', 'error');
       return;
     }
 
     if (this.changePasswordForm.get('currentPassword')?.value === this.changePasswordForm.get('newPassword')?.value) {
-      this.settingsComponent.showToastMessage('New password must be different from current password', 'error');
+      this.toast.show('New password must be different from current password', 'error');
       return;
     }
 
@@ -103,22 +103,20 @@ export class ChagepasswordchildComponent {
          console.log('Password change status response:', res.status);
         if (res.status === 'success') {
           console.log('Password change status inside status:', res.status);
-          this.settingsComponent.showToastMessage(res.message, 'success');
-           this.toast.show('Password updated successfully', 'success');
+          this.toast.show('Password updated successfully', 'success');
           this.changePasswordForm.reset();
           this.settingsComponent.closeModel();
         } else {
             console.log('Password change status inside else:', res.status);
-          this.settingsComponent.showToastMessage(res.message, 'error');
+          this.toast.show(res.message, 'error');
         }
       },
       error: (err) => {
         console.error('Error occurred while changing password', err);
-          this.toast.show('Failed to update password', 'error');
         if (err.error?.message) {
-          this.settingsComponent.showToastMessage(err.error.message, 'error');
+          this.toast.show(err.error.message, 'error');
         } else {
-          this.settingsComponent.showToastMessage('Something went wrong', 'error');
+          this.toast.show('Something went wrong', 'error');
         }
       }
     });
