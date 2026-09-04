@@ -8,6 +8,7 @@ import { LeftSidebarComponent } from './left-sidebar/left-sidebar.component';
 import { MainComponent } from './main/main.component';
 import { isPlatformBrowser } from '@angular/common';
 import { ToastComponent } from "./toast/toast.component";
+import { IdleTimeoutService } from './service/idle-timeout.service';
 
 @Component({
   selector: 'app-root',
@@ -30,7 +31,11 @@ export class AppComponent implements OnInit {
   isLeftSidebarCollapsed = signal<boolean>(false);
   screenWidth = signal<number>(0); // Initialize to 0
 
-  constructor(private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private idleTimeoutService: IdleTimeoutService
+  ) {}
 
   shouldShowHeader(): boolean {
     this.curURL = this.router.url;
@@ -58,6 +63,7 @@ export class AppComponent implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.screenWidth.set(window.innerWidth);
       this.isLeftSidebarCollapsed.set(this.screenWidth() < 768);
+      this.idleTimeoutService.start();
     }
   }
 

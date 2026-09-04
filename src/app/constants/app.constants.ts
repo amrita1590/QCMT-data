@@ -14,7 +14,7 @@ export const APP_CONSTANTS = {
     },
 
     FILES: {
-        BASE_URL: "http://192.168.10.5:8060/"
+        BASE_URL: "http://192.168.11.8:8060/"
 
     },
      MAILNOTIFICATION: {
