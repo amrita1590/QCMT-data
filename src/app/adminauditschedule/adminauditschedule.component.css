@@ -121,6 +121,7 @@
 .status-badge.ActionRequired { background: #ffe5e5; color: #d93025; cursor: pointer;}
 .status-badge.ObservationAPS { background: #fff2e6; color: #ff8c00; cursor: pointer;}
 .status-badge.ObservationCASO { background: #f9e8ff; color: #7e22ce; cursor: pointer;}  
+.status-badge.ObservationSECTOR { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; cursor: pointer; }
 
 /* Actions */
 .actions-col { width: 150px; }
@@ -1006,3 +1007,5 @@ input[readonly] {
 }
 
 
+
+.status-badge.ObservationZONE { background: #fff2e6; color: #b85e00; }

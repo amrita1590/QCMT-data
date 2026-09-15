@@ -1,178 +1,32 @@
-<div class="container text-center mt-3">
-    <h2>Create  <span class="text-primary">e SamikSha</span> Account</h2>
-    <p class="subtitle">Track audit, manage audit, and simplify your audit workflow</p>
-    
-    <div class="register-card">
-        @if (status) {
-        <div class="alert alert-info text-start">
-            e-SamikSha Account created successfully..
-        </div>
-        }
-      <!-- Tabs -->
-      <div class="tab-header d-flex">
-        <button class="active">User Details</button>
+<main class="registration-page">
+  <div class="page-heading-actions">
+    <header class="page-heading"><div class="heading-icon"><i class="fa-solid fa-user-plus"></i></div><div><span class="eyebrow">ACCOUNT MANAGEMENT</span><h1>User Registration</h1><p>Create an e-SamikSha account and assign the officer’s organizational scope.</p></div></header>
+    <a href="/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+  </div>
+  <div class="register-card">
+    <div class="card-intro"><div><h2><i class="fa-solid fa-id-card"></i> New User Account</h2><p>The CISF number will be saved as the account username.</p></div><span class="required-note">* Required fields</span></div>
+    @if (status) { <div class="feedback success" role="status"><i class="fa-solid fa-circle-check"></i> Account created successfully. Sign in with the CISF number.</div> }
+    @if (errorMessage) { <div class="feedback error" role="alert"><i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}</div> }
+    <form [formGroup]="userDetailsForm" (ngSubmit)="addUserDetails()">
+      <div class="form-columns">
+        <section><h3><i class="bi bi-person"></i> Personal details</h3>
+          <div class="field"><label for="rankSelect">Rank *</label><select id="rankSelect" formControlName="rank"><option value="">Select rank</option><option *ngFor="let rank of cisfRanks" [value]="rank.code">{{ rank.name }} ({{ rank.code }})</option></select>@if (invalid('rank')) { <small class="field-error">Select a rank.</small> }</div>
+          <div class="field"><label for="cisfNo">CISF number *</label><input id="cisfNo" formControlName="cisfno" inputmode="numeric" maxlength="9" placeholder="Enter 9-digit CISF number"><small>This is the username used to sign in.</small>@if (invalid('cisfno') && cisfno?.hasError('cisfnoTaken')) { <small class="field-error">This CISF number is already registered.</small> } @else if (invalid('cisfno')) { <small class="field-error">Enter a valid 9-digit CISF number.</small> } @else if (cisfno?.pending) { <small class="field-checking">Checking availability…</small> }</div>
+          <div class="field"><label for="fullName">Full name *</label><input id="fullName" formControlName="fullName" placeholder="Enter name as per official records">@if (invalid('fullName')) { <small class="field-error">Enter a full name of at least 4 characters.</small> }</div>
+          <h3 class="section-divider"><i class="bi bi-shield-lock"></i> Account security</h3>
+          <div class="field"><label for="password">Password *</label><input type="password" id="password" formControlName="password" autocomplete="new-password" placeholder="Create a password"><small>Use at least 6 characters.</small>@if (invalid('password')) { <small class="field-error">Enter at least 6 characters.</small> }</div>
+          <div class="field"><label for="confirmPassword">Confirm password *</label><input type="password" id="confirmPassword" formControlName="confirmpassword" autocomplete="new-password" placeholder="Re-enter password">@if (invalid('confirmpassword')) { <small class="field-error">Confirm your password.</small> } @else if (userDetailsForm.hasError('mismatch') && confirmpassword?.touched) { <small class="field-error">Passwords do not match.</small> }</div>
+        </section>
+        <section><h3><i class="bi bi-envelope"></i> Contact & assignment</h3>
+          <div class="field"><label for="email">Email address *</label><input type="email" id="email" formControlName="email" placeholder="Enter registered email address">@if (invalid('email')) { <small class="field-error">Enter a valid email address.</small> }</div>
+          <div class="field"><label for="mobileNo">Mobile number *</label><input type="tel" id="mobileNo" formControlName="mobileNo" inputmode="numeric" maxlength="10" placeholder="Enter 10-digit mobile number"><small>Used to confirm the account during password recovery.</small>@if (invalid('mobileNo')) { <small class="field-error">Enter a valid 10-digit mobile number.</small> }</div>
+          <div class="field" formGroupName="unitmaster"><label for="unit">Unit</label><select id="unit" formControlName="id"><option value="">Select unit</option><option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option></select></div>
+          <div class="field"><label for="scope">User scope level *</label><select id="scope" formControlName="userscopelevel"><option value="">Select scope level</option><option *ngFor="let scope of scopeLevels" [value]="scope.id">{{ scope.name }}</option></select>@if (invalid('userscopelevel')) { <small class="field-error">Select a scope level.</small> }</div>
+          <div class="field"><label for="sector">Sector</label><select id="sector" formControlName="sector"><option value="">Select sector</option><option *ngFor="let sector of sectors" [value]="sector">{{ sector }}</option></select></div>
+          <div class="field"><label for="zone">Zone</label><select id="zone" formControlName="zone"><option value="">Select zone</option><option *ngFor="let zone of zones" [value]="zone">{{ zone }}</option></select></div>
+        </section>
       </div>
-
-      <form [formGroup]="userDetailsForm" (ngSubmit)="addUserDetails()">
-      <div class="row">
-        <!-- Left Column -->
-        <div class="col-md-6 text-start">
-          <h5>User Details</h5>
-           <div class="mb-3">
-            <select id="rankSelect" formControlName="rank" (change)="onRankChange($event)" class="form-control">
-      
-      <option value="">-- Select Rank --</option>
-      <option *ngFor="let rank of cisfRanks" 
-                [value]="rank.code">
-          {{ rank.name }} ({{ rank.code }})
-        </option>
-    
-      
-      
-    </select>
-    
-            
-            <small class="small-text">Enter your Rank</small>
-                        @if (rank?.invalid && (rank?.dirty || rank?.touched)) {
-                @if (rank?.hasError('required')) {
-                    <br/><span class="alert">Rank is required.</span>
-                }
-                
-            }  
-          </div>
-           <div class="mb-3">
-            <input type="text" class="form-control" placeholder="CISF No" id="username" formControlName="cisfno" minlength="9" required>
-            <small class="small-text">CISF No</small>
-            
-          </div>
-          <div class="mb-3">
-            <input type="text" class="form-control" placeholder="Name" id="username" formControlName="username" minlength="4" required>
-            <small class="small-text">Enter your full name as per records</small>
-            @if (username?.invalid && (username?.dirty || username?.touched)) {
-                @if (username?.hasError('required')) {
-                    <br/><span class="alert">Name is required.</span>
-                }
-                @if (username?.hasError('minlength')) {
-                    <br/><span class="alert">Name must be at least 4 characters long.</span>
-                }
-            }  
-          </div>
-          <div class="mb-3">
-            <input type="password" class="form-control" placeholder="Password" id="password" formControlName="password" minlength="6"  required>
-            @if (password?.invalid && (password?.dirty || password?.touched)) {
-                @if (password?.hasError('required')) {
-                    <span class="alert">Password is required.</span>
-                }
-                @if (password?.hasError('minlength')) {
-                    <span class="alert">Password must be at least 6 characters long.</span>
-                }
-            } 
-          </div>
-          <div class="mb-3">
-            <input type="password" class="form-control" placeholder="Confirm Password" id="confirmPassword" formControlName="confirmpassword" required>
-            @if (confirmpassword?.invalid && (confirmpassword?.dirty || confirmpassword?.touched)) {
-                @if (confirmpassword?.hasError('required')) {
-                    <span class="alert">Password is required.</span>
-                }
-                @else if (confirmpassword?.hasError('minlength')) {
-                    <span class="alert">Password must be at least 6 characters long.</span>
-                }                       
-            }  
-            @else if (userDetailsForm.hasError('mismatch') && (confirmpassword?.dirty || confirmpassword?.touched)) {
-                <span class="alert">Passwords do not match.</span>
-            }
-          </div>
-          
-          
-        </div>
-
-        <!-- Right Column -->
-        <div class="col-md-6 text-start">
-          <h5>Additional Details</h5>
-          <div class="mb-3">
-            <input type="email" class="form-control" placeholder="Email" id="email" formControlName="email" required>
-            @if (email?.invalid && (email?.dirty || email?.touched)) {
-                @if (email?.hasError('required')) {
-                    <span class="alert">Email is required.</span>
-                }
-                @if (email?.hasError('email')) {
-                    <small class="alert">Please enter valid email id.</small>
-                }
-            } 
-          </div>
-         <div class="mb-3">
-            <input type="text" class="form-control" placeholder="Mobile No." formControlName="mobileNo" minlength="10" maxlength="10" required>
-            <small class="small-text">We’ll send verification OTP here</small>
-            @if (mobileNo?.invalid && (mobileNo?.dirty || mobileNo?.touched)) {
-                @if (mobileNo?.hasError('required')) {
-                    <br/><span class="alert">Mobile No is required.</span>
-                }
-                @if (mobileNo?.hasError('minlength') || mobileNo?.hasError('maxlength')) {
-                    <br/><span class="alert">Please enter valid mobile no.</span>
-                }
-            }
-          </div>
-          <div class="mb-3">
-          <div formGroupName="unitmaster">
-  <select formControlName="id" class="form-select">
-    <option value="">- Select Unit -</option>
-    <option *ngFor="let unit of units" [value]="unit.id">
-      {{ unit.unitName }}
-    </option>
-  </select>
-  <small class="small-text">Unit Name</small>
-</div>
-          
-            @if (organizationName?.invalid && (organizationName?.dirty || organizationName?.touched)) {
-                @if (organizationName?.hasError('required')) {
-                    <br/><span class="alert">Unit Details is required.</span>
-                }
-            }            
-          </div>
-          <div class="mb-3">
-            
-    <select class="form-select" formControlName="userscopelevel">
-    <option value="" disabled >
-      -- User Scope Level --
-    </option>
-
-    <option *ngFor="let s of scopeLevels" [value]="s.id">
-      {{ s.name }}
-    </option>
-  </select><small class="small-text">User Scope Level</small>
-            @if (userscopelevel?.invalid && (userscopelevel?.dirty || userscopelevel?.touched)) {
-                @if (userscopelevel?.hasError('required')) {
-                    <br/><span class="alert">User Scope Level is required.</span>
-                }}
-          </div>
-          <div class="mb-3">
-            <select formControlName="sector" class="form-select">
-    <option value="">- Select Sector -</option>
-    <option *ngFor="let sector of sectors" [value]="sector">
-      {{ sector }}
-    </option>
-  </select>
-          
-          </div>
-          <div class="mb-3">
-            <select formControlName="zone" class="form-select">
-    <option value="">- Select Zone -</option>
-    <option *ngFor="let zone of zones" [value]="zone">
-      {{ zone }}
-    </option>
-  </select>
- </div>   
+      <footer class="form-actions"><p><i class="fa-solid fa-circle-info"></i> Review the details before creating the account.</p><div><button type="button" class="secondary" (click)="clearFields()" [disabled]="isSubmitting"><i class="fa-solid fa-rotate-left"></i> Reset</button><button type="submit" class="primary" [disabled]="isSubmitting"><i class="fa-solid" [ngClass]="isSubmitting ? 'fa-spinner fa-spin' : 'fa-user-plus'"></i> {{ isSubmitting ? 'Creating account…' : 'Create Account' }}</button></div></footer>
+    </form>
   </div>
-  <hr/>
-  <div class="d-flex justify-content-center gap-3 mt-3">
-    <button type="submit" class="btn btn-register" [disabled]="isSubmitting">
-      {{ isSubmitting ? 'Registering...' : 'Register' }}
-    </button>
-    <button type="button" class="btn btn-reset " (click)="clearFields()">Reset</button>
-  </div>
-  </div>
-  </form>
-  </div>
-
-
-
+</main>

@@ -4,17 +4,17 @@
 >
   <!-- Logo -->
   <div class="logo-container">
-    <button class="logo" (click)="toggleCollapse()">
+    <button type="button" class="logo" (click)="toggleCollapse()" aria-label="Toggle navigation menu" title="Toggle menu">
       <i class="fas fa-bars"></i>
     </button>
     @if (!isLeftSidebarCollapsed()) {
-        <div class="logo-text">
-    <img src="images/cisf-logo.png" alt="CISF Logo">
-    <img src=" images/logo3.png" alt="CISF Logo">
-    
-</div>
-      <button class="btn-close" (click)="closeSidenav()">
-        <i class="fas fa-times close-icon"></i>
+      <div class="logo-text" aria-label="CISF e-SamikSha">
+        <img class="cisf-emblem" src="images/cisf-logo.png" alt="CISF">
+        <span class="brand-divider" aria-hidden="true"></span>
+        <img class="esamiksha-logo" src="images/logo3.png" alt="e-SamikSha">
+      </div>
+      <button type="button" class="sidebar-close" (click)="closeSidenav()" aria-label="Collapse navigation menu" title="Collapse menu">
+        <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     }
   </div>
@@ -32,6 +32,24 @@
       <span class="sidenav-link-text" *ngIf="!isLeftSidebarCollapsed()">
         {{ item.permissionLabel }}
       </span>
+    </a>
+  </li>
+  <li *ngIf="showZoneBoardLink" class="sidenav-nav-item">
+    <a class="sidenav-nav-link" routerLink="/zoneboard" routerLinkActive="active">
+      <i class="sidenav-link-icon fas fa-map-marked-alt"></i>
+      <span class="sidenav-link-text" *ngIf="!isLeftSidebarCollapsed()">Zone Board</span>
+    </a>
+  </li>
+  <li *ngIf="showSectorBoardLink" class="sidenav-nav-item">
+    <a class="sidenav-nav-link" routerLink="/sectorboard" routerLinkActive="active">
+      <i class="sidenav-link-icon fas fa-layer-group"></i>
+      <span class="sidenav-link-text" *ngIf="!isLeftSidebarCollapsed()">Sector Board</span>
+    </a>
+  </li>
+  <li *ngIf="showCalendarManagerLink" class="sidenav-nav-item">
+    <a class="sidenav-nav-link" routerLink="/iqcucalendar" routerLinkActive="active">
+      <i class="sidenav-link-icon fas fa-calendar-days"></i>
+      <span class="sidenav-link-text" *ngIf="!isLeftSidebarCollapsed()">IQCU Calendar</span>
     </a>
   </li>
 </div>

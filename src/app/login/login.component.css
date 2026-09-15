@@ -254,8 +254,26 @@ form {
   user-select: none;
 }
 
+.captcha-image {
+  display: block;
+  width: 190px;
+  max-width: calc(100% - 105px);
+  height: 54px;
+  border: 1px solid #b8cad9;
+  border-radius: 5px;
+  background: #f1f6fb;
+  object-fit: contain;
+  user-select: none;
+}
+
+.captcha-loading {
+  color: #627b91;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
 .captcha-refresh {
-  margin-left: auto;
+  margin-left: 0;
   border: none;
   background: none;
   color: #0b4c86;
@@ -281,6 +299,8 @@ form {
   color: #23394d;
   background: #fff;
   transition: border-color .2s;
+  letter-spacing: .12em;
+  text-transform: uppercase;
 }
 
 .captcha-input:focus {

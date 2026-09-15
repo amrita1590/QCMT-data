@@ -127,8 +127,13 @@ export class PermissionAssignmentComponent {
           // Get all permission as per role id
           this.roleId = selectedValue;
           this.getAssignedPermission(this.roleId);
-
-      } 
+      } else {
+          this.roleId = '';
+          this.assignedPermissions = [];
+          this.availablePermissions = [...this.permissions];
+          this.selectedAvailable = null;
+          this.selectedAssigned = null;
+      }
     }
 
     selectAvailable(permission: Permissions) {
@@ -154,6 +159,19 @@ export class PermissionAssignmentComponent {
         this.availablePermissions.push(this.selectedAssigned);
         this.assignedPermissions = this.assignedPermissions.filter(p => p !== this.selectedAssigned);
         this.selectedAssigned = null;
+      }
+    }
+
+    resetAssignment() {
+      this.selectedAvailable = null;
+      this.selectedAssigned = null;
+      this.errorStatus = false;
+      this.successStatus = false;
+      if (this.roleId !== '') {
+        this.getAssignedPermission(this.roleId);
+      } else {
+        this.availablePermissions = [...this.permissions];
+        this.assignedPermissions = [];
       }
     }
 }

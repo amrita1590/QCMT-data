@@ -1,3 +1,5 @@
+import { ActivatedRoute } from '@angular/router';
+import { inject } from '@angular/core';
 import { NgModule, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
@@ -29,18 +31,48 @@ import { AuditorResponseFilesTemp } from '../interface/AuditorResponseFilesTemp'
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { DownloadService } from '../service/download.service';
+import { AuditObservation } from '../interface/AuditObservation';
+import { AuditObservationComponent } from '../interface/AuditObservationComponent';
+import { AuditObservationChatComponentComponent } from '../audit-observation-chat-component/audit-observation-chat-component.component';
+import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
 
 @Component({
   selector: 'app-auditboard',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditorresponseformComponent, NgbTooltip],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditorresponseformComponent, NgbTooltip, AuditObservationChatComponentComponent, AuditStatusGuideComponent],
   templateUrl: './auditboard.component.html',
   styleUrl: './auditboard.component.css'
 })
 export class AuditboardComponent {
+  private readonly boardScope = inject(ActivatedRoute).snapshot.data['boardScope'];
+  readonly isZoneBoard = this.boardScope === 'zone';
+  readonly isSectorBoard = this.boardScope === 'sector';
+  readonly isScopedBoard = this.isZoneBoard || this.isSectorBoard;
+  readonly zoneBoardStatuses = ['ObservationZONE', 'Observation SECTOR', 'Completed', 'Observation APS', 'Observation CASO'];
+  readonly boardTitle = this.isSectorBoard ? 'Sector Board' : (this.isZoneBoard ? 'Zone Board' : 'Audit Board');
+  readonly scopeLabel = this.isSectorBoard ? 'sector' : (this.isZoneBoard ? 'zone' : '');
+  readonly scopedObservationStatus = this.isSectorBoard ? 'Observation SECTOR' : 'ObservationZONE';
+
+  auditObservation: AuditObservation | null = null;
+  auditObservationComponent: AuditObservationComponent | null = null;
+  selectedObservationTab: 'active' | 'dropped' = 'active';
+  observationSearchText = '';
+  observationCriticality = '';
+  isRoutingObservation = false;
+  zoneApsMessage = '';
+  zoneCasoMessage = '';
 
   constants = APP_CONSTANTS;
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
   auditorRemarktoCASOList: AuditorRemarktoCASO[] = [];
+  get zoneUserRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource === 'ZONE');
+  }
+  get sectorUserRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource === 'SECTOR');
+  }
+  get auditorRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource !== 'ZONE' && remark.remarkSource !== 'SECTOR');
+  }
   casoResponseFilesTemp: AuditorResponseFilesTemp[] = [];
 
   scheduleFromDate: string = '';
@@ -193,6 +225,11 @@ const unitId=this.questionForm.get('unitId')?.value;
     });
 }
 loadAuditDetails() {
+    if (this.isScopedBoard) {
+      this.templates = [];
+      this.getAuditorAuditDetails();
+      return;
+    }
     this.auditService.getAuditDetailsData().subscribe({
       next: (data) => {
         this.templates = (data ?? []).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')).map(template => {
@@ -307,6 +344,18 @@ updateAuditStatus(row: number, status: string) {
 
 viewAuditorResponse(content: any, id: number) {
     this.selectedTemplateId = id;
+    this.auditScheduleTemplate = this.templates.find(template => template.id === id) ?? null;
+    this.auditObservation = null;
+    if (this.isScopedBoard) {
+      this.auditService.getAuditObservationDetails(id).subscribe({
+        next: (data) => {
+          this.auditObservation = { ...data };
+          this.auditObservation.auditObservationComponent =
+            [...(this.auditObservation.auditObservationComponent ?? [])].sort((a, b) => a.id - b.id);
+        },
+        error: (err) => console.error('Failed to fetch audit observation details', err)
+      });
+    }
     this.loadQuestions();
     this.auditService.setAuditorQuestionData( this.auditorQuestions);
     this.auditService.getAuditBoardDetails(id).subscribe({
@@ -363,6 +412,9 @@ viewAuditorResponse(content: any, id: number) {
             // Open modal
             this.modalRef = this.modalService.open(content, {
               size: "xl",
+              windowClass: "questionnaire-modal audit-summary-modal",
+              scrollable: true,
+              centered: true,
               backdrop: "static",
               keyboard: false
             });
@@ -383,17 +435,22 @@ viewAuditorResponse(content: any, id: number) {
 }
 
 getAuditorAuditDetails() {
-    this.auditService.getAuditorAuditDetails().subscribe({
+    const request = this.isSectorBoard
+      ? this.auditService.getSectorAuditDetails()
+      : (this.isZoneBoard ? this.auditService.getZoneAuditDetails() : this.auditService.getAuditorAuditDetails());
+    request.subscribe({
       next: (data) => {
-        this.templates = (data ?? []).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')).map(template => {
+        this.templates = (data ?? [])
+          .filter(template => !this.isZoneBoard || this.zoneBoardStatuses.includes(template.auditStatus))
+          .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')).map(template => {
           console.log("Audit Status ::", template.auditStatus);
-          if(template.auditStatus === 'Observation CASO' || template.auditStatus === 'Observation APS'){
+          if(!this.isScopedBoard && (template.auditStatus === 'Observation CASO' || template.auditStatus === 'Observation APS')){
             return { ...template, auditStatus: 'Completed' };
           }
           console.log("Mapped Template ::", template.auditStatus);
           return template;
         });
-        console.log('Templates:', this.templates);
+        this.page = 1;
       },
       error: (err) => {
         this.toast.show('Failed to fetch templates'+ err, 'error');
@@ -402,9 +459,136 @@ getAuditorAuditDetails() {
     });
 }
 
+openObservationSummary(content: any, id: number) {
+  this.templateId = id;
+  this.auditScheduleTemplate = this.templates.find(template => template.id === id) ?? null;
+  this.selectedObservationTab = 'active';
+  this.observationSearchText = '';
+  this.observationCriticality = '';
+  this.auditObservation = null;
+  this.auditService.getAuditObservationDetails(id).subscribe({
+    next: (data) => {
+      this.auditObservation = { ...data };
+      this.auditObservation.auditObservationComponent =
+        [...(this.auditObservation.auditObservationComponent ?? [])].sort((a, b) => a.id - b.id);
+      this.modalRef = this.modalService.open(content, {
+        size: 'xl',
+        backdrop: 'static',
+        keyboard: false,
+        scrollable: true,
+        centered: true,
+        windowClass: 'audit-summary-modal'
+      });
+    },
+    error: (err) => this.toast.show('Failed to fetch audit observation details: ' + err, 'error')
+  });
+}
+
+openApsConfirmation(content: any) {
+  this.zoneApsMessage = '';
+  this.modalRef = this.modalService.open(content, {
+    size: 'md', backdrop: 'static', keyboard: false, centered: true
+  });
+}
+
+confirmSendZoneObservationToAPS() {
+  if (!this.zoneApsMessage.trim()) {
+    this.toast.show('Please enter a message for APS HQrs.', 'error');
+    return;
+  }
+  this.routeZoneObservation('APS', this.zoneApsMessage.trim());
+}
+
+openSendToCasoPopup(content: any) {
+  this.zoneCasoMessage = '';
+  this.modalRef = this.modalService.open(content, {
+    size: 'md', backdrop: 'static', keyboard: false, centered: true
+  });
+}
+
+submitZoneObservationToCASO() {
+  if (!this.zoneCasoMessage.trim()) {
+    this.toast.show('Please enter a message for CASO.', 'error');
+    return;
+  }
+  this.routeZoneObservation('CASO', this.zoneCasoMessage.trim());
+}
+
+private routeZoneObservation(destination: 'APS' | 'CASO', remarks = '') {
+  if (!this.auditScheduleTemplate || this.auditScheduleTemplate.auditStatus !== this.scopedObservationStatus) {
+    this.toast.show(`Only ${this.scopedObservationStatus} audits can be forwarded from the ${this.boardTitle}.`, 'error');
+    return;
+  }
+
+  const nextStatus = destination === 'APS' ? 'Observation APS' : 'Observation CASO';
+  const destinationName = destination === 'APS' ? 'APS HQrs' : 'CASO';
+  const updatedAudit = { ...this.auditScheduleTemplate, auditStatus: nextStatus };
+  const request: AuditorRemarktoCASO = {
+    id: 0,
+    remarks,
+    auditTempalteId: this.auditScheduleTemplate.id,
+    createdBy: '',
+    entryDate: new Date()
+  };
+  this.isRoutingObservation = true;
+
+  this.auditService.routeZoneObservation(destination, request).subscribe({
+    next: () => {
+      this.auditScheduleTemplate = updatedAudit;
+      this.templates = this.templates.map(template =>
+        template.id === updatedAudit.id ? updatedAudit : template
+      );
+      this.toast.show(`Observation sent to ${destinationName} successfully.`, 'success');
+      this.modalService.dismissAll();
+      this.isRoutingObservation = false;
+    },
+    error: (err) => {
+      this.toast.show(`Failed to send observation to ${destinationName}: ${err}`, 'error');
+      this.isRoutingObservation = false;
+    }
+  });
+}
+
+viewObservation(content: any, id: number) {
+  this.auditObservationComponent =
+    this.auditObservation?.auditObservationComponent.find(observation => observation.id === id) ?? null;
+  this.modalRef = this.modalService.open(content, {
+    size: 'xl', backdrop: 'static', keyboard: false, scrollable: true
+  });
+}
+
+get activeObservations() {
+  return this.auditObservation?.auditObservationComponent.filter(
+    observation => observation.complianceStatus !== 'Dropped' && observation.complianceStatus !== 'Compliant'
+  ) ?? [];
+}
+
+get closedObservations() {
+  return this.auditObservation?.auditObservationComponent.filter(
+    observation => observation.complianceStatus === 'Dropped' || observation.complianceStatus === 'Compliant'
+  ) ?? [];
+}
+
+get filteredObservations() {
+  let observations = this.selectedObservationTab === 'active'
+    ? this.activeObservations
+    : this.closedObservations;
+  if (this.observationCriticality) {
+    observations = observations.filter(item => item.typeCriticality === this.observationCriticality);
+  }
+  const search = this.observationSearchText.trim().toLowerCase();
+  return search
+    ? observations.filter(item => item.observation?.toLowerCase().includes(search))
+    : observations;
+}
+
+formatStatusClass(status: string): string {
+  return status ? status.replace(/\s+/g, '').replace(/[()\-]/g, '') : '';
+}
+
 viewBoardTemplate(content: any) {
     this.modalRef = this.modalService.open(content, {
-      size: "xl",
+      size: "xl", windowClass: "questionnaire-modal audit-preview-modal", scrollable: true, centered: true,
       backdrop: "static",
       keyboard: false
     });         
@@ -440,7 +624,7 @@ viewTemplate(content: any, id: number) {
 
   this.loadQuestions();
   
-  this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+  this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false, windowClass: 'questionnaire-modal audit-preview-modal', scrollable: true, centered: true });
 }
 
 showReviewResponseAuditor(content: any, id: number, auditScheduleFromDate?: string, auditScheduleToDate?: string) {
@@ -531,7 +715,7 @@ showReviewResponseAuditor(content: any, id: number, auditScheduleFromDate?: stri
             setTimeout(() => {
             // Open modal
             this.modalRef = this.modalService.open(content, {
-              size: "xl",
+              size: "xl", windowClass: "questionnaire-modal auditor-evaluation-modal", scrollable: true, centered: true,
               backdrop: "static",
               keyboard: false
             });}, 100);
@@ -604,11 +788,21 @@ get totalPlanned() {
 }
 
 get totalInProgress() {
-  return this.templates.filter(t => t.auditStatus === "In Progress").length;
+  return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation SECTOR").length;
 }
 
 get totalCompleted() {
-  return this.templates.filter(t => t.auditStatus === "Completed").length;
+  return this.templates.filter(t => this.isZoneBoard
+    ? this.zoneBoardStatuses.includes(t.auditStatus)
+    : (this.isSectorBoard ? t.auditStatus === "Completed" : t.auditStatus === "Completed" || t.auditStatus === "ObservationZONE")).length;
+}
+
+getBucketLabel(status: string): string {
+  if (status === 'Observation SECTOR') return 'Sector Bucket';
+  if (status === 'ObservationZONE') return 'Zone Bucket';
+  if (status === 'Observation CASO') return 'CASO Bucket';
+  if (status === 'Observation APS') return 'APS HQrs Bucket';
+  return status === 'Completed' ? 'Workflow completed' : 'Current workflow stage';
 }
 
 get totalActionRequired() {
@@ -819,8 +1013,16 @@ printPDF() {
     }); 
   }
   showRemarks: boolean = true;
+  showZoneRemarks: boolean = true;
+  showSectorRemarks: boolean = true;
   toggleRemarks() {
     this.showRemarks = !this.showRemarks;
+  }
+  toggleZoneRemarks() {
+    this.showZoneRemarks = !this.showZoneRemarks;
+  }
+  toggleSectorRemarks() {
+    this.showSectorRemarks = !this.showSectorRemarks;
   }
 
   saveAuditScheduleFromToDatePopup(content: any, id: number | undefined) {
@@ -870,3 +1072,6 @@ printPDF() {
         .replace('{auditorName}', data.auditorName);
   }
 }
+
+
+

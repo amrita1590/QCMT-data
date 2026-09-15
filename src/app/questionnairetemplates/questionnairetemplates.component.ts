@@ -182,7 +182,10 @@ export class QuestionnairetemplatesComponent {
     this.questionComponent = template.questionsList || [];
 
     this.toggleStatus(template.type === "Non-Basic");
-    this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl', centered: true, scrollable: true,
+      backdrop: 'static', keyboard: false, windowClass: 'question-template-modal'
+    });
   }
 
   editTemplate(content: any, id: number) {
@@ -198,8 +201,11 @@ export class QuestionnairetemplatesComponent {
     // OPEN MODAL FIRST
     this.modalRef = this.modalService.open(content, {
       size: 'xl',
+      centered: true,
+      scrollable: true,
       backdrop: 'static',
-      keyboard: false
+      keyboard: false,
+      windowClass: 'question-template-modal'
     });
 
     this.toggleStatus(template.type === "Non-Basic");
@@ -217,7 +223,10 @@ export class QuestionnairetemplatesComponent {
     this.templateName = templateName;
     this.templateId = templateId;
 
-    this.modalRef = this.modalService.open(content, { centered: true });
+    this.modalRef = this.modalService.open(content, {
+      centered: true, backdrop: 'static', keyboard: false,
+      windowClass: 'question-template-delete-modal'
+    });
   }
 
   deleteTemplate(id: number, modalId: string) {
@@ -246,7 +255,10 @@ export class QuestionnairetemplatesComponent {
     console.log(":::::::::::::::");
     this.questiontemplateReset();
     this.btnName = "Create";
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl', centered: true, scrollable: true,
+      backdrop: 'static', keyboard: false, windowClass: 'question-template-modal'
+    });
   }
 
   questiontemplateReset() {
@@ -279,7 +291,10 @@ export class QuestionnairetemplatesComponent {
   removeQuestions(content: any, id: number, index: number) {
     this.questionId = id;
     this.questionIndex = index;
-    this.modalRef = this.modalService.open(content, { centered: true });
+    this.modalRef = this.modalService.open(content, {
+      centered: true, backdrop: 'static', keyboard: false,
+      windowClass: 'question-template-delete-modal'
+    });
   }
 
   deleteQuestion(id: number, index: number, content: any) {

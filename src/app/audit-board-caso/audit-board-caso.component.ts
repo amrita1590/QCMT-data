@@ -35,10 +35,11 @@ import { AuditorResponseFilesTemp } from '../interface/AuditorResponseFilesTemp'
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { DownloadService } from '../service/download.service';
+import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
 
 @Component({
   selector: 'app-audit-board-caso',
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgbTooltip, AuditObservationChatComponentComponent],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgbTooltip, AuditObservationChatComponentComponent, AuditStatusGuideComponent],
   templateUrl: './audit-board-caso.component.html',
   styleUrl: './audit-board-caso.component.css'
 })
@@ -47,6 +48,15 @@ export class AuditBoardCasoComponent {
   constants = APP_CONSTANTS;
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
   auditorRemarktoCASOList: AuditorRemarktoCASO[] = [];
+  get zoneUserRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource === 'ZONE');
+  }
+  get sectorUserRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource === 'SECTOR');
+  }
+  get auditorRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource !== 'ZONE' && remark.remarkSource !== 'SECTOR');
+  }
   searchTerm: string = '';
   templateName: string = '';
   templateId: number = 0;
@@ -54,6 +64,7 @@ export class AuditBoardCasoComponent {
   questionIndex: number = 0;
   letterNo: string = '';
   letterDate: string = '';
+  isEditingCasoMessage = false;
 
   fileId: number = 0;
   fileIndex: number = 0;  
@@ -272,6 +283,9 @@ export class AuditBoardCasoComponent {
             // Open modal
             this.modalRef = this.modalService.open(content, {
               size: "xl",
+              windowClass: 'questionnaire-modal audit-summary-modal',
+              scrollable: true,
+              centered: true,
               backdrop: "static",
               keyboard: false
             });
@@ -325,8 +339,16 @@ export class AuditBoardCasoComponent {
   }
 
   showRemarks: boolean = true;
+  showZoneRemarks: boolean = true;
+  showSectorRemarks: boolean = true;
   toggleRemarks() {
     this.showRemarks = !this.showRemarks;
+  }
+  toggleZoneRemarks() {
+    this.showZoneRemarks = !this.showZoneRemarks;
+  }
+  toggleSectorRemarks() {
+    this.showSectorRemarks = !this.showSectorRemarks;
   }
 
   showAuditTemplate(content: any, id: number) {
@@ -398,6 +420,9 @@ export class AuditBoardCasoComponent {
             // Open modal
             this.modalRef = this.modalService.open(content, {
               size: "xl",
+              windowClass: 'questionnaire-modal',
+              scrollable: true,
+              centered: true,
               backdrop: "static",
               keyboard: false
             });
@@ -441,7 +466,10 @@ export class AuditBoardCasoComponent {
 
       this.loadQuestions();
 
-      this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+      this.modalRef = this.modalService.open(content, {
+        size: 'xl', backdrop: 'static', keyboard: false,
+        windowClass: 'questionnaire-modal audit-preview-modal', scrollable: true, centered: true
+      });
   }
   loadQuestions() {
     this.auditService
@@ -456,6 +484,9 @@ export class AuditBoardCasoComponent {
     
     this.modalRef = this.modalService.open(content, {
       size: "xl",
+      windowClass: 'questionnaire-modal audit-preview-modal',
+      scrollable: true,
+      centered: true,
       backdrop: "static",
       keyboard: false
     }); 
@@ -513,7 +544,7 @@ export class AuditBoardCasoComponent {
     return this.templates.length;
   } 
   get totalInProgress() {
-    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation APS").length;
+    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation SECTOR" || t.auditStatus === "ObservationZONE").length;
   }
 
   get totalCompleted() {
@@ -838,8 +869,16 @@ export class AuditBoardCasoComponent {
   submitObservation(content: any, id: number) {
     console.log(":::::::::::::::");    
     this.templateId = id;
+    this.auditScheduleTemplate = this.templates.find(template => template.id === id) ?? null;
     this.getAuditObservationComponent(id);
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false,
+      centered: true,
+      scrollable: true,
+      windowClass: 'audit-summary-modal'
+    });
   }
 
   viewObservationMessageHistory(content: any) {
@@ -868,7 +907,26 @@ export class AuditBoardCasoComponent {
 
   complianceStatusForm(content: any, auditObservationComponent: any) {
     console.log(":::::::::::::::"+auditObservationComponent.id);
+     this.auditObservationComponent = auditObservationComponent;
+     this.isEditingCasoMessage = false;
+     this.resetObservationMessageForm();
      this.modalRef = this.modalService.open(content, { size : 'md' ,   backdrop: 'static', keyboard: false});
+  }
+
+  editLastCasoMessage(content: any, auditObservationComponent: AuditObservationComponent | null) {
+    if (!auditObservationComponent) return;
+    const lastCasoMessage = [...(auditObservationComponent.auditObservationComponentMessageList ?? [])]
+      .filter(message => message.status === 'CASO')
+      .sort((a, b) => b.id - a.id)[0];
+    if (!lastCasoMessage) {
+      this.toast.show('No CASO message is available to edit.', 'error');
+      return;
+    }
+    this.auditObservationComponent = auditObservationComponent;
+    this.auditObservationComponentMessage = { ...lastCasoMessage };
+    this.csfFile = null;
+    this.isEditingCasoMessage = true;
+    this.modalRef = this.modalService.open(content, { size: 'md', backdrop: 'static', keyboard: false });
   }
 
   submitObservationToAPS() {
@@ -889,7 +947,7 @@ export class AuditBoardCasoComponent {
         );
 
         if (submitStatus) {
-          this.toast.show('Complete all observation components before submitting to APS HQrs', 'error');
+          this.toast.show('Complete all observation components before submitting to Zone/APS HQrs', 'error');
           return;
         }
         const formData = new FormData();
@@ -905,9 +963,10 @@ export class AuditBoardCasoComponent {
         this.auditService.submitLetterNoDateAPS(formData).subscribe({
           next: (event: any) => {
             if (event.type === HttpEventType.Response) {
-              this.updateAuditStatus(this.templateId, 'Observation APS');
-              this.toast.show('Observation submitted to APS HQrs successfully', 'success');
+              this.toast.show('Observation submitted to the responsible office successfully', 'success');
               this.modalService.dismissAll();
+			  this.getCASOAuditDetails();
+			  this.refreshService.triggerRefresh();
               this.auditScheduleTemplate = this.templates.find(t => t.id === this.templateId) || null;
               if(this.auditScheduleTemplate) {
                 const notificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.APS_OBSERVATION_REVIEW_REQUIRED, this.auditScheduleTemplate);
@@ -961,11 +1020,14 @@ export class AuditBoardCasoComponent {
       // JSON part
       formData.append("auditObservationComponentMessageBean",
         new Blob([JSON.stringify({
+          id: this.isEditingCasoMessage ? this.auditObservationComponentMessage.id : 0,
           auditObservationComponentId: auditObservationComponent.id,
           templateId: auditObservationComponent.templateId,
           letterNo: this.auditObservationComponentMessage.letterNo,
           letterDate: this.auditObservationComponentMessage.letterDate,
-          attachmentStatus: this.csfFile ? "Attached" : "No Attachment",
+          attachmentStatus: this.csfFile ? "Attached" : (this.isEditingCasoMessage ? "Keep Existing" : "No Attachment"),
+          filePath: this.isEditingCasoMessage ? this.auditObservationComponentMessage.filePath : '',
+          fileName: this.isEditingCasoMessage ? this.auditObservationComponentMessage.fileName : '',
           complianceMessage: this.auditObservationComponentMessage.complianceMessage,
           status: "CASO",
           createdBy: "Current User",
@@ -987,6 +1049,7 @@ export class AuditBoardCasoComponent {
             this.toast.show("Compliance message submitted successfully", "success");
             this.getAuditObservationComponent(this.templateId);
             this.resetObservationMessageForm();
+            this.isEditingCasoMessage = false;
             this.refreshService.triggerRefresh();
             this.auditService.getAuditObservationDetails(this.templateId).subscribe(res => {
                 this.auditObservation = res;
@@ -1146,3 +1209,4 @@ export class AuditBoardCasoComponent {
         .replace('{auditorName}', data.auditorName);
   }
 } 
+

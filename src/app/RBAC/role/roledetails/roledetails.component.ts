@@ -35,7 +35,7 @@ export class RoledetailsComponent {
   openModal(content: any, roleId: number, roleName: string) {
     this.roleName = roleName;
     this.roleId = roleId;
-    this.modalRef = this.modalService.open(content, { centered: true });
+    this.modalRef = this.modalService.open(content, { centered: true, backdrop: 'static', windowClass: 'role-delete-modal' });
   }
 
   closeModel(content: any) {
@@ -82,7 +82,7 @@ export class RoledetailsComponent {
         this.rbacService.setRoleData(data);
         console.log('Roles:', data);
         this.modalService.dismissAll();
-        this.modalRef = this.modalService.open(content);
+        this.modalRef = this.modalService.open(content, { size: 'lg', centered: true, scrollable: true, backdrop: 'static', windowClass: 'role-edit-modal' });
       },
       error: (err) => {
         console.error('Failed to fetch Roles', err);
@@ -103,7 +103,7 @@ export class RoledetailsComponent {
   get filteredData() {
     const search = this.searchText.toLowerCase();
     return this.roles.filter(role =>
-      role.roleName.toLowerCase().includes(search) || role.roleName.toLowerCase().includes(search)
+      role.roleName.toLowerCase().includes(search) || (role.remarks || '').toLowerCase().includes(search)
     );
   }
   

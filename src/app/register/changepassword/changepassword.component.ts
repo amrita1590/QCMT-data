@@ -22,6 +22,9 @@ export class ChangepasswordComponent {
   strengthLabel: string = '';
   strengthClass: string = 'bg-danger';
   changePasswordData!: ChangePassword;
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
 
   settingsComponent: SettingsComponent;
 
@@ -32,7 +35,7 @@ export class ChangepasswordComponent {
       newPassword: ['', [
         Validators.required,
         Validators.minLength(8),
-        Validators.pattern('^(?=.*[@$\\-_!%*?&])[A-Za-z\\d@$\\-_!%*?&]{8,}$')
+        Validators.pattern('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$\\-_!%*?&])[A-Za-z\\d@$\\-_!%*?&]{8,}$')
       ]],
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordMatchValidator });
@@ -76,6 +79,24 @@ export class ChangepasswordComponent {
   }
 
   get f() { return this.changePasswordForm.controls; }
+
+  get passwordValue(): string { return this.f['newPassword'].value || ''; }
+  get hasMinLength(): boolean { return this.passwordValue.length >= 8; }
+  get hasUppercase(): boolean { return /[A-Z]/.test(this.passwordValue); }
+  get hasLowercase(): boolean { return /[a-z]/.test(this.passwordValue); }
+  get hasNumber(): boolean { return /[0-9]/.test(this.passwordValue); }
+  get hasSpecial(): boolean { return /[$\-_!%*?&]/.test(this.passwordValue); }
+
+  resetForm() {
+    this.changePasswordForm.reset();
+    this.strength = 0;
+    this.strengthLabel = '';
+    this.strengthClass = 'bg-danger';
+    this.submitted = false;
+    this.showCurrentPassword = false;
+    this.showNewPassword = false;
+    this.showConfirmPassword = false;
+  }
 
   onSubmit() {
     this.submitted = true;

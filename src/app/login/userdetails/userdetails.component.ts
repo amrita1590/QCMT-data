@@ -65,32 +65,34 @@ export class UserdetailsComponent {
 
   openModal(content: any, userId: number | undefined) {
     this.userId = userId;
+    this.selectedRole = 0;
+    this.selectedUnit = 0;
+    this.selectedUnitname = '';
+    this.errorStatus = false;
+    this.successStatus = false;
     this.umService.getUser(this.userId!).subscribe(userData => {
       console.log("User Data for ID", this.userId, ":", userData);
       this.userData = userData;
-      
       this.userRoles = userData.userRolesList || [];
+      const assignedUnit = this.availableUnits.find(unit => Number(unit.id) === Number(userData.unitid));
+      if (assignedUnit) {
+        this.selectedUnit = assignedUnit.id;
+        this.selectedUnitname = assignedUnit.unitName;
+      }
       console.log("User Roles:", this.userRoles);
     });
-    if (this.availableUnits != null && this.availableUnits.length > 0) {
-
-    for (let unit of this.availableUnits) {
-
-      if (unit.id === this.userData?.unitid) {
-
-        this.selectedUnit = unit.id;
-        this.selectedUnitname = unit.unitName;
-
-      }
-    }
-  
-}
-    this.modalRef = this.modalService.open(content, { size : 'lg' });
+    this.modalRef = this.modalService.open(content, {
+      size: 'lg',
+      centered: true,
+      scrollable: true,
+      backdrop: 'static',
+      windowClass: 'user-management-modal'
+    });
   }
 
   openDeleteModel(content: any, userId: number | undefined) {
     this.userId = userId;
-    this.modalRef = this.modalService.open(content);
+    this.modalRef = this.modalService.open(content, { centered: true, backdrop: 'static', windowClass: 'confirm-delete-modal' });
   }
   assignUnit() {
     if (this.selectedUnit === 0) {
@@ -295,7 +297,7 @@ export class UserdetailsComponent {
   get filteredData() {
     const search = this.searchText.toLowerCase();
     return this.userDetailsList.filter(user =>
-      user.mstr_name.toLowerCase().includes(search) || user.email?.toLowerCase().includes(search)
+      (user.mstr_name || '').toLowerCase().includes(search) || (user.email || '').toLowerCase().includes(search)
     );
   }
       

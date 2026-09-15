@@ -1,9 +1,7 @@
 import { CommonModule, NgClass } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ChangepasswordpageComponent } from '../../changepasswordpage/changepasswordpage.component';
 import { ChangePassword } from '../../../interface/ChangePassword';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UsermanagementService } from '../../../service/usermanagement.service';
 import { ToastService } from '../../../service/toast.service';
  
@@ -23,17 +21,15 @@ export class ChagepasswordchildComponent {
   strengthLabel: string = '';
   strengthClass: string = 'bg-danger';
   changePasswordData!: ChangePassword;
+  isSubmitting = false;
 
-  settingsComponent: ChangepasswordpageComponent;
-
-  constructor(private fb: FormBuilder, private umService: UsermanagementService, private modalService: NgbModal, settingsComponent: ChangepasswordpageComponent,private toast: ToastService) {
-    this.settingsComponent = settingsComponent;
+  constructor(private fb: FormBuilder, private umService: UsermanagementService, private toast: ToastService) {
     this.changePasswordForm = this.fb.group({
       currentPassword: ['', [Validators.required]],
       newPassword: ['', [
         Validators.required,
         Validators.minLength(8),
-        Validators.pattern('^(?=.*[@$\\-_!%*?&])[A-Za-z\\d@$\\-_!%*?&]{8,}$')
+        Validators.pattern('^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$\\-_!%*?&])[A-Za-z\\d@$\\-_!%*?&]{8,}$')
       ]],
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordMatchValidator });
@@ -97,21 +93,24 @@ export class ChagepasswordchildComponent {
       newPassword: this.changePasswordForm.get('newPassword')?.value
     };
 
+    this.isSubmitting = true;
+
     this.umService.updatePasswordDetails(this.changePasswordData).subscribe({
       next: (res) => {
+        this.isSubmitting = false;
         console.log('Password change messageresponse:', res.message);
          console.log('Password change status response:', res.status);
         if (res.status === 'success') {
           console.log('Password change status inside status:', res.status);
           this.toast.show('Password updated successfully', 'success');
-          this.changePasswordForm.reset();
-          this.settingsComponent.closeModel();
+          this.resetForm();
         } else {
             console.log('Password change status inside else:', res.status);
           this.toast.show(res.message, 'error');
         }
       },
       error: (err) => {
+        this.isSubmitting = false;
         console.error('Error occurred while changing password', err);
         if (err.error?.message) {
           this.toast.show(err.error.message, 'error');
@@ -120,6 +119,14 @@ export class ChagepasswordchildComponent {
         }
       }
     });
+  }
+
+  resetForm(): void {
+    this.changePasswordForm.reset();
+    this.submitted = false;
+    this.strength = 0;
+    this.strengthLabel = '';
+    this.strengthClass = 'bg-danger';
   }
 
 

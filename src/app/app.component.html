@@ -14,6 +14,8 @@
     [screenWidth]="screenWidth()"
     />
 }
-<app-footer></app-footer>         
-
+<app-footer
+    [class.with-sidebar]="!shouldShowHeader()"
+    [class.with-expanded-sidebar]="!shouldShowHeader() && !isLeftSidebarCollapsed() && screenWidth() > 768"
+></app-footer>
 

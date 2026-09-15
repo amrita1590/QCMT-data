@@ -1,18 +1,7 @@
 <div class="container-fluid mt-4">
-  <!-- Top Navigation -->
-  <div class="top-nav mb-3">
-    <button class="back-btn d-flex align-items-center" routerLink="/dashboard">
-      <i class="fa-solid fa-arrow-left me-2"></i>
-      Back to Dashboard
-    </button>
-  </div>
-
-  <!-- Page Title -->
-  <div class="page-header mb-4">
-    <h2 class="page-title fw-bold">
-      <i class="fa fa-user-check me-2"></i> Question Categories
-    </h2>
-    <p class="page-subtitle text-muted">Manage question category headings</p>
+  <div class="page-heading-actions">
+    <div class="page-header"><h2 class="page-title fw-bold"><i class="fa fa-user-check me-2"></i> Question Categories</h2><p class="page-subtitle text-muted">Manage question category headings</p></div>
+    <div class="top-nav"><button class="back-btn d-flex align-items-center" routerLink="/dashboard"><i class="fa-solid fa-arrow-left me-2"></i>Back to Dashboard</button></div>
   </div>
   <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
   <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
@@ -83,8 +72,8 @@
           <th>Category Name</th>
           <th>Added By</th>
           <th>Timestamp</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th class="status-col">Status</th>
+          <th class="actions-col">Actions</th>
         </tr>
       </thead>
 
@@ -96,7 +85,7 @@
           <td>{{ cat.createdBy }}</td>
           <td>{{ cat.entryDate }}</td>
 
-          <td>
+          <td class="status-col">
             <label class="switch">
               <input type="checkbox" [checked]="cat.status" (change)="toggleStatus(cat)">
               <span class="slider round"></span>
@@ -106,7 +95,7 @@
             </span>
           </td>
 
-          <td>
+          <td class="actions-col">
             <i class="bi bi-pencil me-4 edit-icon" (click)="editCategoryDetails(createCategoty, cat.id)"></i>
             <i class="bi bi-trash text-danger delete-icon" (click)="openModal(deleteModal, cat.id, cat.categoryName, cat.addDetails, cat.auditType)"></i>
           </td>

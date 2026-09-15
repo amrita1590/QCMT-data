@@ -14,6 +14,7 @@ import { UnitDetails } from '../../interface/UnitDetails';
 })
 export class UserprofileComponent {
     profileImage: string | ArrayBuffer | null = null;
+    selectedFileName = '';
     emailStatus: boolean = true;
     errorMsg: string | null = null;
     errorStatus: boolean = false;
@@ -76,16 +77,7 @@ export class UserprofileComponent {
 
       this.umService.getUserProfileDetails().subscribe(userData => {
         this.userDetails = userData;
-        this.user.fullName = userData?.mstr_name || '';
-        this.user.email = userData?.email || '';
-        this.user.mobile = userData?.mobileNo.toString() || '';
-        this.user.address = userData?.address || '';
-        this.user.instituteName = userData?.organizationName || '';
-        this.user.unitid = userData?.unitid ?? null;
-        this.user.userscopelevel = userData?.userscopelevel || '';
-        this.user.zone = userData?.zone || '';
-        this.user.sector = userData?.sector || '';
-        this.user.rank = userData?.rank || '';
+        this.populateForm();
       });
     }
 
@@ -93,10 +85,33 @@ export class UserprofileComponent {
     onFileSelected(event: any) {
       const file = event.target.files[0];
       if (file) {
+        this.selectedFileName = file.name;
         const reader = new FileReader();
         reader.onload = e => this.profileImage = reader.result;
         reader.readAsDataURL(file);
       }
+    }
+
+    resetForm() {
+      this.populateForm();
+      this.profileImage = null;
+      this.selectedFileName = '';
+      this.errorStatus = false;
+      this.successStatus = false;
+    }
+
+    private populateForm() {
+      const userData = this.userDetails;
+      this.user.fullName = userData?.mstr_name || '';
+      this.user.email = userData?.email || '';
+      this.user.mobile = userData?.mobileNo?.toString() || '';
+      this.user.address = userData?.address || '';
+      this.user.instituteName = userData?.organizationName || '';
+      this.user.unitid = userData?.unitid ?? null;
+      this.user.userscopelevel = userData?.userscopelevel || '';
+      this.user.zone = userData?.zone || '';
+      this.user.sector = userData?.sector || '';
+      this.user.rank = userData?.rank || '';
     }
 
     updateProfile() {

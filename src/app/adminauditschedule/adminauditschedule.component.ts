@@ -33,14 +33,18 @@ import { AuditorResponseFilesTemp } from '../interface/AuditorResponseFilesTemp'
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { DownloadService } from '../service/download.service';
 import { NotificationBean } from '../interface/NotificationBean';
+import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
+import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
+import { AuditRemarksPanelsComponent } from '../shared/audit-remarks-panels/audit-remarks-panels.component';
 
 @Component({
   selector: 'app-adminauditschedule',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, AuditStatusGuideComponent, AuditRemarksPanelsComponent],
   templateUrl: './adminauditschedule.component.html',
   styleUrl: './adminauditschedule.component.css'
 })
 export class AdminauditscheduleComponent {
+  auditorRemarktoCASOList: AuditorRemarktoCASO[] = [];
   
   constants = APP_CONSTANTS;
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
@@ -692,7 +696,14 @@ listenForNameChanges() {
     console.log(":::::::::::::::");    
     this.getAuditObservationComponent(id);
     this.templateId = id;    
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false,
+      centered: true,
+      scrollable: true,
+      windowClass: 'audit-summary-modal'
+    });
   }
 
   audittemplateReset() {
@@ -875,7 +886,7 @@ listenForNameChanges() {
   }
 
   get totalInProgress() {
-    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation CASO").length;
+    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "ObservationZONE" || t.auditStatus === "Observation SECTOR" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation CASO").length;
   }
 
   get totalCompleted() {
@@ -1344,6 +1355,11 @@ loadQuestions() {
 }
   viewAuditorResponse(content: any, id: number) {
       this.selectedTemplateId = id;
+      this.auditorRemarktoCASOList = [];
+      this.auditService.getAuditorRemarksCaso(id).subscribe({
+        next: data => this.auditorRemarktoCASOList = [...(data ?? [])].sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime()),
+        error: err => console.error('Failed to fetch audit remarks', err)
+      });
       this.loadQuestions();
       this.auditService.getAuditBoardDetails(id).subscribe({
         next: (data) => {
@@ -1581,3 +1597,4 @@ loadQuestions() {
 
 
 }
+

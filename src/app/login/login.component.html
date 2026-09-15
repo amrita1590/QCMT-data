@@ -33,24 +33,31 @@
             <div class="error-banner" role="alert">
               <i class="bi bi-exclamation-triangle-fill"></i>
               {{ loginErrorMessage }}
+              @if (passwordExpired) {
+                <a routerLink="/forgot-password">Forgot Password?</a>
+              }
             </div>
           }
 
           <div class="form-field">
             <label for="username">
               <i class="bi bi-person-fill"></i>
-              Email Address
+              CISF No.
             </label>
             <input
-              type="email"
+              type="text"
+              inputmode="numeric"
+              maxlength="9"
               formControlName="username"
               id="username"
               autocomplete="username"
-              placeholder="Enter registered email address"
+              placeholder="Enter your 9-digit CISF No."
             >
             @if (loginDetailsForm.get('username')?.invalid && (loginDetailsForm.get('username')?.dirty || loginDetailsForm.get('username')?.touched)) {
               @if (loginDetailsForm.get('username')?.hasError('required')) {
-                <span class="field-error">Email is required.</span>
+                <span class="field-error">CISF No. is required.</span>
+              } @else {
+                <span class="field-error">Enter a valid 9-digit CISF No.</span>
               }
             }
           </div>
@@ -78,37 +85,42 @@
             <div class="captcha-question">
               <i class="bi bi-shield-check"></i>
               @if (!captchaExpired) {
-                <span class="captcha-expr">{{ captchaNum1 }} {{ captchaOperator }} {{ captchaNum2 }} = ?</span>
+                @if (captchaImage) {
+                  <img class="captcha-image" [src]="captchaImage" alt="CAPTCHA verification text">
+                } @else {
+                  <span class="captcha-loading">Loading CAPTCHA…</span>
+                }
                 <span class="captcha-countdown" [class.captcha-warn]="captchaTimer <= 10">
                   <i class="bi bi-clock"></i> {{ captchaTimer }}s
                 </span>
               } @else {
                 <span class="captcha-expr captcha-expired-text">CAPTCHA expired</span>
               }
-              <button type="button" class="captcha-refresh" (click)="generateCaptcha()" [title]="captchaExpired ? 'Get new CAPTCHA' : 'New question'">
+              <button type="button" class="captcha-refresh" (click)="generateCaptcha()" [title]="captchaExpired ? 'Get new CAPTCHA' : 'New image'">
                 <i class="bi bi-arrow-clockwise"></i>
               </button>
             </div>
             @if (!captchaExpired) {
-              <input type="number" class="captcha-input" [(ngModel)]="captchaInput" [ngModelOptions]="{standalone: true}"
-                placeholder="Enter answer" autocomplete="off">
+              <input type="text" class="captcha-input" [(ngModel)]="captchaInput" [ngModelOptions]="{standalone: true}"
+                placeholder="Enter the text shown above" autocomplete="off" autocapitalize="characters"
+                spellcheck="false" maxlength="6">
             } @else {
               <div class="captcha-expired-msg">
-                <i class="bi bi-exclamation-triangle"></i> Time expired. Click <strong>refresh</strong> to get a new question.
+                <i class="bi bi-exclamation-triangle"></i> Time expired. Click <strong>refresh</strong> to get a new image.
               </div>
             }
             @if (captchaError) {
-              <span class="field-error">Incorrect answer. Please try again.</span>
+              <span class="field-error">Incorrect CAPTCHA text. Please try again.</span>
             }
           </div>
 
-          <button type="submit" class="login-button" [disabled]="loginDetailsForm.invalid || !captchaInput || captchaExpired">
+          <button type="submit" class="login-button" [disabled]="loginDetailsForm.invalid || !captchaImage || !captchaInput || captchaExpired">
             <i class="bi bi-box-arrow-in-right"></i>
             Sign In Securely
           </button>
 
           <div class="support-links">
-            <a routerLink="/contact">Forgot password?</a>
+            <a routerLink="/forgot-password">Forgot password?</a>
             <span></span>
             <a routerLink="/contact">Contact Help Desk</a>
           </div>

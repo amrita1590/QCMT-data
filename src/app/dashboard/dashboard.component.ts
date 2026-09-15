@@ -13,14 +13,20 @@ import { AirportListDashboard } from '../interface/AirportListDashboard';
 import { AuditScheduleTemplate } from '../interface/AuditScheduleTemplate';
 import { NotificationBean } from '../interface/NotificationBean';
 import { RouterModule } from '@angular/router';
+import { IqcuCalendarService } from '../service/iqcu-calendar.service';
+import { IqcuCalendar } from '../interface/IqcuCalendar';
+import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
+import { UnitAuditCurrentStatus } from '../interface/unit-audit-current-status';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 
 
 type Status = 'P' | 'A';
+type ScheduleStatusFilter = 'ALL' | 'SCHEDULED' | 'DUE' | 'OVERDUE' | 'COMPLETED';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [ReactiveFormsModule, NgbModule, CommonModule, FormsModule],
+  imports: [ReactiveFormsModule, NgbModule, CommonModule, FormsModule, RouterModule, AuditStatusGuideComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -32,6 +38,7 @@ export class DashboardComponent {
   private modalRef: NgbModalRef | null = null;
 
   dashboardBean: DashboardBean | null = null;
+  selectedScheduleStatus: ScheduleStatusFilter = 'ALL';
 
   airportList: AirportListDashboard[] | null = null
 
@@ -49,8 +56,12 @@ export class DashboardComponent {
   notificationCount: number = 0;
 
   statusChart: any;
+  monthlyAuditChart: any;
 
   upcomingAuditList: AuditScheduleTemplate[] | null = null; 
+  upcomingTotalCount = 0;
+  upcomingPlannedCount = 0;
+  upcomingAttentionCount = 0;
 
   auditCards : any = [];
 
@@ -61,7 +72,16 @@ export class DashboardComponent {
   allNotificationList: NotificationBean[] | null = null;
   showNotificationPopup: boolean = false;
 
-  constructor(private modalService: NgbModal,private umService: UsermanagementService, private dashboardService: DashboardService, private toast: ToastService) {
+  // IQCU Calendar - visible to every authenticated user regardless of role, unlike the
+  // management page at /iqcucalendar (APS HQrs only). Year is derived from the system date,
+  // never hardcoded.
+  currentCalendarYear: number = new Date().getFullYear();
+  activeCalendar: IqcuCalendar | null = null;
+  calendarLoading = true;
+  calendarViewerUrl: SafeResourceUrl | null = null;
+  private calendarBlobUrl: string | null = null;
+
+  constructor(private modalService: NgbModal,private umService: UsermanagementService, private dashboardService: DashboardService, private toast: ToastService, private iqcuCalendarService: IqcuCalendarService, private sanitizer: DomSanitizer) {
 
   }
 
@@ -90,6 +110,53 @@ export class DashboardComponent {
         console.log('Notification List:', this.notificationList);
       }
     });
+
+    this.loadActiveCalendar();
+  }
+
+  loadActiveCalendar(): void {
+    this.calendarLoading = true;
+    this.iqcuCalendarService.getActiveCalendarForYear(this.currentCalendarYear).subscribe({
+      next: (calendar) => {
+        this.activeCalendar = calendar;
+        this.calendarLoading = false;
+      },
+      error: () => {
+        // No active calendar for this year (or the request failed) - either way, show the
+        // "none available" state rather than blocking the rest of the dashboard.
+        this.activeCalendar = null;
+        this.calendarLoading = false;
+      }
+    });
+  }
+
+  /** Opens the active calendar PDF inline (in-app modal + iframe), not a new browser tab. */
+  viewActiveCalendar(content: any): void {
+    if (!this.activeCalendar) return;
+    this.calendarViewerUrl = null;
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl', centered: true, scrollable: true,
+      backdrop: 'static', windowClass: 'iqcu-calendar-viewer-modal'
+    });
+    this.iqcuCalendarService.getCalendarFile(this.activeCalendar.filePath).subscribe({
+      next: (blob) => {
+        this.calendarBlobUrl = window.URL.createObjectURL(blob);
+        this.calendarViewerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.calendarBlobUrl);
+      },
+      error: () => {
+        this.toast.show('Failed to open IQCU calendar PDF.', 'error');
+        this.modalRef?.dismiss();
+      }
+    });
+  }
+
+  closeCalendarViewer(modal: any): void {
+    modal.dismiss();
+    if (this.calendarBlobUrl) {
+      window.URL.revokeObjectURL(this.calendarBlobUrl);
+      this.calendarBlobUrl = null;
+    }
+    this.calendarViewerUrl = null;
   }
 
   isDashboardLoading: boolean = true;
@@ -115,11 +182,17 @@ export class DashboardComponent {
         console.log('Notification List:', this.notificationList);
       }
     });
-    this.modalRef = this.modalService.open(content, { backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      size: 'lg', centered: true, scrollable: true,
+      backdrop: 'static', keyboard: false, windowClass: 'dashboard-notification-modal'
+    });
   }
- createModal(content: any) {
-   
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+  createModal(content: any) {
+    this.selectedScheduleStatus = 'ALL';
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl', centered: true, scrollable: true,
+      backdrop: 'static', keyboard: false, windowClass: 'iqcu-schedule-modal'
+    });
   }
   getDashboardData(fromDate: string, toDate: string) {
     this.isDashboardLoading = true;
@@ -132,7 +205,14 @@ export class DashboardComponent {
       next: (data) => {
         this.dashboardBean = data;
         this.createAuditTypeOverview(this.dashboardBean);
-        this.upcomingAuditList = this.dashboardBean.upcomingAuditTemplate.sort((a, b) => new Date(b.createdAt).getTime()).slice(0, 10);
+        const upcomingAudits = [...(this.dashboardBean.upcomingAuditTemplate || [])]
+          .sort((a, b) => (a.auditMonth || '').localeCompare(b.auditMonth || ''));
+        this.upcomingTotalCount = upcomingAudits.length;
+        this.upcomingPlannedCount = upcomingAudits.filter(audit => audit.auditStatus === 'Planned').length;
+        this.upcomingAttentionCount = upcomingAudits.filter(audit =>
+          ['Action Required', 'Observation APS', 'Observation CASO', 'ObservationZONE', 'Observation SECTOR'].includes(audit.auditStatus)
+        ).length;
+        this.upcomingAuditList = upcomingAudits.slice(0, 7);
         console.log('DashboardBean:', this.dashboardBean);
         this.isDashboardLoading = false;
         this.createChartView(this.dashboardBean);
@@ -234,12 +314,89 @@ export class DashboardComponent {
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: "70%",
         plugins: {
           legend: { display: false }
         }
       }
     });
+
+    this.createMonthlyAuditChart(bean);
+  }
+
+  createMonthlyAuditChart(bean: DashboardBean | null) {
+    const canvas = document.getElementById('monthlyAuditChart') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    if (this.monthlyAuditChart) {
+      this.monthlyAuditChart.destroy();
+    }
+
+    const monthlyCounts = bean?.monthlyAuditCounts || [];
+    const auditCounts = monthlyCounts.map(item => Number(item.auditCount || 0));
+    const monthLabels = monthlyCounts.map(item => {
+      const [year, month] = item.auditMonth.split('-').map(Number);
+      return new Intl.DateTimeFormat('en-IN', { month: 'short', year: '2-digit' })
+        .format(new Date(year, month - 1, 1));
+    });
+
+    this.monthlyAuditChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Audits',
+          data: auditCounts,
+          backgroundColor: auditCounts.map(count => this.getAuditCountColor(count)),
+          hoverBackgroundColor: auditCounts.map(count => this.getAuditCountColor(count, true)),
+          borderRadius: 7,
+          borderSkipped: false,
+          maxBarThickness: 54
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b', font: { size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0, color: '#64748b', stepSize: 1 },
+            grid: { color: 'rgba(148, 163, 184, .18)' }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            backgroundColor: '#17395d',
+            padding: 10
+          }
+        }
+      }
+    });
+  }
+
+  private getAuditCountColor(count: number, hover = false): string {
+    const colors = count <= 0
+      ? ['#d9e1e8', '#c8d2dc']
+      : count === 1
+        ? ['#27ae60', '#1f8f4e']
+        : count === 2
+          ? ['#2f80d8', '#2469b4']
+          : count === 3
+            ? ['#f2b01e', '#d5960c']
+            : count === 4
+              ? ['#f0782b', '#cc5d16']
+              : ['#dc4453', '#b92f3d'];
+
+    return colors[hover ? 1 : 0];
   }
 
   validateDates() {
@@ -287,7 +444,10 @@ export class DashboardComponent {
   syncData(content: any) {
     console.log('Sync triggered');
     // Call refresh API
-    this.modalRef = this.modalService.open(content, { backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      centered: true, backdrop: 'static', keyboard: false,
+      windowClass: 'dashboard-date-range-modal'
+    });
   }
 
   openObservationDetails(content: any, type: string, subtitle: string) {
@@ -314,7 +474,10 @@ export class DashboardComponent {
     this.modalRef = this.modalService.open(content, { 
       backdrop: 'static', 
       keyboard: false,
-      size: 'lg'   // ✅ large size
+      size: 'xl',
+      centered: true,
+      scrollable: true,
+      windowClass: 'dashboard-observation-modal'
     });
   }
 
@@ -352,6 +515,22 @@ getAuditStatusClass(status: string): string {
     case 'OVERDUE': return 'status-overdue';
     case 'DUE': return 'status-due';
     case 'SCHEDULED': return 'status-plan';
-    default: return '';
+    default: return 'status-not-scheduled';
   }
-}}
+}
+
+getScheduleStatusCount(status: string): number {
+  return this.dashboardBean?.unitAuditCurrentStatuslist?.filter(item => item.auditStatus === status).length || 0;
+}
+
+filterScheduleByStatus(status: ScheduleStatusFilter): void {
+  this.selectedScheduleStatus = status;
+}
+
+get filteredUnitAuditStatuses(): UnitAuditCurrentStatus[] {
+  const audits = this.dashboardBean?.unitAuditCurrentStatuslist ?? [];
+  return this.selectedScheduleStatus === 'ALL'
+    ? audits
+    : audits.filter(audit => audit.auditStatus === this.selectedScheduleStatus);
+}
+}

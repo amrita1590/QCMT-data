@@ -1093,3 +1093,13 @@ input[readonly] {
   border-radius: 6px;
   white-space: nowrap;      /* prevents breaking text */
 }
+
+.status-badge.ObservationZONE { background: #fff2e6; color: #b85e00; }
+.status-badge.ObservationSECTOR { background:#e8f0ff; color:#2458a6; }
+.zone-remarks-box {
+  border-left: 4px solid #198754;
+  margin-bottom: 12px;
+}
+.zone-remark-card { border-left-color: #198754 !important; }
+.sector-remarks-box { border-left: 4px solid #0284c7; margin-bottom: 12px; }
+.sector-remark-card { border-left-color: #0284c7 !important; }

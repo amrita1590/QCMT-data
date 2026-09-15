@@ -1,0 +1,17 @@
+app-footer {
+  transition: margin-left 0.5s ease;
+}
+
+app-footer.with-sidebar {
+  margin-left: 5rem;
+}
+
+app-footer.with-expanded-sidebar {
+  margin-left: 16.5625rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  app-footer {
+    transition: none;
+  }
+}

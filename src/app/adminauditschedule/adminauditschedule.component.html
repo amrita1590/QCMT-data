@@ -1,14 +1,9 @@
 <div class="audit-page">
 
-  <!-- Top Navigation -->
-  <div class="top-nav">
-    <a href="/dashboard" class="back-btn">
-    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-  </a>
+  <div class="page-heading-actions">
+    <div class="page-heading-copy"><h2 class="page-title"><i class="fa fa-user-check me-2"></i>Audit Schedule</h2><p class="page-subtitle">Manage and track all audit schedules</p></div>
+    <div class="top-nav"><a href="/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a></div>
   </div>
-  <!-- Page Title -->
-  <h2 class="page-title"><i class="fa fa-user-check me-2"></i>Audit Schedule</h2>
-  <p class="page-subtitle">Manage and track all audit schedules</p>
 
   <!-- Status Cards -->
   <div class="status-grid">
@@ -79,7 +74,7 @@
           <th>Auditor Name</th>
           <th>Created By</th>
           <th>Audit Type</th>
-          <th>Status</th>
+          <th class="status-col">Status</th>
           <th class="actions-col">Actions</th>
           <th>Summary</th>
         </tr>
@@ -108,7 +103,7 @@
 
           <td><span class="type-badge">{{ row.auditType }}</span></td>
 
-          <td>
+          <td class="status-col">
             <span>
               <div *ngIf="row.auditStatus === 'Planned'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>               
@@ -138,6 +133,14 @@
                 </div>
 
               </div>
+              <div *ngIf="row.auditStatus === 'ObservationZONE'" class="status-badge ObservationZONE d-flex align-items-center justify-content-between" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+                <div>Observation ZONE<br/><span class="badge-subtitle">Zone Bucket</span></div>
+                <i class="fa fa-eye action-icon ms-2"></i>
+              </div>
+              <div *ngIf="row.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR d-flex align-items-center justify-content-between" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+                <div>Observation SECTOR<br/><span class="badge-subtitle">Sector Bucket</span></div>
+                <i class="fa fa-eye action-icon ms-2"></i>
+              </div>
               <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
@@ -156,6 +159,8 @@
               <option value="Action Required">Action Required</option>
               <option value="Observation APS">Observation APS</option>
               <option value="Observation CASO">Observation CASO</option>
+              <option value="Observation SECTOR">Observation SECTOR</option>
+              <option value="ObservationZONE">Observation ZONE</option>
             </select>
           </td>
           <td>
@@ -222,6 +227,8 @@
         </li>
       </ul>
     </nav>
+
+<app-audit-status-guide></app-audit-status-guide>
 </div>
 
 <ng-template #createAuditTemplate let-modal>
@@ -505,7 +512,7 @@
 </ng-template>
 
 <ng-template #createObservationTemplate let-modal>
-      <div class="modal-header border-0 pb-0">
+      <div class="modal-header audit-summary-header">
         <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
           <div *ngIf="auditObservation?.id"><i class="fa-solid fa-clipboard-check me-2"></i> Audit Observation Summary</div>
           <div *ngIf="!auditObservation?.id"><i class="fa fa-user-check me-2"></i> Create Observation</div>
@@ -514,7 +521,8 @@
       </div>
       <div class="modal-body">  
       <hr/>
-        <div *ngIf="auditObservation?.id && auditObservation?.observationStatus === 'submitted'">
+        <div class="audit-observation-summary-content"
+             *ngIf="auditObservation?.id && auditObservation?.observationStatus === 'submitted'">
 
             <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
               <div class="card-body px-4">
@@ -619,8 +627,8 @@
                       </div>
                     </td>
                     <td class="text-center">
-                      <a class="btn btn-sm btn-outline-primary px-3" (click)="viewObservation(viewObservationDetails,row.id)">
-                        <i class="fa fa-eye action-icon"></i>&nbsp;View
+                      <a class="btn btn-sm btn-outline-primary px-3 view-inline-btn" (click)="viewObservation(viewObservationDetails,row.id)">
+                        <i class="fa fa-eye action-icon"></i><span>View</span>
                       </a>
                     </td>
                   </tr>
@@ -628,14 +636,6 @@
             </table>
           </div>
 
-          </div>
-          <!-- FOOTER -->
-          <div class="modal-footer border-0 mt-2">
-            <!-- <button type="submit" class="btn btn-success me-2" (click)="droppedObservation(auditObservation?.auditTemplateId)"><i class="fa fa-times-circle ms-1 pointer"></i> Dropped</button> -->
-            <button type="submit" class="btn btn-primary me-2" (click)="submitObservationPopupToCASO(submitObservationCASO, auditObservation?.auditTemplateId)" [disabled]="!activeList?.length"><i class="fa fa-user ms-1 pointer"></i> Send to CASO</button>
-            <button class="btn btn-light border px-4" (click)="modal.dismiss()">
-              Close
-            </button>
           </div>
         </div>
 
@@ -731,6 +731,15 @@
         </div>
       </div>
       </div>
+      <div class="modal-footer audit-observation-summary-footer"
+           *ngIf="auditObservation?.id && auditObservation?.observationStatus === 'submitted'">
+        <button type="button" class="btn btn-primary"
+                (click)="submitObservationPopupToCASO(submitObservationCASO, auditObservation?.auditTemplateId)"
+                [disabled]="!activeList?.length">
+          <i class="fa fa-user me-2"></i>Send to CASO
+        </button>
+        <button type="button" class="btn btn-light border px-4" (click)="modal.dismiss()">Close</button>
+      </div>
 </ng-template>
 
 <ng-template #deleteModalObservation let-modal>
@@ -759,7 +768,7 @@
 
 <ng-template #viewObservationDetails let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
+  <div class="modal-header observation-detail-modal-header">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Observation Details
     </h5>
@@ -792,7 +801,7 @@
     </div>
   </div>
     
-    <div class="modal-body pt-2">
+    <div class="modal-body pt-2 observation-detail-modal-body">
         <app-audit-observation-chat-component [data]="auditObservationComponentBean"></app-audit-observation-chat-component>
     </div>
     <!-- FOOTER -->
@@ -834,7 +843,7 @@
 
 <ng-template #viewAuditorResponseTemplate let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
+  <div class="modal-header audit-summary-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Audit & Response Summary
     </h5>
@@ -1031,6 +1040,7 @@
         <h3 class="text-center mb-2 title-text">
             {{auditBoardTemplateGen.auditBoardScheduleTemplate.name}}
         </h3>
+        <app-audit-remarks-panels [remarks]="auditorRemarktoCASOList"></app-audit-remarks-panels>
         <div *ngIf="auditorQuestions?.questions?.length" class="table-responsive">
          <div  class="basic-section" class="mb-2 p-3 border rounded bg-light">
           <h5 class="fw-bold text-primary mb-3">Questions added by Auditor</h5>
@@ -1292,3 +1302,7 @@
   </div>
 
 </ng-template>
+
+
+
+

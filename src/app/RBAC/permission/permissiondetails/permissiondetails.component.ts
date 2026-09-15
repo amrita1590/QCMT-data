@@ -34,7 +34,7 @@ export class PermissiondetailsComponent {
   openModal(content: any, permissionId: number, permissionName: string) {
     this.permissionName = permissionName;
     this.permissionId = permissionId;
-    this.modalRef = this.modalService.open(content, { centered: true });
+    this.modalRef = this.modalService.open(content, { centered: true, backdrop: 'static', windowClass: 'permission-delete-modal' });
   }
 
   closeModel(content: any) {
@@ -81,7 +81,7 @@ export class PermissiondetailsComponent {
         this.rbacService.setPermissionData(data);
         console.log('Permission:', data);
         this.modalService.dismissAll();
-        this.modalRef = this.modalService.open(content);
+        this.modalRef = this.modalService.open(content, { size: 'lg', centered: true, scrollable: true, backdrop: 'static', windowClass: 'permission-edit-modal' });
       },
       error: (err) => {
         console.error('Failed to fetch Roles', err);
@@ -102,7 +102,7 @@ export class PermissiondetailsComponent {
   get filteredData() {
     const search = this.searchText.toLowerCase();
     return this.permissions.filter(permissions =>
-      permissions.permissionLabel.toLowerCase().includes(search) || permissions.permissionRoutelink.toLowerCase().includes(search)
+      (permissions.permissionLabel || '').toLowerCase().includes(search) || (permissions.permissionRoutelink || '').toLowerCase().includes(search)
     );
   }
   

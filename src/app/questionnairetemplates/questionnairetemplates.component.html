@@ -1,19 +1,8 @@
 <div class="audit-page">
 
-  <!-- Top Navigation -->
-  <div class="top-nav mb-3">
-    <button class="back-btn d-flex align-items-center" routerLink="/dashboard">
-      <i class="fa-solid fa-arrow-left me-2"></i>
-      Back to Dashboard
-    </button>
-  </div>
-
-  <!-- Page Title -->
-  <div class="page-header mb-4">
-    <h2 class="page-title fw-bold">
-      <i class="fa fa-user-check me-2"></i> Questionnaire Templates
-    </h2>
-    <p class="page-subtitle text-muted">Create and manage pre-questionnaire templates</p>
+  <div class="page-heading-actions">
+    <div class="page-header"><h2 class="page-title fw-bold"><i class="fa fa-user-check me-2"></i> Questionnaire Templates</h2><p class="page-subtitle text-muted">Create and manage pre-questionnaire templates</p></div>
+    <div class="top-nav"><button class="back-btn d-flex align-items-center" routerLink="/dashboard"><i class="fa-solid fa-arrow-left me-2"></i>Back to Dashboard</button></div>
   </div>
 
   <!-- Status Cards -->
@@ -87,7 +76,7 @@
           <th>Type</th>
           <th>Created&nbsp;By</th>
           <th>Created&nbsp;At</th>
-          <th>Actions</th>
+          <th class="actions-col">Actions</th>
         </tr>
       </thead>
 
@@ -96,7 +85,7 @@
           <td>{{ (page - 1) * pageSize + i + 1 }}</td>
           <td>{{ cat.name }}</td>
           <td>{{ cat.categoryName }}</td>
-          <td>
+          <td class="actions-col">
             <span class="badge badge-questions">
               {{ cat.questions }} questions
             </span>
@@ -148,17 +137,19 @@
 </div>
 
 <ng-template #createQuestionTemplate let-modal>
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-user-check me-2"></i> Create Question Template</h5>
-        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+      <div class="modal-header qt-modal-header">
+        <div class="qt-heading">
+          <span class="qt-eyebrow">Questionnaire Templates</span>
+          <h5 class="modal-title"><i class="fa fa-clipboard-list me-2"></i>{{ btnName }} Question Template</h5>
+        </div>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
-      <div class="modal-body">    
+      <div class="modal-body qt-modal-body">    
         <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
         <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
     
         <form [formGroup]="questionTemplateForm" (ngSubmit)="addQuestionTemplate(questionTemplateForm.value)" class="was-validated">
-            <div class="row g-4">
-                <div class="row g-3">
+            <div class="row g-3 qt-template-fields">
                     <div class="col-md-4">
                     <label class="form-label">Question Category</label>
                     <select class="form-select" formControlName="categoryName">
@@ -196,18 +187,22 @@
                     <li>While non-basic templates have additional features</li>
                     </ul>
                     </div>                   
-                </div>
-                <br/>
             </div>
-            <br/>
-            <table class="table table-bordered table-hover">
+            <div class="qt-section-heading">
+              <div>
+                <h6>Template Questions</h6>
+                <small>Add the questions and any relevant benchmark.</small>
+              </div>
+              <button type="button" class="btn btn-sm btn-success" (click)="addQuestion()"><i class="bi bi-plus-lg me-1"></i>Add Question</button>
+            </div>
+            <div class="table-responsive qt-table-wrap">
+            <table class="table table-bordered table-hover qt-edit-table">
                 <thead class="table-dark">
                     <tr>
                     <th>Sl No</th>
                     <th>Question</th>
                     <th>Benchmark if any</th>
-                   
-                    <th><button type="button" class="btn btn-sm btn-success" (click)="addQuestion()"><i class="bi bi-plus-lg"> </i>Add</button></th>
+                    <th class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -237,12 +232,14 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
 
             <!-- Buttons -->
              <hr/>
-            <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary me-4" [disabled]="questionTemplateForm.invalid">{{btnName}}</button>
-            <button type="reset" class="btn btn-warning" onclick="questiontemplateReset()">Reset</button>
+            <div class="qt-form-actions">
+            <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+            <button type="reset" class="btn btn-outline-secondary" (click)="questiontemplateReset()">Reset</button>
+            <button type="submit" class="btn btn-primary" [disabled]="questionTemplateForm.invalid"><i class="fa fa-save me-1"></i>{{btnName}}</button>
             </div>
         </form>
         <br/>
@@ -258,22 +255,22 @@
 </ng-template>
 
 <ng-template #deleteModal let-modal>
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-danger">
+      <div class="modal-header qt-delete-header">
+        <h5 class="modal-title fw-bold">
           <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
         </h5>
-        <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body qt-delete-body">
         <p class="text-muted mb-3">
           You are about to delete this item. Please confirm before proceeding.
         </p>
-        <div class="border rounded p-2 bg-light text-danger small">
+        <div class="qt-warning-box">
           <i class="fa fa-exclamation-circle me-1"></i>
           This operation is irreversible.
         </div>
       </div>
-      <div class="modal-footer border-0">
+      <div class="modal-footer qt-delete-footer">
         <button class="btn btn-light border" (click)="modal.dismiss()">
           Cancel
         </button>
@@ -282,22 +279,22 @@
 </ng-template>
 
 <ng-template #deleteModalQuestion let-modal>
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-danger">
+      <div class="modal-header qt-delete-header">
+        <h5 class="modal-title fw-bold">
           <i class="fa fa-trash-alt me-2"></i> Delete Confirmation
         </h5>
-        <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body qt-delete-body">
         <p class="text-muted mb-3">
           You are about to delete this item. Please confirm before proceeding.
         </p>
-        <div class="border rounded p-2 bg-light text-danger small">
+        <div class="qt-warning-box">
           <i class="fa fa-exclamation-circle me-1"></i>
           This operation is irreversible.
         </div>
       </div>
-      <div class="modal-footer border-0">
+      <div class="modal-footer qt-delete-footer">
         <button class="btn btn-light border" (click)="modal.dismiss()">
           Cancel
         </button>
@@ -306,24 +303,25 @@
 </ng-template>
 
 <ng-template #viewQuestionTemplate let-modal>
-      <div class="modal-header">
-        <h5 class="modal-title">Audit Questionnaire Template</h5>
-        <!-- PRINT ICON BUTTON -->
-        <button class="btn btn-sm btn-icon me-2" (click)="printPDF()" title="Print" style="border:none; background:transparent;">
-            <i class="fa fa-print" style="font-size:16px;"></i>
-        </button>
-
-        <!-- CLOSE BUTTON -->
-        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-
-
+      <div class="modal-header qt-modal-header">
+        <div class="qt-heading">
+          <span class="qt-eyebrow">Questionnaire Preview</span>
+          <h5 class="modal-title"><i class="fa fa-clipboard-check me-2"></i>Audit Questionnaire Template</h5>
+        </div>
+        <div class="qt-header-actions">
+          <button type="button" class="btn qt-print-icon" (click)="printPDF()" title="Print / Save PDF" aria-label="Print or save as PDF">
+              <i class="fa fa-print"></i>
+          </button>
+          <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+        </div>
       </div>
-      <div class="modal-body" id="printSection">
+      <div class="modal-body qt-preview-body" id="printSection">
         <h3 class="text-center mb-3 title-text">
             {{questionTemplate?.name}}
         </h3>
 
-        <table class="table table-bordered table-sm print-table">
+        <div class="table-responsive qt-preview-table-wrap">
+        <table class="table table-bordered table-sm print-table qt-preview-table">
            <thead>
               <tr>
                   <th width="7%">Sl No</th>
@@ -345,11 +343,12 @@
                 </tr>
             </tbody>
         </table>
+        </div>
 
     </div>
 
-    <div class="modal-footer">
-        <button class="btn btn-primary" (click)="printPDF()">Print / Save PDF</button>
-        <button class="btn btn-secondary" (click)="modal.dismiss()">Close</button>
+    <div class="modal-footer qt-preview-footer">
+        <button class="btn btn-light border" (click)="modal.dismiss()">Close</button>
+        <button class="btn btn-primary" (click)="printPDF()"><i class="fa fa-print me-1"></i>Print / Save PDF</button>
     </div>
 </ng-template>

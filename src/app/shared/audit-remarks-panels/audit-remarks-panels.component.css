@@ -1,0 +1,17 @@
+.remarks-section { margin: 0 0 18px; }
+.section-title { display:flex; align-items:center; gap:9px; margin:0 0 12px; color:#173d63; font-size:16px; font-weight:700; }
+.section-title i { color:#247bc4; }
+.remarks-box { --accent:#64748b; margin-bottom:10px; overflow:hidden; border:1px solid #dce5ee; border-left:4px solid var(--accent); border-radius:10px; background:#fff; }
+.remarks-box.zone { --accent:#198754; }
+.remarks-box.sector { --accent:#0284c7; }
+.remarks-box.auditor { --accent:#7c3aed; }
+.remarks-box header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 14px; background:#f8fafc; }
+.remarks-box h6 { display:flex; align-items:center; gap:8px; margin:0; color:#263b4f; font-size:13px; font-weight:700; }
+.remarks-box h6 i { color:var(--accent); }
+.remarks-box button { display:inline-flex; align-items:center; gap:8px; padding:5px 9px; color:var(--accent); border:1px solid #d8e2ec; border-radius:8px; background:#fff; font-size:11px; font-weight:700; }
+.remarks-list { display:grid; gap:8px; padding:10px 12px 12px; }
+.remark-card { padding:10px 12px; border:1px solid #e0e7ef; border-left:3px solid var(--accent); border-radius:8px; background:#fff; }
+.message-destination { display:inline-flex; margin:0 0 7px; padding:3px 7px; color:var(--accent); border-radius:10px; background:#f0f5f9; font-size:9px; font-weight:800; letter-spacing:.2px; }
+.remark-card p { margin:0 0 8px; color:#34495e; font-size:12px; line-height:1.5; white-space:pre-wrap; }
+.remark-card footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; color:#718096; font-size:10px; }
+@media (max-width:600px) { .remarks-box header { align-items:flex-start; } .remark-card footer { flex-direction:column; } }

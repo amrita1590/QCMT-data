@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { User } from '../interface/User';
 import { UserDashboard } from '../interface/UserDashboard';
 import { Permissions } from '../interface/Permissions';
+import { UserRoleDetails } from '../interface/UserRoleDetails';
 
 @Component({
   selector: 'app-left-sidebar',
@@ -20,6 +21,7 @@ export class LeftSidebarComponent {
 
   userDetails: User | null = null;
   permissions: Permissions[] = [];
+  calendarManagerList: UserRoleDetails[] = [];
 
   isLeftSidebarCollapsed = input.required<boolean>();
   changeIsLeftSidebarCollapsed = output<boolean>();
@@ -46,9 +48,35 @@ export class LeftSidebarComponent {
       },
       error: (err) => console.error(err)
     });
+    this.umService.getUserAuditDetailList().subscribe({
+      next: data => {
+        this.calendarManagerList = data.filter(u => u.rolename === 'APS HQrs' || u.rolename === 'ADMIN');
+      }
+    });
   }
+
+  get isCalendarManager(): boolean {
+    return this.calendarManagerList.some(u => Number(u.id) === Number(this.userDetails?.id));
+  }
+
+  /** Suppressed when a permission row already covers this route - same guard as zoneboard/sectorboard below. */
+  get showCalendarManagerLink(): boolean {
+    return this.isCalendarManager &&
+      !this.permissions.some(item => item.permissionRoutelink?.replace(/^\//, '') === 'iqcucalendar');
+  }
+
+  get showZoneBoardLink(): boolean {
+    return !!this.userDetails?.zone?.trim() &&
+      !this.permissions.some(item => item.permissionRoutelink?.replace(/^\//, '') === 'zoneboard');
+  }
+
   toggleCollapse(): void {
     this.changeIsLeftSidebarCollapsed.emit(!this.isLeftSidebarCollapsed());
+  }
+
+  get showSectorBoardLink(): boolean {
+    return !!this.userDetails?.sector?.trim() &&
+      !this.permissions.some(item => item.permissionRoutelink?.replace(/^\//, '') === 'sectorboard');
   }
 
   closeSidenav(): void {

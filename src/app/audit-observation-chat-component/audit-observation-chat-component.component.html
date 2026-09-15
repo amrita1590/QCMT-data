@@ -1,41 +1,51 @@
 <div class="wrapper">
 
-  <!-- Header -->
-  <div class="top">
-    <div class="hq">APS HQRS</div>
-    <div class="caso">CASO</div>
-  </div>
+  <!-- Letter summary -->
+  <div class="observation-letter-summary">
+    <div class="top">
+      <div class="letter-party hq">
+        <span class="party-icon"><i class="fa-solid fa-building-shield"></i></span>
+        <div><small>Observation raised by</small><strong>APS HQRS</strong></div>
+      </div>
+      <div class="letter-route" aria-hidden="true">
+        <span></span><i class="fa-solid fa-arrow-right"></i><span></span>
+      </div>
+      <div class="letter-party caso">
+        <span class="party-icon"><i class="fa-solid fa-user-check"></i></span>
+        <div><small>Assigned to</small><strong>CASO</strong></div>
+      </div>
+    </div>
 
-  <!-- Basic Info -->
-  <div class="info">
-    <div><span>Letter No :</span> {{data?.letterNo}}</div>
-    <div><span>Letter Date :</span> {{data?.letterDate}}</div>
+    <div class="info">
+      <div>
+        <span><i class="fa-regular fa-file-lines"></i> Letter No</span>
+        <strong>{{ data?.letterNo || 'Not available' }}</strong>
+      </div>
+      <div>
+        <span><i class="fa-regular fa-calendar"></i> Letter Date</span>
+        <strong>{{ data?.letterDate || 'Not available' }}</strong>
+      </div>
+    </div>
   </div>
 
   <!-- Observation & Details -->
 <div class="obs-details">
+  <div class="title observation-title">Observation by APS HQrs</div>
+  <div class="title details-title">Details</div>
 
-  <!-- Observation -->
-  <div class="observation">
-    <div class="title">Observation by APS HQrs</div>
-    <div class="obs-box">
-        {{data?.observation}}
-    </div>
-    <div class="msg-time">
-        {{data?.entryTime}}
-    </div>
+  <div class="obs-box">
+      {{data?.observation}}
   </div>
 
-  <!-- Details -->
-  <div class="details">
-    <div class="title">Details</div>
-    <div class="details-box">
-      <div><b>Remarks :</b> {{data?.remarks}}</div>
-      <div><b>Type Criticality :</b> {{data?.typeCriticality}}</div>
-      <div><b>Compliance Status :</b> {{data?.complianceStatus}}</div>
-    </div>
+  <div class="details-box">
+    <div><b>Remarks :</b> {{data?.remarks}}</div>
+    <div><b>Type Criticality :</b> {{data?.typeCriticality}}</div>
+    <div><b>Compliance Status :</b> {{data?.complianceStatus}}</div>
   </div>
 
+  <div class="msg-time observation-time">
+      {{data?.entryTime}}
+  </div>
 </div>
 <div *ngFor="let row of observationMessages; let i = index">
   <div *ngIf="row.status === 'CASO'" class="section single">
@@ -59,9 +69,9 @@
                 </a>
           
         </div>       
-      </div>
+        </div>
         <div class="msg-time">
-            {{row.entryDate}} | {{row.entryTime}}
+            {{ formatMessageTimestamp(row.entryDate, row.entryTime) }}
         </div>
     </div>    
   </div>
@@ -79,19 +89,9 @@
             </div>
         </div>
         <div class="msg-time">
-             {{row.entryDate}} | {{row.entryTime}}        
+             {{ formatMessageTimestamp(row.entryDate, row.entryTime) }}
         </div>
       </div>
     </div>
   <div>
 </div>
-
-
-
- 
-  
-  
-
-
-
-

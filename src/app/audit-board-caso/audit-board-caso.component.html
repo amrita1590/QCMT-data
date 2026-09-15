@@ -1,15 +1,9 @@
 <div class="audit-page">
 
-  <!-- Top Navigation -->
-  <div class="top-nav">
-    <a href="/dashboard" class="back-btn">
-    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-  </a>
+  <div class="page-heading-actions">
+    <div class="page-heading-copy"><h2 class="page-title"><i class="fa fa-user-check me-2"></i> Audit Board - CASO</h2><p class="page-subtitle">Manage and track all audit activities</p></div>
+    <div class="top-nav"><a href="/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a></div>
   </div>
-
-  <!-- Page Title -->
-  <h2 class="page-title"><i class="fa fa-user-check me-2"></i> Audit Board - CASO</h2>
-  <p class="page-subtitle">Manage and track all audit activities</p>
 
   <!-- Status Cards -->
   <div class="status-grid">
@@ -77,7 +71,7 @@
           <th>CASO Name</th>
           <th>Audit Type</th>
           <th>Scheduled Date By Auditor</th>
-          <th>Status</th>
+          <th class="status-col">Status</th>
           <!--<th>View</th>-->
           <th class="actions-col">Actions</th>
         </tr>
@@ -105,7 +99,7 @@
 <td >{{ row.auditScheduleFromDate && row.auditScheduleToDate 
       ? (row.auditScheduleFromDate + ' to ' + row.auditScheduleToDate) 
       : 'Not available' }}</td>
-          <td>
+          <td class="status-col">
               <div *ngIf="row.auditStatus === 'Planned'" class="status-badge"  class="status-badge Planned">
                   Planned<br/><span class="badge-subtitle">Auditor Bucket</span>
               </div>
@@ -131,9 +125,10 @@
                   <i class="fa fa-eye action-icon"></i>
                 </div>
               </div>
-              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge ObservationAPS d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="(row.auditStatus === 'Observation APS' || row.auditStatus === 'ObservationZONE' || row.auditStatus === 'Observation SECTOR')" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>
-                Observation APS<br/><span class="badge-subtitle">APS HQrs Bucket</span>
+                {{ row.auditStatus === 'ObservationZONE' ? 'Observation ZONE' : row.auditStatus }}
+                <br/><span class="badge-subtitle">{{ row.auditStatus === 'ObservationZONE' ? 'Zone Bucket' : (row.auditStatus === 'Observation SECTOR' ? 'Sector Bucket' : 'APS HQrs Bucket') }}</span>
                 </div>
                 <div class="ms-2">
                   <i class="fa fa-eye action-icon"></i>
@@ -146,7 +141,7 @@
               <button type="button" class="btn n-btn btn-success" style="width: 165px;" (click)="submitObservation(submitObservationTemplate,row.id)"><i class="fa-solid fa-reply me-1"></i>
               Respond to Observation</button>
             </div>
-            <div *ngIf="row.auditStatus === 'Observation APS'">
+            <div *ngIf="(row.auditStatus === 'Observation APS' || row.auditStatus === 'ObservationZONE' || row.auditStatus === 'Observation SECTOR')">
               <button type="button" class="btn n-btn btn-success " style="width: 165px;" [disabled]="true"><i class="fa-solid fa-reply me-1"></i>
                Respond to Observation</button>
             </div>
@@ -185,26 +180,28 @@
         </li>
       </ul>
     </nav>
+
+<app-audit-status-guide></app-audit-status-guide>
 </div>
+
 <ng-template #viewAuditorResponseTemplate let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
+  <div class="modal-header audit-summary-header">
+    <h5 class="modal-title d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Audit & Response Summary
     </h5>
 
     <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+     <button type="button" class="btn-close" aria-label="Close summary" (click)="modal.dismiss()"></button>
   </div>
 
   <!-- BODY -->
-  <div class="modal-body pt-2">
+  <div class="modal-body">
       <ng-container *ngIf="auditBoardTemplateGen.auditiorResponse">
 
       <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
       <div>
-        <hr/>
-        <div class="card-body px-4">
+        <div class="card-body summary-details">
 
           <!-- AUDIT DETAILS SECTION -->
           <h5 class="fw-semibold text-dark mb-3 mt-2">
@@ -230,6 +227,7 @@
 
             <!-- 👁 Show only for Audit Name -->
             <button class="btn btn-sm btn-icon"
+                    type="button" aria-label="View audit questionnaire" title="View audit questionnaire"
                     *ngIf="field.label === 'Audit Name'"
                     (click)="viewTemplate(viewAuditBoardTemplate, auditBoardTemplateGen.auditBoardScheduleTemplate.auditTemplateId)">
               <i class="fa fa-eye"></i>
@@ -462,9 +460,13 @@
 
 <ng-template #viewAuditTemplate let-modal>
       <div class="modal-header">
-        <h5 class="modal-title">Audit Scheduled Template</h5>
+        <div class="questionnaire-heading">
+          <span class="questionnaire-eyebrow">Audit questionnaire · Preview</span>
+          <h5 class="modal-title">Audit Scheduled Template</h5>
+          <p>Review the scheduled questionnaire and print or save a copy.</p>
+        </div>
         <!-- PRINT ICON BUTTON -->
-        <button class="btn btn-sm btn-icon me-2" (click)="printPDF()" title="Print" style="border:none; background:transparent;">
+        <button type="button" class="btn preview-print" (click)="printPDF()" title="Print questionnaire" aria-label="Print questionnaire">
             <i class="fa fa-print" style="font-size:16px;"></i>
         </button>
 
@@ -477,13 +479,41 @@
         <h3 class="text-center mb-3 title-text">
             {{auditTemplateGen.auditScheduleTemplate.name}}
         </h3>
-            <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
+    <div class="remarks-box zone-remarks-box" *ngIf="zoneUserRemarks.length > 0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor follow on queries Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-map-location-dot me-2"></i>Zone Remarks</h6>
+        <button class="toggle-badge" (click)="toggleZoneRemarks()">
+          <span>Remarks</span><span class="count">{{ zoneUserRemarks.length }}</span>
+          <i class="fa" [ngClass]="showZoneRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        </button>
+      </div>
+      <div *ngIf="showZoneRemarks" class="remarks-container">
+        <div class="remark-card zone-remark-card" *ngFor="let remark of zoneUserRemarks">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div>
+          <div class="remark-footer">
+            <span><i class="fa fa-user"></i> {{ remark.createdBy }}</span>
+            <span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="remarks-box sector-remarks-box" *ngIf="sectorUserRemarks.length > 0">
+      <div class="remarks-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fa-solid fa-layer-group me-2"></i>Sector Remarks</h6>
+        <button class="toggle-badge" (click)="toggleSectorRemarks()"><span>Remarks</span><span class="count">{{ sectorUserRemarks.length }}</span><i class="fa" [ngClass]="showSectorRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+      </div>
+      <div *ngIf="showSectorRemarks" class="remarks-container"><div class="remark-card sector-remark-card" *ngFor="let remark of sectorUserRemarks"><span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div><div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div></div></div>
+    </div>
+            <div class="remarks-box" *ngIf="auditorRemarks.length > 0">
+      <div class="remarks-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="fa-solid fa-reply me-2"></i>
+          Auditor Remarks
+        </h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>
-          <span class="count">{{ auditorRemarktoCASOList.length || 0 }}</span>
+          <span class="count">{{ auditorRemarks.length }}</span>
           <i class="fa" [ngClass]="showRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
       </div>
@@ -491,9 +521,9 @@
       <!-- Remarks Section -->
       <div *ngIf="showRemarks" class="remarks-container">
 
-        <div class="remark-card" *ngFor="let remark of auditorRemarktoCASOList">
+        <div class="remark-card" *ngFor="let remark of auditorRemarks">
                 
-          <div class="remark-text">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">
             {{ remark.remarks }}
           </div>
 
@@ -512,17 +542,17 @@
           
           <table class="table table-bordered table-sm print-table">
             <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
+              <col style="width:6%">
+              <col style="width:39%">
               <col style="width:25%">
               <col style="width:30%">
             </colgroup>
             <thead>              
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
-                  <th width="25%">Details</th>
-                  <th width="30%">Answer</th>
+                  <th>Sl No</th>
+                  <th>Description</th>
+                  <th>Details</th>
+                  <th>Answer</th>
             </tr>            
           </thead>
             <tbody>
@@ -543,17 +573,16 @@
           <h5>{{item.name}}</h5>
           <table class="table table-bordered table-sm print-table">
             <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
-              <col style="width:25%">
+              <col style="width:6%">
+              <col style="width:64%">
               <col style="width:30%">
             </colgroup>
             <thead>              
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="68%">Description</th>
+                  <th>Sl No</th>
+                  <th>Description</th>
                  
-                  <th width="30%">Answer</th>
+                  <th>Answer</th>
             </tr>            
           </thead>
             <tbody>
@@ -573,17 +602,17 @@
           <h5>{{item.name}}</h5>
           <table class="table table-bordered table-sm print-table">
             <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
+              <col style="width:6%">
+              <col style="width:39%">
               <col style="width:25%">
               <col style="width:30%">
             </colgroup>
             <thead>             
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
-                  <th width="25%">Relevant Benchmark</th>
-                  <th width="30%">Answer</th>
+                  <th>Sl No</th>
+                  <th>Description</th>
+                  <th>Relevant Benchmark</th>
+                  <th>Answer</th>
             </tr>            
           </thead>
             <tbody>
@@ -608,36 +637,55 @@
 
 <ng-template #viewAuditBoardTemplate let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa fa-file-alt me-2"></i>
-      Audit: {{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}&nbsp;  
-      <!-- PRINT BUTTON -->
-      <button class="btn btn-light border btn-sm me-2"
-              title="Print"
-              (click)="printPDF()">
-        <i class="fa fa-print"></i>
-      </button>
-    </h5>
+  <div class="modal-header">
+    <div class="questionnaire-heading">
+      <span class="questionnaire-eyebrow">Audit questionnaire · View responses</span>
+      <h5 class="modal-title">{{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}</h5>
+    </div>
+    <button type="button" class="btn preview-print" title="Print responses" aria-label="Print responses" (click)="printPDF()">
+      <i class="fa fa-print" aria-hidden="true"></i>
+    </button>
 
     <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
 
   <!-- BODY -->
-  <div class="modal-body pt-2" id="printSection">
+  <div class="modal-body" id="printSection">
   
 
     <h5 class="text-center fw-bold mb-4 text-dark">
       {{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}
     </h5>
-    <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
+    <div class="remarks-box zone-remarks-box" *ngIf="zoneUserRemarks.length > 0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor Pre-Questionnaire Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-map-location-dot me-2"></i>Zone Remarks</h6>
+        <button class="toggle-badge" (click)="toggleZoneRemarks()">
+          <span>Remarks</span><span class="count">{{ zoneUserRemarks.length }}</span>
+          <i class="fa" [ngClass]="showZoneRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        </button>
+      </div>
+      <div *ngIf="showZoneRemarks" class="remarks-container">
+        <div class="remark-card zone-remark-card" *ngFor="let remark of zoneUserRemarks">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div>
+          <div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="remarks-box sector-remarks-box" *ngIf="sectorUserRemarks.length > 0">
+      <div class="remarks-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fa-solid fa-layer-group me-2"></i>Sector Remarks</h6>
+        <button class="toggle-badge" (click)="toggleSectorRemarks()"><span>Remarks</span><span class="count">{{ sectorUserRemarks.length }}</span><i class="fa" [ngClass]="showSectorRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+      </div>
+      <div *ngIf="showSectorRemarks" class="remarks-container"><div class="remark-card sector-remark-card" *ngFor="let remark of sectorUserRemarks"><span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div><div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div></div></div>
+    </div>
+    <div class="remarks-box" *ngIf="auditorRemarks.length > 0">
+      <div class="remarks-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor Remarks</h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>
-          <span class="count">{{ auditorRemarktoCASOList.length || 0 }}</span>
+          <span class="count">{{ auditorRemarks.length }}</span>
           <i class="fa" [ngClass]="showRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
       </div>
@@ -645,9 +693,9 @@
       <!-- Remarks Section -->
       <div *ngIf="showRemarks" class="remarks-container">
 
-        <div class="remark-card" *ngFor="let remark of auditorRemarktoCASOList">
+        <div class="remark-card" *ngFor="let remark of auditorRemarks">
                 
-          <div class="remark-text">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">
             {{ remark.remarks }}
           </div>
 
@@ -796,20 +844,43 @@
 <ng-template #auditResponseTemplate let-modal>
 
   <div class="modal-header">
-    <h5 class="modal-title">{{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}</h5>
+    <div class="questionnaire-heading">
+      <span class="questionnaire-eyebrow">Pre-audit questionnaire</span>
+      <h5 class="modal-title">{{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}</h5>
+      <p>Complete each section and save your responses before submitting.</p>
+    </div>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <div class="modal-body" id="printSection">
       <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
       <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>     
         <div *ngIf="currentSectionIndex === 0">    
-          <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
+          <div class="remarks-box zone-remarks-box" *ngIf="zoneUserRemarks.length > 0">
             <div class="remarks-header d-flex justify-content-between align-items-center">
-              <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor Pre-questionnaire Remarks/Message</h6>
+              <h6 class="mb-0"><i class="fa-solid fa-map-location-dot me-2"></i>Zone Remarks</h6>
+              <button class="toggle-badge" (click)="toggleZoneRemarks()"><span>Remarks</span><span class="count">{{ zoneUserRemarks.length }}</span><i class="fa" [ngClass]="showZoneRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+            </div>
+            <div *ngIf="showZoneRemarks" class="remarks-container">
+              <div class="remark-card zone-remark-card" *ngFor="let remark of zoneUserRemarks">
+                <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div>
+                <div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="remarks-box sector-remarks-box" *ngIf="sectorUserRemarks.length > 0">
+            <div class="remarks-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0"><i class="fa-solid fa-layer-group me-2"></i>Sector Remarks</h6>
+              <button class="toggle-badge" (click)="toggleSectorRemarks()"><span>Remarks</span><span class="count">{{ sectorUserRemarks.length }}</span><i class="fa" [ngClass]="showSectorRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+            </div>
+            <div *ngIf="showSectorRemarks" class="remarks-container"><div class="remark-card sector-remark-card" *ngFor="let remark of sectorUserRemarks"><span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div><div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div></div></div>
+          </div>
+          <div class="remarks-box" *ngIf="auditorRemarks.length > 0">
+            <div class="remarks-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor Remarks</h6>
 
                <button class="toggle-badge" (click)="toggleRemarks()">
                 <span>Remarks</span>
-                <span class="count">{{ auditorRemarktoCASOList.length || 0 }}</span>
+                <span class="count">{{ auditorRemarks.length }}</span>
                 <i class="fa" [ngClass]="showRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
               </button>
             </div>
@@ -817,9 +888,9 @@
             <!-- Remarks Section -->
             <div *ngIf="showRemarks" class="remarks-container">
 
-              <div class="remark-card" *ngFor="let remark of auditorRemarktoCASOList">
+              <div class="remark-card" *ngFor="let remark of auditorRemarks">
                 
-                <div class="remark-text">
+                <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">
                   {{ remark.remarks }}
                 </div>
 
@@ -833,7 +904,10 @@
             </div>               
           </div>
         </div>  
-      <strong>Section {{ currentSectionIndex + 1 }} of {{ sectionList.length }}</strong>
+      <div class="questionnaire-section-bar">
+        <div><span class="questionnaire-step">Section {{ currentSectionIndex + 1 }} of {{ sectionList.length }}</span><h6>{{ currentSection?.name }}</h6></div>
+        <span class="questionnaire-count">{{ currentSection?.auditBoardQuestionsList?.length || 0 }} questions</span>
+      </div>
       
       <div class="card-body">
           <!-- BASIC SECTION -->
@@ -1048,23 +1122,23 @@
 
 <ng-template #submitObservationTemplate let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
+  <div class="modal-header audit-summary-header">
+    <h5 class="modal-title fw-bold d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Audit Observation Summary
     </h5>
 
     <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
 
   <!-- BODY -->
-  <div class="modal-body pt-2">
+  <div class="modal-body">
       <ng-container *ngIf="auditObservation">
 
       <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
       <div>
-        <hr/>
-        <div class="card-body px-4">
+        
+        <div class="card-body observation-summary-content audit-observation-summary-content">
 
           <!-- AUDIT DETAILS SECTION -->
           <h5 class="fw-semibold text-dark mb-3 mt-2">
@@ -1094,7 +1168,7 @@
       <!-- LEFT -->
       <div class="obs-title">
         <h5 class="fw-semibold text-dark mb-3">
-          <i class="fa-solid fa-reply me-2 text-primary"></i> Observation's
+          <i class="fa-solid fa-reply me-2 text-primary"></i> Observations
         </h5>
       </div>
       <!-- RIGHT -->
@@ -1167,8 +1241,8 @@
                 </div>
               </td>
               <td class="text-center">
-                <a class="btn btn-sm btn-outline-primary px-3" (click)="viewObservation(viewObservationDetails,row.id)">
-                  <i class="fa fa-eye action-icon"></i> View
+                <a class="btn btn-sm btn-outline-primary px-3 view-inline-btn" (click)="viewObservation(viewObservationDetails,row.id)">
+                  <i class="fa fa-eye action-icon"></i><span>View</span>
                 </a>
               </td>
             </tr>
@@ -1183,8 +1257,8 @@
 </ng-container>
 </div>
   <!-- FOOTER -->
-  <div class="modal-footer border-0 mt-2">
-    <button type="submit" class="btn btn-primary me-2" (click)="submitObservationPopupToAPS(submitObservationAPS, auditObservation?.auditTemplateId)"><i class="fa fa-user ms-1 pointer"></i> Submit to APS HQrs</button>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary me-2" (click)="submitObservationPopupToAPS(submitObservationAPS, auditObservation?.auditTemplateId)"><i class="fa fa-user ms-1 pointer"></i> Submit to Responsible Office</button>
     <button class="btn btn-light border px-4" (click)="modal.dismiss()">
       <i class="fa-solid fa-xmark"></i>&nbsp;Close
     </button>
@@ -1194,20 +1268,25 @@
 
 <ng-template #viewObservationDetails let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
+  <div class="modal-header observation-detail-modal-header">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Observation Details
     </h5>
     <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
   <!-- BODY -->
-  <div class="modal-body pt-2">
+  <div class="modal-body pt-2 observation-detail-modal-body">
       <app-audit-observation-chat-component [data]="auditObservationComponent"></app-audit-observation-chat-component>
   </div>
   <!-- FOOTER -->
   <div class="modal-footer border-0 mt-2">
     <button type="submit" class="btn btn-primary me-2" (click)="complianceStatusForm(complianceStatusModel,auditObservationComponent)" *ngIf="auditObservationComponent?.status === 'APSHQrs' && auditObservationComponent?.complianceStatus !== 'Dropped' && auditObservationComponent?.complianceStatus !== 'Compliant'"><i class="fa fa-user ms-1 pointer me-2"></i> Enter Compliance Status</button>
+    <button type="button" class="btn btn-warning me-2"
+            *ngIf="auditScheduleTemplate?.auditStatus === 'Observation CASO' && auditObservationComponent?.status === 'CASO' && auditObservationComponent?.complianceStatus !== 'Dropped' && auditObservationComponent?.complianceStatus !== 'Compliant'"
+            (click)="editLastCasoMessage(complianceStatusModel, auditObservationComponent)">
+      <i class="fa fa-edit me-2"></i>Edit Last Message
+    </button>
     <button class="btn btn-light border px-4" (click)="modal.dismiss()">
       <i class="fa-solid fa-xmark"></i>&nbsp;Close
     </button>
@@ -1219,7 +1298,7 @@
   <!-- HEADER -->
   <div class="modal-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa-solid fa-clipboard-check me-2"></i> Compliance Status Form
+      <i class="fa-solid fa-clipboard-check me-2"></i> {{ isEditingCasoMessage ? 'Edit Last Compliance Message' : 'Compliance Status Form' }}
     </h5>
     <!-- CLOSE BUTTON -->
      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
@@ -1235,12 +1314,15 @@
       <div class="mb-3">
         <label>Document</label>
         <input type="file" class="form-control" accept=".pdf,.doc,.docx" (change)="handleFileInput($event)" />
+        <div class="form-text" *ngIf="isEditingCasoMessage && auditObservationComponentMessage.fileName">
+          Current file: {{ auditObservationComponentMessage.fileName }}. Select a file only to replace it.
+        </div>
       </div>
     </div>
   </div>
   <!-- FOOTER -->
   <div class="modal-footer border-0 mt-2">
-    <button type="submit" class="btn btn-primary me-2" (click)="submitObservationMessage(auditObservationComponent)"><i class="fa fa-user ms-1 pointer me-2"></i> Submit</button>
+    <button type="submit" class="btn btn-primary me-2" (click)="submitObservationMessage(auditObservationComponent)"><i class="fa fa-user ms-1 pointer me-2"></i> {{ isEditingCasoMessage ? 'Update & Resubmit' : 'Submit' }}</button>
     <button class="btn btn-light border px-4" (click)="modal.dismiss()">
       <i class="fa-solid fa-xmark"></i>&nbsp;Close
     </button>
@@ -1312,5 +1394,8 @@
   </div>
 
 </ng-template>
+
+
+
 
 

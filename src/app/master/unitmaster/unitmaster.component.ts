@@ -92,6 +92,13 @@ export class UnitmasterComponent {
       this.unitDetailsForm.reset(); // This will reset all fields to their initial values    }
     }
 
+    resetForm(): void {
+      this.clearFields();
+      this.btnName = 'Submit';
+      this.status = false;
+      this.unitService.clearUnitData();
+    }
+
     get unitName() {
       return this.unitDetailsForm.get('unitName')!;
     }

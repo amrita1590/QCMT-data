@@ -1,24 +1,29 @@
-<div>
-  <!-- Form -->
-  <div *ngIf="errorStatus" class="error-msg">{{ errorMsg }}</div> 
-  <div *ngIf="successStatus" class="success-msg">{{ successMsg }}</div>
-   <form [formGroup]="roleDetailsForm" (ngSubmit)="addRole(roleDetailsForm.value)" class="was-validated">
-    <div class="form-group">
-      <label>Role Name</label>
-      <input type="text" formControlName="roleName" name="roleName" />
-      <span class="warning-msg">E.g. Admin, Sector, Zone,Unit ...</span>
-    </div>
-   
-    <div class="form-group">
-      <label>Description</label>
-      <textarea formControlName="remarks" name="remarks"></textarea>
-    </div>
-    
+<section class="role-form-shell">
+  <div class="form-intro">
+    <div class="intro-icon"><i class="fa fa-users"></i></div>
+    <div><h2>{{ btnName }} role</h2><p>Create a clear role name and describe the access group it represents.</p></div>
+    <span class="required-note"><b>*</b> Required field</span>
+  </div>
 
-    <!-- Buttons -->
-    <div class="d-flex justify-content-center">
-      <button type="submit" class="btn btn-primary me-4" [disabled]="roleDetailsForm.invalid">{{btnName}}</button>
-      <button type="reset" class="btn btn-warning" onclick="roleReset()">Reset</button>
+  <div *ngIf="errorStatus" class="form-message error-message"><i class="fa fa-exclamation-circle"></i><span>{{ errorMsg }}</span></div>
+  <div *ngIf="successStatus" class="form-message success-message"><i class="fa fa-check-circle"></i><span>{{ successMsg }}</span></div>
+
+  <form [formGroup]="roleDetailsForm" (ngSubmit)="addRole(roleDetailsForm.value)" novalidate>
+    <div class="field-group">
+      <label for="roleName">Role name <span>*</span></label>
+      <div class="control-wrap"><i class="fa fa-id-badge"></i><input id="roleName" type="text" formControlName="roleName" placeholder="e.g. Auditor, Sector, Zone" maxlength="15" /></div>
+      <small class="field-help">Use 2–15 characters and choose a name users can easily recognize.</small>
+      <small *ngIf="roleDetailsForm.get('roleName')?.hasError('required') && roleDetailsForm.get('roleName')?.touched" class="field-error">Role name is required.</small>
+      <small *ngIf="roleDetailsForm.get('roleName')?.hasError('minlength') && roleDetailsForm.get('roleName')?.touched" class="field-error">Enter at least 2 characters.</small>
     </div>
+    <div class="field-group">
+      <label for="remarks">Description</label>
+      <textarea id="remarks" rows="3" formControlName="remarks" placeholder="Describe the responsibility and intended access for this role"></textarea>
+    </div>
+    <footer class="form-actions">
+      <p><i class="fa fa-info-circle"></i> Permissions can be assigned after the role is saved.</p>
+      <button type="button" class="reset-btn" (click)="roleReset()"><i class="fa fa-undo"></i> Reset</button>
+      <button type="submit" class="save-btn" [disabled]="roleDetailsForm.invalid"><i class="fa fa-check"></i> {{ btnName }} Role</button>
+    </footer>
   </form>
-</div>
+</section>

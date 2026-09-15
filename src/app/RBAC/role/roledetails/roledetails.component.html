@@ -1,86 +1,33 @@
-<div class="mt-5">
-    <div class="row mb-3">
-      <div class="col-md-9">
-        <input type="text" class="form-control" name="search" placeholder="Search..." [(ngModel)]="searchText" />
-      </div>
-      <div class="col-md-3">
-        <select class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
-          <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
-        </select>
-      </div>
-    </div>
-  
-    <table class="table table-bordered table-hover">
-      <thead class="table-dark">
-        <tr>
-          <th>Sl No</th>
-          <th>Role Name</th>
-          <th>Additional Details</th>
-          <th>Edit</th>
-          <th>Delete</th>
-        </tr>
-      </thead>
+<section class="roles-shell">
+  <div class="roles-intro"><div class="intro-icon"><i class="fa fa-users"></i></div><div><h2>Application roles</h2><p>Review and maintain the access roles available to administrators.</p></div><span class="record-count">{{ filteredData.length }} roles</span></div>
+  <div class="table-toolbar">
+    <div class="search-box"><i class="fa fa-search"></i><input type="text" name="search" placeholder="Search role name or description" [(ngModel)]="searchText" (ngModelChange)="page = 1" /></div>
+    <select class="page-size" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1"><option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option></select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="number-column">#</th><th>Role name</th><th>Description</th><th class="actions-column">Actions</th></tr></thead>
       <tbody>
-        <tr 
-          *ngFor="let role of filteredData | slice: (page - 1) * pageSize : page * pageSize; let i = index;">
-          <td>{{ (page - 1) * pageSize + i + 1 }}</td> <!-- Serial number -->
-          <td>{{ role.roleName }}</td>
-          <td>{{ role.remarks }}</td>
-          <td>
-            <button type="button" (click)="editRoleDetails(role.id, addRole)"  class="btn btn-info btn-sm">
-              <i class="fal bi-pencil"></i> Edit
-            </button>
-          </td>
-          <td>
-            <button type="button" class="btn btn-danger btn-sm"  (click)="openModal(deleteModal, role.id, role.roleName)">
-              <i class="fal bi-trash-fill"></i> Delete
-            </button>
-          </td>        
+        <tr *ngFor="let role of filteredData | slice: (page - 1) * pageSize : page * pageSize; let i = index">
+          <td class="number-column"><span class="row-number">{{ (page - 1) * pageSize + i + 1 }}</span></td>
+          <td><span class="role-name"><i class="fa fa-shield"></i>{{ role.roleName }}</span></td>
+          <td class="description-cell">{{ role.remarks || 'No description provided' }}</td>
+          <td class="actions-column"><div class="row-actions"><button type="button" class="edit-btn" title="Edit role" (click)="editRoleDetails(role.id, addRole)"><i class="fa fa-pencil"></i><span>Edit</span></button><button type="button" class="delete-btn" title="Delete role" (click)="openModal(deleteModal, role.id, role.roleName)"><i class="fa fa-trash"></i><span>Delete</span></button></div></td>
         </tr>
+        <tr *ngIf="filteredData.length === 0"><td colspan="4" class="empty-state"><i class="fa fa-search"></i><strong>No roles found</strong><span>Try a different search term.</span></td></tr>
       </tbody>
     </table>
-
-    <ng-template #deleteModal let-modal>
-      <div class="modal-header">
-        <h5 class="modal-title">Confirm Deletion</h5>
-        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to delete <strong>{{ roleName }} </strong>?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-warning" (click)="modal.dismiss()">Cancel</button>
-        <button type="button" class="btn btn-danger" (click)="confirmDelete(roleId, 'deleteModal')">Yes, Delete</button>
-      </div>
-    </ng-template>
-    
-    <ng-template #addRole let-modal>
-      <div class="modal-header">
-          <h5 class="modal-title">🔐 Add Role</h5>
-          <button type="button" class="btn-close" aria-label="Close" (click)="closeModel('addRole')"></button>
-      </div>
-      <div class="modal-body">
-          <app-role></app-role>
-      </div>
-    </ng-template>
-    <!-- Pagination -->
-    <nav>
-      <ul class="pagination justify-content-center">
-        <li class="page-item" [class.disabled]="page === 1">
-          <button class="page-link" (click)="prevPage()">Prev</button>
-        </li>
-  
-        <li
-          class="page-item"
-          *ngFor="let p of visiblePages"
-          [class.active]="p === page"
-        >
-          <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
-        </li>
-  
-        <li class="page-item" [class.disabled]="page === totalPages">
-          <button class="page-link" (click)="nextPage()">Next</button>
-        </li>
-      </ul>
-    </nav>
   </div>
+  <nav class="table-pagination" *ngIf="totalPages > 1" aria-label="Role pagination"><button type="button" (click)="prevPage()" [disabled]="page === 1"><i class="fa fa-chevron-left"></i> Prev</button><button type="button" *ngFor="let p of visiblePages" (click)="goToPage(p)" [class.active]="p === page">{{ p }}</button><button type="button" (click)="nextPage()" [disabled]="page === totalPages">Next <i class="fa fa-chevron-right"></i></button></nav>
+</section>
+
+<ng-template #deleteModal let-modal>
+  <header class="confirm-header"><div><span>CONFIRM ACTION</span><h5>Delete role</h5></div><button type="button" aria-label="Close" (click)="modal.dismiss()"><i class="fa fa-times"></i></button></header>
+  <div class="confirm-body"><div class="danger-icon"><i class="fa fa-trash"></i></div><h3>Delete {{ roleName }}?</h3><p>This role will be permanently removed. Users assigned to it may lose access.</p></div>
+  <footer class="confirm-footer"><button type="button" class="cancel-btn" (click)="modal.dismiss()">Cancel</button><button type="button" class="confirm-delete-btn" (click)="confirmDelete(roleId, 'deleteModal')"><i class="fa fa-trash"></i> Delete Role</button></footer>
+</ng-template>
+
+<ng-template #addRole let-modal>
+  <header class="edit-header"><div><span>ACCESS CONTROL</span><h5>Edit role</h5></div><button type="button" aria-label="Close" (click)="closeModel('addRole')"><i class="fa fa-times"></i></button></header>
+  <div class="edit-body"><app-role></app-role></div>
+</ng-template>

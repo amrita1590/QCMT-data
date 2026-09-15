@@ -80,4 +80,20 @@ export class AuditObservationChatComponentComponent {
 
     return new Date(clean).getTime();
   }
+
+  formatMessageTimestamp(entryDate: string, entryTime: string): string {
+    const date = (entryDate ?? '').trim();
+    const time = (entryTime ?? '').trim();
+
+    // Some API responses already return "date | time" inside entryTime.
+    if (time.includes('|')) {
+      return time;
+    }
+
+    if (date && time) {
+      return `${date} | ${time}`;
+    }
+
+    return date || time;
+  }
 }

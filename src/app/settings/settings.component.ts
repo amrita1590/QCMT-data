@@ -29,23 +29,28 @@ export class SettingsComponent {
   
   }
   openChangePassword(content: any) {
-    this.modalRef = this.modalService.open(content);
+    this.modalRef = this.modalService.open(content, this.modalOptions('lg'));
   }
 
   openUpdateProfile(content: any) {
-    this.modalRef = this.modalService.open(content);
+    this.modalRef = this.modalService.open(content, this.modalOptions('lg'));
   }
 
   openModel(content: any) {
-    this.modalRef = this.modalService.open(content);
+    this.modalRef = this.modalService.open(content, this.modalOptions('lg'));
   }
 
   openDetailsModel(content: any) {
-    this.modalRef = this.modalService.open(content, { size : 'lg' });
+    this.modalRef = this.modalService.open(content, this.modalOptions('xl'));
   }
 
-  closeModel(content: any) {
-    content.modalRef?.close();
+  closeModel(_content?: unknown) {
+    this.modalRef?.close();
+    this.modalRef = null;
+  }
+
+  private modalOptions(size: 'lg' | 'xl') {
+    return { size, centered: true, backdrop: 'static' as const, keyboard: false, scrollable: true, windowClass: 'settings-modal' };
   }
 
   showToastMessage(message: string, type: 'success' | 'error' = 'success') {

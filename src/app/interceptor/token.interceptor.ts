@@ -18,7 +18,8 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
     || req.url.includes('/auth/publickey')
     || req.url.includes('/auth/send-otp')
     || req.url.includes('/auth/resend-otp')
-    || req.url.includes('/auth/verify-otp');
+    || req.url.includes('/auth/verify-otp')
+    || req.url.includes('/auth/forgot-password/');
   if (isPublicAuthEndpoint) {
     // Skip adding the Authorization header - no JWT exists yet at this stage of login
     return next(req);

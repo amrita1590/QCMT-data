@@ -1,18 +1,11 @@
 <div class="audit-page">
 
-  <!-- Top Navigation -->
- <div class="top-nav">
-    <a href="/dashboard" class="back-btn">
-    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-  </a>
-  </div>
-
-  <!-- Page Title -->
-  <div class="page-header mb-4">
-    <h2 class="page-title fw-bold">
-      <i class="fa fa-user-check me-2"></i> Audit Board
-    </h2>
-    <p class="page-subtitle text-muted">Manage and track all audit activities efficiently</p>
+  <div class="page-heading-actions">
+    <div class="page-header">
+      <h2 class="page-title fw-bold"><i class="fa fa-user-check me-2"></i> {{ boardTitle }}</h2>
+      <p class="page-subtitle text-muted">{{ isScopedBoard ? ('Manage and track audits for your ' + scopeLabel) : 'Manage and track all audit activities efficiently' }}</p>
+    </div>
+    <div class="top-nav"><a href="/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a></div>
   </div>
 
   <!-- Status Cards -->
@@ -51,16 +44,17 @@
     </div>
 
   </div>
-  <br/>
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5>All Audits</h5>
+  <section class="audit-list-panel">
+  <div class="audit-list-heading">
+    <div>
+      <h5>{{ isScopedBoard ? ((isSectorBoard ? 'Sector' : 'Zone') + ' Audits') : 'All Audits' }}</h5>
+      <p>{{ isScopedBoard ? ('Audits assigned to units in your ' + scopeLabel) : 'Audits in planned, in progress and completed' }}</p>
+    </div>
+    <span class="audit-record-count">{{ filteredData.length }} records</span>
   </div>
-  <p class="text-muted">Audits in planned, in progress and completed </p>
-  
-
 
   <!-- Search & Filter Row -->
-  <div class="row mb-3 g-2">
+  <div class="row g-2 audit-list-toolbar">
     <div class="col-md-9">
       <input 
         type="text" 
@@ -82,35 +76,34 @@
   <!-- Table Section -->
   <!-- Table Section -->
   <!-- Templates Table -->
-  <div class="table-responsive">
+  <div class="table-responsive audit-list-table-wrap">
      <table class="table table-hover table-bordered align-middle modern-table">
       <thead class="table-dark">
         <tr>
           <th>#</th>
-          <th width="20%">Audit Name -Pre-Questionaries</th>
+          <th width="20%">{{ isScopedBoard ? 'Audit Name' : 'Audit Name -Pre-Questionaries' }}</th>
           <th>Audit Month</th>
           <th>Unit Name</th>
           <th>Auditor Name</th>
           <!-- <th>Created By</th> -->
           <th>CASO Name</th>
           <th>Audit Type</th>
-          <th>Status</th>
-          <th>Schedule Audit</th>
+          <th class="status-col">Status</th>
+          <th class="schedule-col">{{ isScopedBoard ? 'Scheduled Date By Auditor' : 'Schedule Audit' }}</th>
           <th class="actions-col">Actions</th>
         </tr>
       </thead>
 
       <tbody>
           <tr *ngFor="let row of filteredData | slice: (page - 1) * pageSize : page * pageSize; let i = index;">
-          <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+          <td><span class="row-number-badge">{{ (page - 1) * pageSize + i + 1 }}</span></td>
           <td>
-            <div class="d-flex align-items-center">
-              <!-- Left content -->
-              <div class="flex-grow-1">
-                {{ row.name }}&nbsp;<i class="fa fa-eye ms-2 pointer" (click)="viewTemplate(viewAuditTemplate,row.id)"></i>
-              </div>
-              <!-- Right corner -->
-              <span *ngIf="row.auditStatus === 'Planned'" class="new-badge" title="New audit assigned - Requires attention">NEW</span>              
+            <div class="audit-name-cell">
+              <span class="audit-name-text">{{ row.name }}</span>
+              <span *ngIf="row.auditStatus === 'Planned'" class="new-badge" title="New audit assigned - Requires attention">NEW</span>
+              <button type="button" class="table-icon-btn" title="View pre-questionnaire" aria-label="View pre-questionnaire" (click)="viewTemplate(viewAuditTemplate,row.id)">
+                <i class="fa fa-eye" aria-hidden="true"></i>
+              </button>
             </div>
           </td>
           <td>{{ row.auditMonth + '-01' | date: 'MMM yyyy' }}</td>
@@ -120,19 +113,54 @@
           <td>{{ row.casoName }}</td>
           <td><span class="type-badge">{{ row.auditType }}</span></td>
 
-          <td style="width: 130px;">
-            <span class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
-              {{ row.auditStatus }}
-            </span>
+          <td class="status-col">
+            <div class="status-badge"
+                 [ngClass]="row.auditStatus.replace(' ','')"
+                 [class.d-flex]="isScopedBoard && row.auditStatus !== 'Completed'"
+                 [class.align-items-center]="isScopedBoard && row.auditStatus !== 'Completed'"
+                 [class.justify-content-between]="isScopedBoard && row.auditStatus !== 'Completed'">
+              <div>
+                <span class="status-name">{{ row.auditStatus === 'ObservationZONE' ? 'Observation ZONE' : row.auditStatus }}</span>
+                <ng-container *ngIf="isScopedBoard">
+                  <br><span class="badge-subtitle">{{ getBucketLabel(row.auditStatus) }}</span>
+                </ng-container>
+              </div>
+              <button *ngIf="isScopedBoard && row.auditStatus !== 'Completed'"
+                      type="button"
+                      class="status-eye-btn ms-2"
+                      title="View audit question and answer details"
+                      aria-label="View audit question and answer details"
+                      (click)="viewAuditorResponse(viewAuditorResponseTemplate, row.id)">
+                <i class="fa fa-eye"></i>
+              </button>
+            </div>
           </td>
-          <td style="width: 160px;">
-            <button [disabled]="row.auditStatus == 'Completed'" class="btn btn-primary btn-sm" style="width: 110px;" (click)="saveAuditScheduleFromToDatePopup(auditScheduleFromToPopup, row.id)">
+          <td class="schedule-col">
+            <ng-container *ngIf="isScopedBoard; else scheduleAuditAction">
+              <span *ngIf="row.auditScheduleFromDate && row.auditScheduleToDate; else noScheduleDate"
+                    class="scheduled-date-text">
+                <span>{{ row.auditScheduleFromDate | date: 'dd MMM yyyy' }}</span>
+                <span class="scheduled-date-separator">to</span>
+                <span>{{ row.auditScheduleToDate | date: 'dd MMM yyyy' }}</span>
+              </span>
+              <ng-template #noScheduleDate><span class="not-available-text">Not available</span></ng-template>
+            </ng-container>
+            <ng-template #scheduleAuditAction>
+            <div class="schedule-action-inline">
+            <button [disabled]="row.auditStatus === 'Completed' || row.auditStatus === 'ObservationZONE' || row.auditStatus === 'Observation SECTOR'" class="btn btn-primary btn-sm schedule-btn" (click)="saveAuditScheduleFromToDatePopup(auditScheduleFromToPopup, row.id)">
                 <i class="fa fa-calendar ms-1 pointer"></i> Schedule
-            </button>&nbsp;<span *ngIf="row?.auditScheduleFromDate && row?.auditScheduleToDate" class="info-circle" [ngbTooltip]="row.auditScheduleFromDate + ' to ' + row.auditScheduleToDate"> i </span>
+            </button>
+            <span *ngIf="row?.auditScheduleFromDate && row?.auditScheduleToDate" class="info-circle" [ngbTooltip]="row.auditScheduleFromDate + ' to ' + row.auditScheduleToDate">i</span>
+            </div>
+            </ng-template>
                       
           </td>
-          <td class="text-center">
-            <ng-container [ngSwitch]="row.auditStatus">
+          <td class="text-center actions-col">
+            <button *ngIf="isScopedBoard && row.auditStatus === scopedObservationStatus"
+              class="btn btn-success btn-sm scoped-action-btn" (click)="openObservationSummary(zoneObservationTemplate, row.id)">
+              View Observation <i class="fa fa-eye ms-1 pointer"></i>
+            </button>
+            <ng-container *ngIf="!isScopedBoard" [ngSwitch]="row.auditStatus">
 
               <button *ngSwitchCase="'Planned'"
                 class="btn btn-success btn-sm"
@@ -151,19 +179,34 @@
                 Review & Respond<i class="fa-solid fa-reply ms-1 pointer"></i>
               </button>
 
+              <button *ngSwitchCase="'ObservationZONE'" class="btn btn-warning btn-sm"
+                (click)="viewAuditorResponse(viewAuditorResponseTemplate, row.id)" style="width: 160px;">
+                Audit Summary<i class="fa fa-eye ms-1 pointer"></i>
+              </button>
+              <button *ngSwitchCase="'Observation SECTOR'" class="btn btn-warning btn-sm"
+                (click)="viewAuditorResponse(viewAuditorResponseTemplate, row.id)" style="width: 160px;">
+                Audit Summary<i class="fa fa-eye ms-1 pointer"></i>
+              </button>
               <button *ngSwitchCase="'Completed'"
                 class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate, row.id)" style="width: 160px;">
                 Audit Summary<i class="fa fa-eye ms-1 pointer"></i>
               </button>
             </ng-container>
+            <button *ngIf="isScopedBoard && row.auditStatus !== scopedObservationStatus"
+              class="btn btn-warning btn-sm scoped-action-btn" (click)="viewAuditorResponse(viewAuditorResponseTemplate, row.id)">
+              Audit Summary <i class="fa fa-eye ms-1 pointer"></i>
+            </button>
           </td>
+        </tr>
+        <tr *ngIf="isScopedBoard && filteredData.length === 0">
+          <td colspan="10" class="text-center py-4">No audits were found for your {{ scopeLabel }}.</td>
         </tr>
       </tbody>
 
     </table>
   </div>
    <!-- Pagination -->
-    <nav>
+    <nav class="audit-list-pagination">
       <ul class="pagination justify-content-center">
         <li class="page-item" [class.disabled]="page === 1">
           <button class="page-link" (click)="prevPage()">Prev</button>
@@ -182,13 +225,152 @@
         </li>
       </ul>
     </nav>
+  </section>
+
+<app-audit-status-guide></app-audit-status-guide>
 </div>
 
+<ng-template #zoneObservationTemplate let-modal>
+  <div class="modal-header audit-summary-header">
+    <h5 class="modal-title fw-bold"><i class="fa-solid fa-clipboard-check me-2"></i>Audit Observation Summary</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div class="audit-observation-summary-content" *ngIf="auditObservation">
+      <h5 class="fw-semibold text-dark mb-3"><i class="fa-solid fa-file-alt me-2 text-primary"></i>Observation Details</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4" *ngFor="let field of [
+          {label:'Letter No', val:auditObservation.letterNo},
+          {label:'Letter Date', val:(auditObservation.letterDate | date:'dd-MMM-yyyy')},
+          {label:'Created Date', val:(auditObservation.creationDate | date:'dd-MMM-yyyy')}
+        ]">
+          <div class="detail-tile p-3 rounded-3 shadow-sm">
+            <label class="detail-label mb-1">{{ field.label }}</label>
+            <div class="detail-value">{{ field.val || 'Not available' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="obs-header mb-3">
+        <h5 class="fw-semibold text-dark mb-0"><i class="fa-solid fa-reply me-2 text-primary"></i>Observations</h5>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <div class="legend">
+            <span class="lg critical">Critical</span>
+            <span class="lg moderate">Moderate</span>
+            <span class="lg noncritical">Non Critical</span>
+          </div>
+          <div class="tabs">
+            <span [class.active]="selectedObservationTab === 'active'" (click)="selectedObservationTab = 'active'">Active ({{ activeObservations.length }})</span>
+            <span [class.active]="selectedObservationTab === 'dropped'" (click)="selectedObservationTab = 'dropped'">Closed ({{ closedObservations.length }})</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-9">
+          <input type="text" class="form-control" placeholder="Search observation..." [(ngModel)]="observationSearchText">
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" [(ngModel)]="observationCriticality">
+            <option value="">All Criticality</option>
+            <option>Critical</option><option>Moderate</option><option>Non Critical</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle table-bordered">
+          <thead class="table-primary">
+            <tr><th>#</th><th>Observation</th><th>Remarks</th><th>Type Criticality</th><th>Compliance Status</th><th>View</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let observation of filteredObservations; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ observation.observation }}</td>
+              <td>{{ observation.remarks }}</td>
+              <td><span class="criticality-badge" [ngClass]="observation.typeCriticality.replace(' ','')">{{ observation.typeCriticality }}</span></td>
+              <td><span class="status-badge" [ngClass]="formatStatusClass(observation.complianceStatus)">{{ observation.complianceStatus }}</span></td>
+              <td><button class="btn btn-sm btn-outline-primary view-inline-btn" (click)="viewObservation(zoneObservationDetails, observation.id)"><i class="fa fa-eye"></i><span>View</span></button></td>
+            </tr>
+            <tr *ngIf="filteredObservations.length === 0">
+              <td colspan="6" class="text-center py-3 text-muted">No observations found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <ng-container *ngIf="isScopedBoard && auditScheduleTemplate?.auditStatus === scopedObservationStatus">
+      <button type="button" class="btn btn-primary" [disabled]="isRoutingObservation" (click)="openApsConfirmation(zoneApsConfirmPopup)">
+        <i class="fa fa-paper-plane me-2"></i>Send To APS HQrs
+      </button>
+      <button type="button" class="btn btn-success" [disabled]="isRoutingObservation" (click)="openSendToCasoPopup(zoneCasoMessagePopup)">
+        <i class="fa fa-paper-plane me-2"></i>Send To CASO
+      </button>
+    </ng-container>
+    <button class="btn btn-light border" [disabled]="isRoutingObservation" (click)="modal.dismiss()">Close</button>
+  </div>
+</ng-template>
+
+<ng-template #zoneObservationDetails let-modal>
+  <div class="modal-header observation-detail-modal-header">
+    <h5 class="modal-title fw-bold text-primary"><i class="fa-solid fa-clipboard-check me-2"></i>Observation Details</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body pt-2 observation-detail-modal-body">
+    <app-audit-observation-chat-component [data]="auditObservationComponent"></app-audit-observation-chat-component>
+  </div>
+  <div class="modal-footer"><button class="btn btn-light border" (click)="modal.dismiss()">Close</button></div>
+</ng-template>
+
+<ng-template #zoneApsConfirmPopup let-modal>
+  <div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold text-primary"><i class="fa fa-comment-dots me-2"></i>Send Observation to APS HQrs</h5>
+    <button type="button" class="btn-close" aria-label="Close" [disabled]="isRoutingObservation" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <label for="zoneApsMessage" class="form-label fw-semibold">Message for APS HQrs <span class="text-danger">*</span></label>
+    <textarea id="zoneApsMessage" class="form-control" rows="5"
+              placeholder="Enter message for APS HQrs"
+              [(ngModel)]="zoneApsMessage"
+              maxlength="2000"></textarea>
+    <div class="form-text text-end">{{ zoneApsMessage.length }}/2000</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" [disabled]="isRoutingObservation || !zoneApsMessage.trim()" (click)="confirmSendZoneObservationToAPS()">
+      <i class="fa fa-paper-plane me-2"></i>{{ isRoutingObservation ? 'Sending...' : 'Submit to APS HQrs' }}
+    </button>
+    <button type="button" class="btn btn-light border" [disabled]="isRoutingObservation" (click)="modal.dismiss()">Cancel</button>
+  </div>
+</ng-template>
+
+<ng-template #zoneCasoMessagePopup let-modal>
+  <div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold text-primary"><i class="fa fa-comment-dots me-2"></i>Send Observation to CASO</h5>
+    <button type="button" class="btn-close" aria-label="Close" [disabled]="isRoutingObservation" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <label for="zoneCasoMessage" class="form-label fw-semibold">Message for CASO <span class="text-danger">*</span></label>
+    <textarea id="zoneCasoMessage" class="form-control" rows="5"
+              placeholder="Enter message for CASO"
+              [(ngModel)]="zoneCasoMessage"
+              maxlength="2000"></textarea>
+    <div class="form-text text-end">{{ zoneCasoMessage.length }}/2000</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" [disabled]="isRoutingObservation || !zoneCasoMessage.trim()" (click)="submitZoneObservationToCASO()">
+      <i class="fa fa-paper-plane me-2"></i>Submit to CASO
+    </button>
+    <button type="button" class="btn btn-light border" [disabled]="isRoutingObservation" (click)="modal.dismiss()">Cancel</button>
+  </div>
+</ng-template>
+
 <ng-template #viewAuditTemplate let-modal>
-      <div class="modal-header">
-        <h5 class="modal-title">Audit Scheduled Templates(List of Pre-Questionaries)</h5>
+      <div class="modal-header auditor-preview-header">
+        <h5 class="modal-title">Scheduled Audit Questionnaire</h5>
         <!-- PRINT ICON BUTTON -->
-        <button class="btn btn-sm btn-icon me-2" (click)="printPDF()" title="Print" style="border:none; background:transparent;">
+        <button class="btn preview-print" (click)="printPDF()" title="Print" >
             <i class="fa fa-print" style="font-size:16px;"></i>
         </button>
 
@@ -213,15 +395,15 @@
           
           <table class="table table-bordered table-sm print-table">
             <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
+              <col style="width:6%">
+              <col style="width:39%">
               <col style="width:25%">
               <col style="width:30%">
             </colgroup>
             <thead>              
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
+                  <th width="6%">Sl No</th>
+                  <th width="39%">Description</th>
                   <th width="25%">Details</th>
                   <th width="30%">Answer</th>
             </tr>            
@@ -243,17 +425,12 @@
           <div *ngIf="item.type === 'Basic'" class="basic-section">
           <h5>{{item.name}}</h5>
           
-          <table class="table table-bordered table-sm print-table">
-            <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
-              <col style="width:25%">
-              <col style="width:30%">
-            </colgroup>
+          <table class="table table-bordered table-sm print-table scheduled-questionnaire-table">
+            <colgroup><col style="width:6%"><col style="width:64%"><col style="width:30%"></colgroup>
             <thead>              
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="68%">Description</th>
+                  <th width="6%">Sl No</th>
+                  <th width="64%">Description</th>
                   
                   <th width="30%">Answer</th>
             </tr>            
@@ -275,15 +452,15 @@
           <h5>{{item.name}}</h5>
           <table class="table table-bordered table-sm print-table">
             <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
+              <col style="width:6%">
+              <col style="width:39%">
               <col style="width:25%">
               <col style="width:30%">
             </colgroup>
             <thead>             
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
+                  <th width="6%">Sl No</th>
+                  <th width="39%">Description</th>
                   <th width="25%">Relevant Benchmark</th>
                   <th width="30%">Answer</th>
             </tr>            
@@ -311,26 +488,26 @@
 <ng-template #reviewResponseAudit let-modal>
 
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary">
+  <div class="modal-header auditor-evaluation-header">
+    <h5 class="modal-title fw-bold">
       <i class="fa fa-user-check me-2"></i> Auditor Evaluation & Response
     </h5>
-    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" aria-label="Close auditor evaluation" (click)="modal.dismiss()"></button>
   </div>
 
   <!-- BODY -->
-  <div class="modal-body pt-2">
+  <div class="modal-body">
     <p class="text-muted small mb-3">
       Please review and submit the auditor’s evaluation form below.
     </p>
 
-    <div class="p-3 border rounded bg-light">
+    <div class="auditor-evaluation-content">
       <app-auditorresponseform #childRef [auditScheduledateinfo]="auditScheduledate"></app-auditorresponseform>
     </div>
   </div>
 
   <!-- FOOTER -->
-  <div class="modal-footer border-0 mt-2">
+  <div class="modal-footer">
     <button class="btn btn-light border px-4" (click)="modal.dismiss()">
       Close
     </button>
@@ -397,7 +574,7 @@
 
 <ng-template #viewAuditorResponseTemplate let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
+  <div class="modal-header audit-summary-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Audit & Response Summary
     </h5>
@@ -530,6 +707,29 @@
         </table>
       </div>
 </div>
+
+      <ng-container *ngIf="isScopedBoard && auditObservation?.id">
+        <h5 class="fw-semibold text-dark mb-3 mt-4">
+          <i class="fa-solid fa-file-alt me-2 text-primary"></i>Observation Details
+          <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+                  title="View observation details"
+                  (click)="openObservationSummary(zoneObservationTemplate, auditObservation?.auditTemplateId || 0)">
+            <i class="fa fa-eye"></i>
+          </button>
+        </h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4" *ngFor="let field of [
+            {label:'Letter No', val:auditObservation?.letterNo},
+            {label:'Letter Date', val:(auditObservation?.letterDate | date:'dd-MMM-yyyy')},
+            {label:'Created Date', val:(auditObservation?.creationDate | date:'dd-MMM-yyyy')}
+          ]">
+            <div class="detail-tile p-3 rounded-3 shadow-sm">
+              <label class="detail-label mb-1">{{ field.label }}</label>
+              <div class="detail-value">{{ field.val || 'Not available' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
     </div>
 
   </div>
@@ -549,36 +749,54 @@
 </ng-template>
 
 <ng-template #viewAuditBoardTemplate let-modal>
-  <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa fa-file-alt me-2"></i>
-      Audit: {{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}&nbsp;
-      <!-- PRINT BUTTON -->
-      <button class="btn btn-light border btn-sm me-2"
-              title="Print"
-              (click)="printPDF()">
-        <i class="fa fa-print"></i>
-      </button>
-    </h5>
-
-    <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  <div class="modal-header auditor-preview-header">
+    <div class="questionnaire-heading">
+      <span class="questionnaire-eyebrow">Audit questionnaire · View responses</span>
+      <h5 class="modal-title">Audit Responses</h5>
+    </div>
+    <button type="button" class="btn preview-print" aria-label="Print audit responses" (click)="printPDF()"><i class="fa fa-print"></i></button>
+    <button type="button" class="btn-close" aria-label="Close audit responses" (click)="modal.dismiss()"></button>
   </div>
-
   <!-- BODY -->
-  <div class="modal-body pt-2" id="printSection">
+  <div class="modal-body" id="printSection">
 
-    <h5 class="text-center fw-bold mb-4 text-dark">
+    <h5 class="title-text">
       {{ auditBoardTemplateGen.auditBoardScheduleTemplate.name }}
     </h5>
-    <div class="remarks-box" *ngIf="auditorRemarktoCASOList && auditorRemarktoCASOList.length>0">
+    <div class="remarks-box zone-remarks-box" *ngIf="zoneUserRemarks.length > 0">
       <div class="remarks-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="fa-solid fa-reply me-2"></i>Auditor follow on queries Remarks/Message</h6>
+        <h6 class="mb-0"><i class="fa-solid fa-map-location-dot me-2"></i>Zone Remarks</h6>
+        <button class="toggle-badge" (click)="toggleZoneRemarks()"><span>Remarks</span><span class="count">{{ zoneUserRemarks.length }}</span><i class="fa" [ngClass]="showZoneRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+      </div>
+      <div *ngIf="showZoneRemarks" class="remarks-container">
+        <div class="remark-card zone-remark-card" *ngFor="let remark of zoneUserRemarks">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div>
+          <div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="remarks-box sector-remarks-box" *ngIf="sectorUserRemarks.length > 0">
+      <div class="remarks-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fa-solid fa-layer-group me-2"></i>Sector Remarks</h6>
+        <button class="toggle-badge" (click)="toggleSectorRemarks()"><span>Remarks</span><span class="count">{{ sectorUserRemarks.length }}</span><i class="fa" [ngClass]="showSectorRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+      </div>
+      <div *ngIf="showSectorRemarks" class="remarks-container">
+        <div class="remark-card sector-remark-card" *ngFor="let remark of sectorUserRemarks">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">{{ remark.remarks }}</div>
+          <div class="remark-footer"><span><i class="fa fa-user"></i> {{ remark.createdBy }}</span><span><i class="fa fa-clock"></i> {{ remark.entryDate | date:'dd MMM yyyy, hh:mm a' }}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="remarks-box" *ngIf="auditorRemarks.length > 0">
+      <div class="remarks-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="fa-solid fa-reply me-2"></i>
+          Auditor Remarks
+        </h6>
 
         <button class="toggle-badge" (click)="toggleRemarks()">
           <span>Remarks</span>
-          <span class="count">{{ auditorRemarktoCASOList.length || 0 }}</span>
+          <span class="count">{{ auditorRemarks.length }}</span>
           <i class="fa" [ngClass]="showRemarks ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         </button>
       </div>
@@ -586,9 +804,9 @@
       <!-- Remarks Section -->
       <div *ngIf="showRemarks" class="remarks-container">
 
-        <div class="remark-card" *ngFor="let remark of auditorRemarktoCASOList">
+        <div class="remark-card" *ngFor="let remark of auditorRemarks">
                 
-          <div class="remark-text">
+          <span class="message-destination">{{ remark.routeDestination === 'APS' ? 'Message for APS HQrs' : 'Message for CASO' }}</span><div class="remark-text">
             {{ remark.remarks }}
           </div>
 
@@ -602,20 +820,20 @@
       </div>               
     </div>  
      <div *ngIf="auditorQuestions?.questions?.length" class="table-responsive mb-4">
-         <div  class="basic-section" class="mb-2 p-3 border rounded bg-light">
+         <div  class="basic-section mb-2">
           <h5 class="fw-bold text-primary mb-3">Questions added by Auditor</h5>
           
           <table class="table table-bordered table-sm print-table">
             <colgroup>
-              <col style="width:7%">
-              <col style="width:43%">
+              <col style="width:6%">
+              <col style="width:39%">
               <col style="width:25%">
               <col style="width:30%">
             </colgroup>
             <thead>              
             <tr>
-                  <th width="7%">Sl No</th>
-                  <th width="43%">Description</th>
+                  <th width="6%">Sl No</th>
+                  <th width="39%">Description</th>
                   <th width="25%">Details</th>
                   <th width="30%">Answer</th>
             </tr>            
@@ -640,7 +858,7 @@
         <table class="table table-bordered table-sm print-table">
           <thead class="table-secondary">
             <tr>
-              <th width="7%">Sl No</th>
+              <th width="6%">Sl No</th>
               <th width="68%">Description</th>
              
               <th width="30%">Answer</th>
@@ -668,8 +886,8 @@
         <table class="table table-bordered table-sm print-table">
           <thead class="table-secondary">
             <tr>
-              <th width="7%">Sl No</th>
-              <th width="43%">Description</th>
+              <th width="6%">Sl No</th>
+              <th width="39%">Description</th>
               <th width="25%">Relevant Benchmark</th>
               <th width="30%">Answer</th>
             </tr>
@@ -722,7 +940,7 @@
     </div>
 
   <!-- FOOTER -->
-  <div class="modal-footer border-0 mt-2">
+  <div class="modal-footer">
     <button class="btn btn-light border px-4" (click)="modal.dismiss()">
       Close
     </button>
@@ -889,3 +1107,9 @@
   </div>
 
 </ng-template>
+
+
+
+
+
+

@@ -1,0 +1,65 @@
+<section class="audit-status-guide" [class.guide-expanded]="expanded" aria-labelledby="sharedAuditStatusGuideTitle">
+  <button type="button" class="status-guide-toggle" (click)="expanded = !expanded"
+    [attr.aria-expanded]="expanded" aria-controls="sharedAuditStatusGuideContent">
+    <span class="status-guide-heading-icon"><i class="fa-solid fa-circle-info"></i></span>
+    <span class="status-guide-heading">
+      <strong id="sharedAuditStatusGuideTitle">Audit Status Guide</strong>
+      <small>{{ expanded ? 'Status details are currently visible.' : 'Open this guide to understand each workflow stage and responsible desk.' }}</small>
+    </span>
+    <span class="status-guide-toggle-label">{{ expanded ? 'Hide guide' : 'Show guide' }}</span>
+    <i class="fa-solid fa-chevron-down status-guide-chevron" [class.rotated]="expanded"></i>
+  </button>
+
+  <div *ngIf="expanded" id="sharedAuditStatusGuideContent" class="status-guide-content">
+    <div class="status-guide-grid">
+      <article class="status-guide-item guide-planned">
+        <span class="guide-icon"><i class="fa-regular fa-calendar"></i></span>
+        <div><span class="guide-status">Planned</span><span class="guide-owner">Auditor Bucket</span>
+          <p>The audit is scheduled and waiting for the assigned auditor to begin the audit process.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-progress">
+        <span class="guide-icon"><i class="fa-regular fa-clock"></i></span>
+        <div><span class="guide-status">In Progress</span><span class="guide-owner">CASO Bucket</span>
+          <p>The audit has started and its questionnaire or response workflow is currently active.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-action">
+        <span class="guide-icon"><i class="fa-solid fa-rotate-left"></i></span>
+        <div><span class="guide-status">Action Required</span><span class="guide-owner">Auditor Bucket</span>
+          <p>The audit was returned to the auditor for correction, clarification, or an additional response.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-aps">
+        <span class="guide-icon"><i class="fa-solid fa-building-shield"></i></span>
+        <div><span class="guide-status">Observation APS</span><span class="guide-owner">APS HQrs Bucket</span>
+          <p>The observation is with APS Headquarters for review and the next compliance decision.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-caso">
+        <span class="guide-icon"><i class="fa-solid fa-user-shield"></i></span>
+        <div><span class="guide-status">Observation CASO</span><span class="guide-owner">CASO Bucket</span>
+          <p>The observation is with CASO for remarks, supporting details, or a compliance response.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-zone">
+        <span class="guide-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+        <div><span class="guide-status">Observation ZONE</span><span class="guide-owner">Zone Bucket</span>
+          <p>The Zone user is reviewing the observation and may forward it to APS HQrs or CASO.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-sector">
+        <span class="guide-icon"><i class="fa-solid fa-layer-group"></i></span>
+        <div><span class="guide-status">Observation SECTOR</span><span class="guide-owner">Sector Bucket</span>
+          <p>The Sector user is reviewing the observation for a unit assigned to the same sector.</p>
+        </div>
+      </article>
+      <article class="status-guide-item guide-completed">
+        <span class="guide-icon"><i class="fa-regular fa-circle-check"></i></span>
+        <div><span class="guide-status">Completed</span><span class="guide-owner">APS HQrs Bucket</span>
+          <p>The audit workflow is finalized and no further response is currently pending.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

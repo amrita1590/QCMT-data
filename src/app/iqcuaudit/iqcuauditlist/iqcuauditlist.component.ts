@@ -35,15 +35,19 @@ import { AuditBoardScheduleTemplate } from '../../interface/AuditBoardScheduleTe
 import { AuditBoardTemplateGen } from '../../interface/AuditBoardTemplateGen';
 import { RouterModule } from '@angular/router';
 import { User } from '../../interface/User';
+import { AuditStatusGuideComponent } from '../../shared/audit-status-guide/audit-status-guide.component';
+import { AuditorRemarktoCASO } from '../../interface/AuditorRemarktoCASO';
+import { AuditRemarksPanelsComponent } from '../../shared/audit-remarks-panels/audit-remarks-panels.component';
 
 @Component({
   selector: 'app-iqcuauditlist',
   standalone: true,
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent,RouterModule],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, RouterModule, AuditStatusGuideComponent, AuditRemarksPanelsComponent],
   templateUrl: './iqcuauditlist.component.html',
   styleUrls: ['./iqcuauditlist.component.css']
 })
 export class IqcuauditlistComponent {
+  auditorRemarktoCASOList: AuditorRemarktoCASO[] = [];
 constants = APP_CONSTANTS;
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
   casoResponseFilesTemp: AuditorResponseFilesTemp[] = [];
@@ -426,7 +430,7 @@ console.error(' units after filtering:', this.units);
         });
       });
       this.auditScheduleTemplate = template;
-      this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+      this.modalRef = this.modalService.open(content, { size: 'xl', centered: true, scrollable: true, backdrop: 'static', keyboard: false, windowClass: 'iqcu-detail-modal' });
   }
 
   
@@ -463,7 +467,7 @@ console.error(' units after filtering:', this.units);
     console.log(":::::::::::::::");
     this.audittemplateReset();
     this.btnName = "Create";
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, { size: 'xl', centered: true, scrollable: true, backdrop: 'static', keyboard: false, windowClass: 'iqcu-detail-modal' });
   }
 
   
@@ -624,7 +628,7 @@ console.error(' units after filtering:', this.units);
   }
 
   get totalInProgress() {
-    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation CASO").length;
+    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation SECTOR" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation CASO").length;
   }
 
   get totalCompleted() {
@@ -826,7 +830,7 @@ console.error(' units after filtering:', this.units);
 
   complianceStatusForm(content: any, auditObservationComponent: any) {
     console.log(":::::::::::::::"+auditObservationComponent.id);
-    this.modalRef = this.modalService.open(content, { size : 'md' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, { size: 'md', centered: true, scrollable: true, backdrop: 'static', keyboard: false, windowClass: 'iqcu-detail-modal' });
   }
 
   submitObservationMessage(auditObservationComponent: any) {
@@ -948,7 +952,7 @@ console.error(' units after filtering:', this.units);
       return;
     }
     this.templateId = id;
-    this.modalRef = this.modalService.open(content, { backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, { centered: true, backdrop: 'static', keyboard: false, windowClass: 'iqcu-detail-modal' });
   }
 
   droppedObservation(id: number | undefined) {
@@ -1000,7 +1004,7 @@ console.error(' units after filtering:', this.units);
     console.log(":::::::::::::::"+id);    
     this.chatObservationStatus = '';
     this.auditObservationComponentBean = this.auditObservation?.auditObservationComponent.find(o => o.id === id) ?? null;
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, { size: 'xl', centered: true, scrollable: true, backdrop: 'static', keyboard: false, windowClass: 'iqcu-detail-modal' });
   }
 
   resetObservationMessageForm() {
@@ -1077,6 +1081,11 @@ loadQuestions() {
 }
   viewAuditorResponse(content: any, id: number) {
       this.selectedTemplateId = id;
+      this.auditorRemarktoCASOList = [];
+      this.auditService.getAuditorRemarksCaso(id).subscribe({
+        next: data => this.auditorRemarktoCASOList = [...(data ?? [])].sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime()),
+        error: err => console.error('Failed to fetch audit remarks', err)
+      });
       this.loadQuestions();
       this.auditService.getAuditBoardDetails(id).subscribe({
         next: (data) => {
@@ -1129,7 +1138,10 @@ loadQuestions() {
               this.modalRef = this.modalService.open(content, {
                 size: "xl",
                 backdrop: "static",
-                keyboard: false
+                keyboard: false,
+                centered: true,
+                scrollable: true,
+                windowClass: "iqcu-detail-modal"
               });
             },
   
@@ -1152,12 +1164,22 @@ loadQuestions() {
       this.modalRef = this.modalService.open(content, {
         size: "xl",
         backdrop: "static",
-        keyboard: false
+        keyboard: false,
+        centered: true,
+        scrollable: true,
+        windowClass: "iqcu-detail-modal"
       }); 
     }
 
     viewObservationMessageHistory(content: any) {
-      this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+      this.modalRef = this.modalService.open(content, {
+        size: 'xl',
+        centered: true,
+        scrollable: true,
+        backdrop: 'static',
+        keyboard: false,
+        windowClass: 'iqcu-history-modal'
+      });
     }
 
     prepareDownloadUrls() {

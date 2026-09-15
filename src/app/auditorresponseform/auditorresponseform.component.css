@@ -104,6 +104,10 @@ button.btn-outline-primary:hover {
   margin-bottom: 15px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
+.zone-remarks-box { border-left: 4px solid #198754; margin-bottom: 12px; }
+.zone-remark-card { border-left-color: #198754 !important; }
+.sector-remarks-box { border-left: 4px solid #0284c7; margin-bottom: 12px; }
+.sector-remark-card { border-left-color: #0284c7 !important; }
 
 /* Header */
 .remarks-header {
@@ -167,4 +171,27 @@ button.btn-outline-primary:hover {
 
 .toggle-badge i.rotate {
   transform: rotate(180deg);
+}
+
+/* Corporate evaluation form. */
+.auditor-evaluation-form { width: 100%; color: #18324e; }
+.auditor-evaluation-form .audit-card { border: 1px solid #dce5ef; border-radius: 8px; overflow: hidden; box-shadow: none; }
+.auditor-evaluation-form .card-header { padding: 11px 16px; background: #edf3f9; color: #12375d; border-bottom: 1px solid #dce5ef; border-top: 3px solid #3977b8; font-size: 14px; }
+.auditor-evaluation-form .card-body { padding: 16px; }
+.auditor-evaluation-form .audit-identity { gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid #e5ebf2; }
+.auditor-evaluation-form .audit-identity > div { gap: 4px; min-width: 0; }
+.auditor-evaluation-form h6 { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.auditor-evaluation-form .audit-identity .text-success { font-size: 12px; }
+.auditor-evaluation-form .form-label { font-size: 12px; color: #60738a; margin-bottom: 5px; font-weight: 600 !important; }
+.auditor-evaluation-form .static-field { min-height: 36px; padding: 7px 10px; font-size: 13px; color: #18324e; background: #f6f8fb; border: 1px solid #e1e7ef; border-radius: 5px; overflow-wrap: anywhere; }
+.auditor-evaluation-form .form-control { font-size: 13px; border-color: #d4dfeb; border-radius: 5px; }
+.auditor-evaluation-form .form-control:focus { border-color: #3977b8; box-shadow: 0 0 0 3px rgb(57 119 184 / 12%); }
+.auditor-evaluation-form .fa { font-size: 16px !important; color: #3977b8; }
+.auditor-evaluation-form .table { min-width: 660px; margin-bottom: 12px; font-size: 13px; }
+.auditor-evaluation-form .info-message { background: #f1f6fc; color: #60738a; font-size: 12px; border-left: 3px solid #3977b8; }
+.auditor-evaluation-form .info-message li:last-child { margin-bottom: 0; }
+.auditor-evaluation-form .audit-card:last-child { margin-bottom: 0 !important; }
+@media (max-width: 767px) {
+  .auditor-evaluation-form .card-body { padding: 12px; }
+  .auditor-evaluation-form form .col-md-6 + .col-md-6 { margin-top: 12px; }
 }

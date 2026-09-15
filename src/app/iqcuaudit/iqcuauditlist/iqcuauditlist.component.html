@@ -1,64 +1,60 @@
 <div class="audit-page">
 
-  <!-- Top Navigation -->
-   
-  <div class="top-nav">
-    <a href="/dashboard" class="back-btn">
-    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-  </a>
+  <div class="page-heading-actions">
+    <div class="iqcu-page-heading">
+      <div class="iqcu-title-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+      <div><span class="iqcu-page-eyebrow">Internal Quality Control Unit</span><h2 class="page-title">IQCU Audit Details</h2><p class="page-subtitle">Track audit schedules, workflow status, and detailed responses</p></div>
+    </div>
+    <div class="top-nav iqcu-page-nav"><a href="/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a></div>
   </div>
- 
-  
-
-
-  <!-- Page Title -->
-  <h2 class="page-title"><i class="fa fa-user-check me-2"></i>IQCU Audit Details</h2>
-  <p class="page-subtitle">Track all audit schedules status</p>
 
   <!-- Status Cards -->
   <div class="status-grid">
 
     <div class="status-card blue">
-      <h4>Planned</h4>
+      <div class="iqcu-status-card-top"><h4>Planned</h4><span class="iqcu-status-icon"><i class="fa-regular fa-calendar"></i></span></div>
       <div class="value-section">
         <span class="value">{{ totalPlanned }}</span>
-        <i class="fa-regular fa-calendar"></i>
+        <span class="iqcu-status-caption">Awaiting execution</span>
       </div>
     </div>
 
     <div class="status-card yellow">
-      <h4>In Progress</h4>
+      <div class="iqcu-status-card-top"><h4>In Progress</h4><span class="iqcu-status-icon"><i class="fa-regular fa-clock"></i></span></div>
       <div class="value-section">
         <span class="value">{{ totalInProgress }}</span>
-        <i class="fa-regular fa-calendar"></i>
+        <span class="iqcu-status-caption">Currently active</span>
       </div>
     </div>
 
     <div class="status-card green">
-      <h4>Completed</h4>
+      <div class="iqcu-status-card-top"><h4>Completed</h4><span class="iqcu-status-icon"><i class="fa-regular fa-circle-check"></i></span></div>
       <div class="value-section">
         <span class="value">{{ totalCompleted }}</span>
-        <i class="fa-regular fa-calendar-check"></i>
+        <span class="iqcu-status-caption">Successfully closed</span>
       </div>
     </div>
 
     <div class="status-card red">
-      <h4>Action Required</h4>
+      <div class="iqcu-status-card-top"><h4>Action Required</h4><span class="iqcu-status-icon"><i class="fa-solid fa-triangle-exclamation"></i></span></div>
       <div class="value-section">
         <span class="value">{{ totalActionRequired }}</span>
-        <i class="fa-regular fa-calendar-xmark"></i>
+        <span class="iqcu-status-caption">Needs attention</span>
       </div>
     </div>
   </div>
   
-  <br/>
-  
+  <section class="iqcu-list-panel">
+  <div class="iqcu-list-heading">
+    <div><h5>All IQCU Audits</h5><p>Review audit schedules, assigned personnel, and current workflow status.</p></div>
+    <span class="iqcu-record-count"><i class="fa-solid fa-list-check me-2"></i>{{ filteredData.length }} records</span>
+  </div>
 
   <!-- Table Section -->
   <!-- Search Box -->
-  <div class="row mb-3">
+  <div class="row g-2 iqcu-list-toolbar">
     <div class="col-md-9">
-      <input type="text" class="form-control" name="search" placeholder="Search..." [(ngModel)]="searchText" />
+      <div class="iqcu-search"><i class="fa fa-search"></i><input type="text" class="form-control" name="search" placeholder="Search by audit, unit, auditor, or status..." [(ngModel)]="searchText" /></div>
     </div>
     <div class="col-md-3">
       <select class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
@@ -67,8 +63,8 @@
     </div>
   </div>
   <!-- Templates Table -->
-  <div class="table-responsive">
-    <table class="table table-hover table-bordered align-middle modern-table">
+  <div class="table-responsive iqcu-table-wrap">
+    <table class="table table-hover align-middle modern-table iqcu-data-table">
       <thead class="table-dark">
         <tr>
           <th>#</th>
@@ -79,16 +75,16 @@
           <th>Auditor Name</th>
           <th>Created By</th>
           <th>Audit Type</th>
-          <th>Status</th>
+          <th class="status-col">Status</th>
          
-          <th>View</th>
+          <th class="actions-col">View</th>
         </tr>
       </thead>
 
       <tbody>
           <tr *ngFor="let row of filteredData | slice: (page - 1) * pageSize : page * pageSize; let i = index;">
-          <td>{{ (page - 1) * pageSize + i + 1 }}</td>
-          <td>
+          <td><span class="iqcu-row-number">{{ (page - 1) * pageSize + i + 1 }}</span></td>
+          <td class="iqcu-audit-name">
             <div class="d-flex align-items-center">
               <!-- Left content -->
               <div class="flex-grow-1">
@@ -108,7 +104,7 @@
 
           <td><span class="type-badge">{{ row.auditType }}</span></td>
 
-          <td>
+          <td class="status-col">
             <span>
               <div *ngIf="row.auditStatus === 'Planned'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>               
@@ -140,11 +136,14 @@
                 </div>
                
               </div>
+              <div *ngIf="row.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR">
+                Observation SECTOR<br/><span class="badge-subtitle">Sector Bucket</span>
+              </div>
             </span>
           </td>
 
           
-          <td>
+          <td class="actions-col">
             <div class="d-flex align-items-center gap-2 flex-wrap">
             <div *ngIf="row.auditStatus === 'Observation APS'">
              
@@ -157,12 +156,12 @@
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
             </div>
-            <div *ngIf="row.auditStatus === 'Action Required' || row.auditStatus === 'Observation CASO'">
+            <div *ngIf="row.auditStatus === 'Action Required' || row.auditStatus === 'Observation CASO' || row.auditStatus === 'Observation SECTOR'">
                 <button class="btn btn-warning btn-sm" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)" style="width: 150px;">
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>
                 </button>
             </div>
-            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Action Required' && row.auditStatus !== 'Observation CASO'">
+            <div *ngIf="row.auditStatus !== 'Observation APS' && row.auditStatus !== 'Completed' && row.auditStatus !== 'Action Required' && row.auditStatus !== 'Observation CASO' && row.auditStatus !== 'Observation SECTOR'">
               <div class="action-group">
                 <button class="btn btn-warning btn-sm" (click)="viewTemplate(viewAuditTemplate,row.id)" style="width: 150px;">
                   Audit Details <i class="fa fa-eye ms-1 pointer"></i>
@@ -176,7 +175,7 @@
     </table>
   </div>
    <!-- Pagination -->
-    <nav>
+    <nav class="iqcu-pagination" aria-label="IQCU audit pagination">
       <ul class="pagination justify-content-center">
         <li class="page-item" [class.disabled]="page === 1">
           <button class="page-link" (click)="prevPage()">Prev</button>
@@ -195,8 +194,10 @@
         </li>
       </ul>
     </nav>
-</div>
+  </section>
 
+<app-audit-status-guide></app-audit-status-guide>
+</div>
 
 
 <ng-template #deleteModal let-modal>
@@ -250,15 +251,12 @@
 <ng-template #viewAuditTemplate let-modal>
       <div class="modal-header">
         <h5 class="modal-title">Audit Scheduled Template</h5>
-        <!-- PRINT ICON BUTTON -->
-        <button class="btn btn-sm btn-icon me-2" (click)="printPDF()" title="Print" style="border:none; background:transparent;">
+        <div class="modal-header-actions">
+        <button type="button" class="btn btn-icon modal-print-btn" (click)="printPDF()" title="Print / Save PDF" aria-label="Print or save the audit scheduled template as PDF">
             <i class="fa fa-print" style="font-size:16px;"></i>
         </button>
-
-        <!-- CLOSE BUTTON -->
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-
-
+        </div>
       </div>
       <div class="modal-body" id="printSection">
           <h3 class="text-center mb-3 title-text">
@@ -361,7 +359,7 @@
 
 <ng-template #viewObservationDetails let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
+  <div class="modal-header observation-detail-modal-header">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Observation Details
     </h5>
@@ -394,7 +392,7 @@
     </div>
   </div>
     
-    <div class="modal-body pt-2">
+    <div class="modal-body pt-2 observation-detail-modal-body">
         <app-audit-observation-chat-component [data]="auditObservationComponentBean"></app-audit-observation-chat-component>
     </div>
     <!-- FOOTER -->
@@ -436,7 +434,7 @@
 
 <ng-template #viewAuditorResponseTemplate let-modal>
   <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
+  <div class="modal-header audit-summary-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
       <i class="fa-solid fa-clipboard-check me-2"></i> Audit & Response Summary
     </h5>
@@ -619,20 +617,19 @@
 
 <ng-template #viewAuditBoardTemplate let-modal>
       <div class="modal-header">
-        <h5 class="modal-title">Audit: {{auditBoardTemplateGen.auditBoardScheduleTemplate.name}}</h5>&nbsp;
-        <!-- PRINT ICON BUTTON -->
-        <button class="btn btn-sm btn-icon me-2" (click)="printPDF()" title="Print" style="border:none; background:transparent;">
+        <h5 class="modal-title">Audit: {{auditBoardTemplateGen.auditBoardScheduleTemplate.name}}</h5>
+        <div class="modal-header-actions">
+        <button type="button" class="btn btn-icon modal-print-btn" (click)="printPDF()" title="Print / Save PDF" aria-label="Print or save audit details as PDF">
             <i class="fa fa-print" style="font-size:16px;"></i>
         </button>
-
-        <!-- CLOSE BUTTON -->
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-
+        </div>
       </div>
       <div class="modal-body" id="printSection">
         <h3 class="text-center mb-2 title-text">
             {{auditBoardTemplateGen.auditBoardScheduleTemplate.name}}
         </h3>
+        <app-audit-remarks-panels [remarks]="auditorRemarktoCASOList"></app-audit-remarks-panels>
         <div *ngIf="auditorQuestions?.questions?.length" class="table-responsive">
          <div  class="basic-section" class="mb-2 p-3 border rounded bg-light">
           <h5 class="fw-bold text-primary mb-3">Questions added by Auditor</h5>
@@ -767,18 +764,16 @@
 
 <ng-template #observationMessageHistoryModel let-modal>
       <div class="modal-header">
-        <h5 class="modal-title">Observation Compliance History</h5>&nbsp;
-        <!-- PRINT ICON BUTTON -->
-        <button class="btn btn-sm btn-icon me-2" (click)="printObservationHistory()" title="Print" style="border:none; background:transparent;">
+        <h5 class="modal-title">Observation Compliance History</h5>
+        <div class="modal-header-actions">
+        <button type="button" class="btn btn-icon modal-print-btn" (click)="printObservationHistory()" title="Print / Save PDF" aria-label="Print or save observation compliance history as PDF">
             <i class="fa fa-print" style="font-size:16px;"></i>
         </button>
-
-        <!-- CLOSE BUTTON -->
         <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-
+        </div>
       </div>
       <!-- ================= REPORT ================= -->
-      <div id="print-section">
+      <div id="print-section" class="modal-body observation-history-body">
       <div class="report-page" *ngIf="auditObservation">
 
         <div class="report-title">
@@ -858,6 +853,7 @@
         <button class="btn btn-secondary" (click)="modal.dismiss()"><i class="fa-solid fa-xmark"></i>&nbsp;Close</button>
     </div>
 </ng-template>
+
 
 
 

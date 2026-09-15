@@ -32,6 +32,15 @@ export class AuditorresponseformComponent {
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
   
   auditorRemarktoCASOList: AuditorRemarktoCASO[] = [];
+  get zoneUserRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource === 'ZONE');
+  }
+  get sectorUserRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource === 'SECTOR');
+  }
+  get auditorRemarks(): AuditorRemarktoCASO[] {
+    return this.auditorRemarktoCASOList.filter(remark => remark.remarkSource !== 'ZONE' && remark.remarkSource !== 'SECTOR');
+  }
   auditorResponseFilesTemp: AuditorResponseFilesTemp[] = [];
   casoResponseFilesTemp: AuditorResponseFilesTemp[] = [];
   auditorResponseFiles: AuditorResponseFiles[] = [];
@@ -202,7 +211,7 @@ if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
       }
   
       this.modalRef = this.modalService.open(content, {
-        size: "xl",
+        size: "xl", windowClass: "questionnaire-modal audit-preview-modal", scrollable: true, centered: true,
         backdrop: "static",
         keyboard: false
       });         
@@ -523,8 +532,16 @@ if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
     }); 
   }
   showRemarks: boolean = true;
+  showZoneRemarks: boolean = true;
+  showSectorRemarks: boolean = true;
   toggleRemarks() {
     this.showRemarks = !this.showRemarks;
+  }
+  toggleZoneRemarks() {
+    this.showZoneRemarks = !this.showZoneRemarks;
+  }
+  toggleSectorRemarks() {
+    this.showSectorRemarks = !this.showSectorRemarks;
   }
 
    formatNotificationMessage(template: string, data: AuditBoardScheduleTemplate) {
@@ -546,3 +563,4 @@ showSendBackToCaso() {
  
 }
 }
+

@@ -18,14 +18,13 @@ const OTP_RESEND_SECONDS = 30;
 
 export class LoginComponent implements OnDestroy {
     status = false;
-    loginErrorMessage = 'Invalid Email or Password';
+    loginErrorMessage = 'Invalid username or password';
+    passwordExpired = false;
     login: Login[] = [];
     loginDetailsForm: FormGroup;
 
     captchaId = '';
-    captchaNum1 = 0;
-    captchaNum2 = 0;
-    captchaOperator = '+';
+    captchaImage = '';
     captchaInput = '';
     captchaError = false;
     captchaExpired = false;
@@ -50,7 +49,7 @@ export class LoginComponent implements OnDestroy {
 
     constructor(private fb: FormBuilder, private umService: UsermanagementService, private router: Router, @Inject(PLATFORM_ID) private platformId: Object) {
       this.loginDetailsForm = this.fb.group({
-        username:new FormControl('', [Validators.required]),
+        username:new FormControl('', [Validators.required, Validators.pattern(/^[0-9]{9}$/)]),
         password:new FormControl('', [Validators.required])
       });
       // SSR-safe: the backend isn't reachable during build-time prerendering, so fetching a
@@ -110,18 +109,22 @@ export class LoginComponent implements OnDestroy {
      * way it could when the answer only ever existed in this component.
      */
     generateCaptcha() {
+      if (this.captchaInterval) clearInterval(this.captchaInterval);
+      this.captchaId = '';
+      this.captchaImage = '';
+      this.captchaInput = '';
+      this.captchaError = false;
       this.umService.getCaptcha().subscribe({
         next: (challenge) => {
           this.captchaId = challenge.captchaId;
-          this.captchaNum1 = challenge.num1;
-          this.captchaNum2 = challenge.num2;
-          this.captchaOperator = challenge.operator;
+          this.captchaImage = challenge.captchaImage;
           this.captchaInput = '';
           this.captchaError = false;
           this.captchaExpired = false;
           this.startCaptchaTimer();
         },
         error: (error) => {
+          this.captchaExpired = true;
           console.error('Failed to load captcha:', error);
         }
       });
@@ -176,13 +179,14 @@ export class LoginComponent implements OnDestroy {
             error: (error) => {
               console.error('Login failed:', error);
               this.loginErrorMessage = this.resolveLoginErrorMessage(error);
+              this.passwordExpired = error?.status === 403;
               if (error?.status === 400) {
                 // Captcha was wrong/expired - a fresh challenge is required for the next attempt.
                 this.generateCaptcha();
               }
               this.status = true;
               setTimeout(() => {
-                this.status = false; // Hide the div after 10 seconds
+                if (!this.passwordExpired) this.status = false;
               }, 10000); // 10000 milliseconds = 10 seconds
             }
           });
@@ -198,6 +202,9 @@ export class LoginComponent implements OnDestroy {
      */
     private resolveLoginErrorMessage(error: any): string {
       const serverMessage = typeof error?.error === 'string' && error.error ? error.error : null;
+      if (error?.status === 403) {
+        return serverMessage ?? 'Your password has expired. Please use Forgot Password to change your password.';
+      }
       if (error?.status === 502) {
         return serverMessage ?? 'Unable to send OTP at this time. Please try again shortly.';
       }
@@ -210,7 +217,7 @@ export class LoginComponent implements OnDestroy {
       if (error?.status === 429) {
         return serverMessage ?? 'Too many login attempts. Please try again later.';
       }
-      return 'Invalid Email or Password';
+      return 'Invalid username or password';
     }
 
     private navigateAfterAuthSuccess(response: string) {
@@ -250,6 +257,13 @@ export class LoginComponent implements OnDestroy {
           this.otpError = parsed.message;
           this.attemptsRemaining = parsed.attemptsRemaining;
           this.otpInput = '';
+          if (error?.status === 403) {
+            this.backToLogin();
+            this.passwordExpired = true;
+            this.loginErrorMessage = parsed.message;
+            this.status = true;
+            this.generateCaptcha();
+          }
         }
       });
     }
@@ -326,3 +340,4 @@ export class LoginComponent implements OnDestroy {
       return this.loginDetailsForm.get('username')?.value;
     }
 }
+

@@ -435,6 +435,7 @@ export class OtherauditapshqrsdeskComponent implements OnInit {
       case 'In Progress':      return 'badge-audit';
       case 'Observation APS':  return 'badge-obs';
       case 'Observation CASO': return 'badge-obs-draft';
+      case 'Observation SECTOR': return 'badge-obs';
       case 'Action Required':  return 'badge-warn';
       case 'Completed':        return 'badge-done';
       default:                 return 'badge-secondary';

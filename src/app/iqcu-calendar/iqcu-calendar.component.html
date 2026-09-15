@@ -1,0 +1,109 @@
+<main class="calendar-page">
+  <header class="page-heading">
+    <div class="heading-icon"><i class="fa-solid fa-calendar-days"></i></div>
+    <div>
+      <span class="eyebrow">IQCU</span>
+      <h1>IQCU Calendar Management</h1>
+      <p>Upload and manage year-wise IQCU annual calendar PDFs.</p>
+    </div>
+  </header>
+
+  @if (isCalendarManager) {
+    <section class="upload-card">
+      <h2><i class="fa-solid fa-upload"></i> Upload calendar</h2>
+      <div class="upload-row">
+        <div class="field">
+          <label for="calendarYear">Calendar year</label>
+          <select id="calendarYear" [(ngModel)]="selectedYear">
+            <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="calendarFile">PDF file</label>
+          <input id="calendarFile" type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)">
+          @if (fileError) { <small class="field-error">{{ fileError }}</small> }
+        </div>
+        <button type="button" class="primary" [disabled]="!selectedFile || isUploading" (click)="uploadCalendar()">
+          <i class="fa-solid" [ngClass]="isUploading ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-up'"></i>
+          {{ isUploading ? 'Uploading…' : 'Upload' }}
+        </button>
+      </div>
+      <p class="hint">A newly uploaded calendar is inactive by default - activate it below to make it live on the dashboard.</p>
+    </section>
+  }
+
+  <section class="list-card">
+    <div class="list-card-header">
+      <h2><i class="fa-solid fa-list"></i> All calendars</h2>
+      @if (calendars.length > 0) {
+        <div class="page-size-field">
+          <label for="pageSize">Show</label>
+          <select id="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
+            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
+          </select>
+        </div>
+      }
+    </div>
+
+    @if (isLoading) {
+      <p class="empty-state">Loading…</p>
+    } @else if (calendars.length === 0) {
+      <p class="empty-state">No calendars uploaded yet.</p>
+    } @else {
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>File name</th>
+              <th>Upload date</th>
+              <th>Status</th>
+              <th>View</th>
+              @if (isCalendarManager) { <th>Action</th> }
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cal of calendars | slice: (page - 1) * pageSize : page * pageSize">
+              <td>{{ cal.calendarYear }}</td>
+              <td>{{ cal.fileName }}</td>
+              <td>{{ cal.uploadedAt }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="cal.active ? 'status-active' : 'status-inactive'">
+                  {{ cal.active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="link-btn" (click)="view(cal)">
+                  <i class="fa-solid fa-eye"></i> View
+                </button>
+              </td>
+              @if (isCalendarManager) {
+                <td>
+                  @if (cal.active) {
+                    <button type="button" class="secondary small" (click)="deactivate(cal)">Deactivate</button>
+                  } @else {
+                    <button type="button" class="primary small" (click)="activate(cal)">Activate</button>
+                  }
+                </td>
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPages > 1) {
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="page === 1">
+            <button type="button" class="page-link" (click)="prevPage()">Prev</button>
+          </li>
+          <li class="page-item" *ngFor="let p of visiblePages" [class.active]="p === page">
+            <button type="button" class="page-link" (click)="goToPage(p)">{{ p }}</button>
+          </li>
+          <li class="page-item" [class.disabled]="page === totalPages">
+            <button type="button" class="page-link" (click)="nextPage()">Next</button>
+          </li>
+        </ul>
+      }
+    }
+  </section>
+</main>

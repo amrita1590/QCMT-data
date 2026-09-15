@@ -1,5 +1,36 @@
-.alert {
-    color: #820000;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
+:host { display:block; }
+.unit-master-page { min-height:100%; padding:24px 28px 42px; color:#172b3d; background:#f3f7fb; }
+.page-topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:20px; }
+.back-btn { display:inline-flex; min-height:38px; flex:0 0 auto; align-items:center; gap:8px; margin-top:6px; padding:9px 13px; color:#176fc1; border:1px solid #d8e7f6; border-radius:9px; background:#eaf3ff; font-size:13px; font-weight:600; text-decoration:none; transition:.18s ease; }
+.back-btn:hover { color:#0d5597; background:#dcecff; transform:translateX(-2px); }
+.page-heading { display:flex; min-width:0; align-items:center; gap:14px; margin:0; }
+.heading-icon { display:grid; width:48px; height:48px; flex:0 0 48px; place-items:center; color:#fff; border-radius:13px; background:linear-gradient(135deg,#176fc1,#0d4d83); box-shadow:0 8px 18px rgba(23,111,193,.22); font-size:20px; }
+.eyebrow { color:#287fc8; font-size:10px; font-weight:800; letter-spacing:1.4px; }
+.page-heading h1 { margin:2px 0 3px; color:#102a43; font-size:27px; font-weight:750; }
+.page-heading p { margin:0; color:#62778b; font-size:13px; }
+.unit-form-card { overflow:hidden; margin-bottom:24px; border:1px solid #d9e4ee; border-radius:14px; background:#fff; box-shadow:0 8px 24px rgba(30,60,90,.07); }
+.section-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; border-bottom:1px solid #e3ebf2; background:linear-gradient(90deg,#f8fbff,#fff); }
+.section-heading h2 { margin:0 0 4px; color:#143a5d; font-size:17px; font-weight:750; }
+.section-heading h2 i { margin-right:8px; color:#247bc4; }
+.section-heading p { margin:0; color:#718397; font-size:12px; }
+.form-mode { padding:6px 10px; color:#176fc1; border-radius:20px; background:#e7f2ff; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.45px; white-space:nowrap; }
+.form-mode.edit-mode { color:#9a6700; background:#fff3cd; }
+form { padding:22px; }
+.form-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px 20px; }
+.field-group { min-width:0; }
+.field-wide { grid-column:span 2; }
+.field-group label { display:block; margin-bottom:7px; color:#30475d; font-size:12px; font-weight:700; }
+.field-group label span { color:#dc3545; }
+.field-group .form-control,.field-group .form-select { min-height:42px; color:#243b53; border:1px solid #cbd9e6; border-radius:9px; background-color:#fff; font-size:13px; transition:.18s ease; }
+.field-group .form-control::placeholder { color:#9aa9b7; }
+.field-group .form-control:focus,.field-group .form-select:focus { border-color:#3284ce; box-shadow:0 0 0 3px rgba(50,132,206,.12); }
+.success-alert { display:flex; align-items:center; gap:9px; margin:16px 22px 0; padding:11px 13px; color:#146c43; border:1px solid #badbcc; border-radius:9px; background:#e8f6ee; font-size:12px; font-weight:600; }
+.form-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:22px; padding-top:17px; border-top:1px solid #edf1f5; }
+.form-actions .btn { display:inline-flex; min-width:108px; min-height:39px; align-items:center; justify-content:center; gap:7px; border-radius:8px; font-size:12px; font-weight:700; }
+.reset-btn { color:#526578; border:1px solid #cbd8e4; background:#fff; }
+.reset-btn:hover { color:#21384d; background:#f1f5f9; }
+.submit-btn { color:#fff; border:1px solid #176fc1; background:linear-gradient(135deg,#2086df,#176fc1); box-shadow:0 5px 12px rgba(23,111,193,.2); }
+.submit-btn:hover:not(:disabled) { color:#fff; transform:translateY(-1px); box-shadow:0 7px 15px rgba(23,111,193,.28); }
+.submit-btn:disabled { opacity:.55; box-shadow:none; }
+@media (max-width:992px) { .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:650px) { .unit-master-page { padding:18px 14px 30px; } .page-topbar { align-items:flex-start; gap:10px; } .page-heading { align-items:flex-start; } .page-heading p { display:none; } .back-btn { min-height:35px; margin-top:4px; padding:7px 10px; font-size:11px; } .form-grid { grid-template-columns:1fr; } .field-wide { grid-column:auto; } .section-heading { align-items:flex-start; } .form-actions { justify-content:stretch; } .form-actions .btn { flex:1; } }

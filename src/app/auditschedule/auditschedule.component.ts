@@ -34,18 +34,22 @@ import { APP_CONSTANTS } from '../constants/app.constants';
 import { NotificationBean } from '../interface/NotificationBean';
 import { DownloadService } from '../service/download.service';
 import { AuditObservationStatusHistory } from '../interface/AuditObservationStatusHistory';
+import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
+import { AuditRemarksPanelsComponent } from '../shared/audit-remarks-panels/audit-remarks-panels.component';
 
 @Component({
   selector: 'app-auditschedule',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, AuditRemarksPanelsComponent],
   templateUrl: './auditschedule.component.html',
   styleUrl: './auditschedule.component.css'
 })
 export class AuditscheduleComponent {
+  showAuditStatusGuide = false;
   
   constants = APP_CONSTANTS;
   baseUrl = APP_CONSTANTS.FILES.BASE_URL;
   casoResponseFilesTemp: AuditorResponseFilesTemp[] = [];
+  auditorRemarktoCASOList: AuditorRemarktoCASO[] = [];
   searchTerm: string = '';
   templateName: string = '';
   templateId: number = 0;
@@ -641,7 +645,14 @@ if (this.auditorList && this.auditorList.length > 0) {
         });
       });
       this.auditScheduleTemplate = template;
-      this.modalRef = this.modalService.open(content, { size: 'xl', backdrop: 'static', keyboard: false });
+      this.modalRef = this.modalService.open(content, {
+        size: 'xl',
+        backdrop: 'static',
+        keyboard: false,
+        centered: true,
+        scrollable: true,
+        windowClass: 'questionnaire-modal scheduled-template-modal'
+      });
   }
 
   editTemplate(content: any, id: number) {
@@ -768,14 +779,28 @@ listenForNameChanges() {
     console.log(":::::::::::::::");
     this.audittemplateReset();
     this.btnName = "Create";
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl',
+      centered: true,
+      scrollable: true,
+      backdrop: 'static',
+      keyboard: false,
+      windowClass: 'create-audit-modal'
+    });
   }
 
   createObservation(content: any, id: number) {
     console.log(":::::::::::::::");    
     this.getAuditObservationComponent(id);
     this.templateId = id;    
-    this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false,
+      centered: true,
+      scrollable: true,
+      windowClass: 'audit-summary-modal'
+    });
   }
 
   audittemplateReset() {
@@ -962,7 +987,7 @@ listenForNameChanges() {
   }
 
   get totalInProgress() {
-    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation CASO").length;
+    return this.templates.filter(t => t.auditStatus === "In Progress" || t.auditStatus === "ObservationZONE" || t.auditStatus === "Observation SECTOR" || t.auditStatus === "Observation APS" || t.auditStatus === "Observation CASO").length;
   }
 
   get totalCompleted() {
@@ -1017,21 +1042,31 @@ listenForNameChanges() {
     });
   }
 
-  printPDF() {
-
-      const printContents = document.getElementById('printSection')!.innerHTML;
+  printPDF(sectionId: string = 'printSection') {
+      const printSection = document.getElementById(sectionId);
+      if (!printSection) {
+        this.toast.show('Unable to find the content to print.', 'error');
+        return;
+      }
+      const printContents = printSection.innerHTML;
 
       const generatedBy = this.auditTemplateGen?.auditScheduleTemplate.createdBy ?? "Unknown User";           
       const generatedFrom = "QCMT App";        
       const generatedDate = new Date().toLocaleString();
     
       const popupWin = window.open('', '_blank', 'width=850,height=1100');
+      if (!popupWin) {
+        this.toast.show('Please allow popups to print or save this audit as PDF.', 'error');
+        return;
+      }
 
-      popupWin!.document.open();
-      popupWin!.document.write(`
+      popupWin.document.open();
+      popupWin.document.write(`
         
-        <html>
+        <!doctype html>
+        <html lang="en">
           <head>
+            <meta charset="utf-8">
             <title>Print</title>
 
             <style>
@@ -1053,9 +1088,22 @@ listenForNameChanges() {
               body {
                   font-family: Arial, sans-serif;
                   background: #fff !important;
-                  width: 190mm;
+                  max-width: 190mm;
                   margin: 0 auto;
+                  color: #111;
               }
+
+              .title-text {
+                  text-align: center;
+                  font-size: 18px;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  margin: 0 0 18px;
+              }
+
+              .questionnaire-section { margin-bottom: 18px; }
+              .section-title { font-size: 16px; margin: 0 0 8px; }
+              .table-responsive { overflow: visible !important; }
 
               /* ------------------------- */
               /* TABLE FIXES               */
@@ -1091,24 +1139,6 @@ listenForNameChanges() {
               }
 
               /* --------------------------------------------- */
-              /* PAGE NUMBER FALLBACK (for browsers not using 
-                  @bottom-center)
-              /* --------------------------------------------- */
-              .page-number {
-                  display: none;
-                  text-align: center;
-                  font-size: 12px;
-                  margin-top: 10px;
-              }
-
-              @media print {
-                  .page-number {
-                      display: block;
-                      page-break-after: always;
-                  }
-              }
-
-              /* --------------------------------------------- */
               /* FOOTER ONLY ON LAST PAGE                      */
               /* --------------------------------------------- */
               .footer {
@@ -1134,19 +1164,16 @@ listenForNameChanges() {
                   <div>Generated From: <b>${generatedFrom}</b></div>
               </div>
 
-              <!-- fallback page numbers -->
-              <div class="page-number"></div>
-
           </body>
         </html>
       `);
 
-      popupWin!.document.close();
-
+      popupWin.document.close();
+      popupWin.onafterprint = () => popupWin.close();
       setTimeout(() => {
-          popupWin!.print();
-          popupWin!.close();
-      }, 500);
+          popupWin.focus();
+          popupWin.print();
+      }, 300);
   }
 
   getAuditObservationComponent(id: number) {
@@ -1451,6 +1478,15 @@ loadQuestions() {
 }
   viewAuditorResponse(content: any, id: number) {
       this.selectedTemplateId = id;
+      this.auditorRemarktoCASOList = [];
+      this.auditService.getAuditorRemarksCaso(id).subscribe({
+        next: data => this.auditorRemarktoCASOList = [...(data ?? [])].sort((a, b) =>
+          new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime()),
+        error: err => {
+          console.error('Failed to fetch audit remarks', err);
+          this.toast.show('Failed to fetch audit remarks.', 'error');
+        }
+      });
       this.loadQuestions();
       this.auditService.getAuditBoardDetails(id).subscribe({
         next: (data) => {
@@ -1503,7 +1539,10 @@ loadQuestions() {
               this.modalRef = this.modalService.open(content, {
                 size: "xl",
                 backdrop: "static",
-                keyboard: false
+                keyboard: false,
+                centered: true,
+                scrollable: true,
+                windowClass: "questionnaire-modal audit-response-preview-modal"
               });
             },
   
@@ -1526,7 +1565,10 @@ loadQuestions() {
       this.modalRef = this.modalService.open(content, {
         size: "xl",
         backdrop: "static",
-        keyboard: false
+        keyboard: false,
+        centered: true,
+        scrollable: true,
+        windowClass: "questionnaire-modal audit-response-preview-modal"
       }); 
     }
 
@@ -1686,4 +1728,5 @@ loadQuestions() {
         .replace('{auditorName}', data.auditorName);
   }
 }
+
 

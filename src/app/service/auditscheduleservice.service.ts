@@ -89,6 +89,14 @@ export class AuditscheduleserviceService {
     return this.http.get<AuditScheduleTemplate[]>(this.getAuditDetailsUrl);
   }
 
+  getZoneAuditDetails(): Observable<AuditScheduleTemplate[]> {
+    return this.http.get<AuditScheduleTemplate[]>('/v1/qcmt/master/getzoneaudittemplates');
+  }
+
+  getSectorAuditDetails(): Observable<AuditScheduleTemplate[]> {
+    return this.http.get<AuditScheduleTemplate[]>('/v1/qcmt/master/getsectoraudittemplates');
+  }
+
   getAuditorAuditDetails():Observable<AuditScheduleTemplate[]> {
     return this.http.get<AuditScheduleTemplate[]>(this.getAuditorAuditDetailsUrl);
   }
@@ -206,6 +214,10 @@ deleteQuestion(questionId: number) {
    saveAuditorRemarksCaso(auditorRemarktoCASOBean: AuditorRemarktoCASO):Observable<any> {
        console.log("Inside Audit Details Service ::");
        return this.http.post(this.saveAuditorRemarksCASOUrl, auditorRemarktoCASOBean, { responseType: 'text' });
+   }
+
+   routeZoneObservation(destination: 'APS' | 'CASO', request: AuditorRemarktoCASO): Observable<any> {
+      return this.http.post(`/v1/qcmt/master/routezoneobservation/${destination}`, request);
    }
 
    getAuditorRemarksCaso(id: number):Observable<AuditorRemarktoCASO[]> {

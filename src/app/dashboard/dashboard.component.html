@@ -5,7 +5,6 @@
 </div>
 
 <div class="dashboard-container">
-<div class="dashboard-container">
 
   <!-- Header -->
   <div class="dashboard-header">
@@ -32,62 +31,98 @@
 
         <div class="notification-dropdown" *ngIf="showNotifications">
           <div class="dropdown-header">
-            Notifications
+            <div class="notification-header-icon"><i class="fa fa-bell"></i></div>
+            <div><span>ACTIVITY CENTRE</span><h3>Notifications</h3></div>
+            <strong>{{ notificationList?.length || 0 }}</strong>
           </div>
 
           <div class="notification-body">
             <div class="notification-item" *ngFor="let item of notificationList">
-              <div class="message">{{ item.title }}</div>
-              <div class="time">{{ item.createdOn }}</div>
+              <span class="notification-event-icon"><i class="fa fa-check"></i></span>
+              <div class="notification-copy"><div class="message">{{ item.title }}</div><div class="time"><i class="fa fa-clock-o"></i>{{ item.createdOn }}</div></div>
             </div>
+            <div class="notification-empty" *ngIf="!notificationList?.length"><i class="fa fa-bell-slash-o"></i><strong>No new notifications</strong><span>You are all caught up.</span></div>
           </div>
 
-          <div class="dropdown-footer" (click)="showAllNotificationPopup(showAllNotification)">
-            View All Notifications
-          </div>
+          <button type="button" class="dropdown-footer" (click)="showAllNotificationPopup(showAllNotification)"><span>View all notifications</span><i class="fa fa-arrow-right"></i></button>
         </div>
       </div>
-    </div>    
+      <div ngbDropdown class="account-dropdown" placement="bottom-end" (openChange)="$event && (showNotifications = false)">
+        <button type="button" class="account-toggle" id="accountMenuToggle" ngbDropdownToggle aria-label="Open account menu">
+          <span class="account-avatar" aria-hidden="true">{{ (usernameData || 'U').charAt(0) | uppercase }}</span>
+          <span class="account-name">{{ usernameData || 'My Account' }}</span>
+        </button>
+        <div ngbDropdownMenu aria-labelledby="accountMenuToggle" class="account-menu">
+          <div class="account-menu-header">
+            <span class="account-caption">Signed in as</span>
+            <strong>{{ usernameData || 'My Account' }}</strong>
+          </div>
+          <a ngbDropdownItem routerLink="/profile"><i class="bi bi-person" aria-hidden="true"></i>Profile</a>
+          <a ngbDropdownItem routerLink="/changepassword"><i class="bi bi-key" aria-hidden="true"></i>Change Password</a>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- IQCU Calendar - visible to every role, not just APS HQrs (see /iqcucalendar for management) -->
+  <div class="iqcu-calendar-banner">
+    @if (calendarLoading) {
+      <span class="iqcu-calendar-loading"><i class="fa-solid fa-calendar-days"></i> Loading IQCU calendar…</span>
+    } @else if (activeCalendar) {
+      <button type="button" class="iqcu-calendar-link" (click)="viewActiveCalendar(calendarViewerModal)">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>IQCU Calendar {{ currentCalendarYear }}</span>
+        <i class="fa-solid fa-eye iqcu-calendar-open-icon"></i>
+      </button>
+    } @else {
+      <span class="iqcu-calendar-empty"><i class="fa-solid fa-calendar-xmark"></i> No active IQCU calendar available for {{ currentCalendarYear }}.</span>
+    }
+  </div>
+
   <!-- Top Stats -->
   <div class="stats-grid">
 
-  <div class="stat-card">
+  <div class="stat-card accent-blue dashboard-metric-card">
     <div class="card-top-border"></div>
 
-    <div class="card-content">
-      <div>
-  
-  @if (dashboardBean?.totalAirport === '1') {
-    <h5>{{ dashboardBean?.asgname }}</h5>
-  } @else {
-    <h4>Total Airports</h4>
-    <h2>{{ dashboardBean?.totalAirport ?? '0' }}</h2>
-    <p class="sub">Under CISF security</p>
-  }
-
+    <div class="card-content metric-card-content">
+      <div class="metric-card-main">
+        <div class="metric-card-header">
+          <h4>Total Airports</h4>
+          <div class="icon-box"><i class="fa-solid fa-plane-departure"></i></div>
+        </div>
+        <h2>{{ dashboardBean?.totalAirport ?? '0' }}</h2>
+        @if (dashboardBean?.totalAirport === '1') {
+          <p class="sub">{{ dashboardBean?.asgname }}</p>
+        } @else {
+          <p class="sub">Airports under CISF security</p>
+        }
       </div>
-
-      <div class="icon-box">
-        <i class="fa-solid fa-plane-departure"></i>
+      <div class="metric-card-footer">
+        <span class="metric-footer-icon blue"><i class="fa-solid fa-shield-halved"></i></span>
+        <span>Monitored airport network</span>
       </div>
     </div>
   </div>
 
    <!-- CARD 2 -->
-  <div class="stat-card">
+  <div class="stat-card accent-purple dashboard-metric-card">
     <div class="card-top-border"></div>
 
-    <div class="card-content">
-      <div>
-        <h4>Total Observations</h4>
+    <div class="card-content metric-card-content">
+      <div class="metric-card-main">
+        <div class="metric-card-header">
+          <h4>Total Observations</h4>
+          <div class="icon-box"><i class="fa-regular fa-clipboard"></i></div>
+        </div>
         <h2>{{dashboardBean?.totalObservation || 0}}</h2>
         <p class="sub">Across all audit types</p>
-        <p class="change red">{{dashboardBean?.totalObservationLast30Days || 0}}% vs last 30 days</p>
       </div>
-
-      <div class="icon-box">
-        <i class="fa-regular fa-clipboard"></i>
+      <div class="metric-card-footer">
+        <span class="metric-footer-icon purple"><i class="fa-solid fa-chart-line"></i></span>
+        <span class="change red">
+          {{dashboardBean?.totalObservationLast30Days || 0}}% vs last 30 days
+        </span>
       </div>
     </div>
   </div>
@@ -110,19 +145,24 @@
   </div> -->
 
   <!-- CARD 4 -->
-  <div class="stat-card">
+  <div class="stat-card accent-green dashboard-metric-card">
     <div class="card-top-border"></div>
 
-    <div class="card-content">
-      <div>
-        <h4>Compliance %</h4>
+    <div class="card-content metric-card-content">
+      <div class="metric-card-main">
+        <div class="metric-card-header">
+          <h4>Compliance Rate</h4>
+          <div class="icon-box success"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        </div>
         <h2 class="green-text">{{dashboardBean?.averageCompliance || 0}}%</h2>
         <p class="sub">Overall compliance rate</p>
-        <p class="change green">{{dashboardBean?.averageComplianceLast30Days || 0}}% vs last 30 days</p>
       </div>
-
-      <div class="icon-box success">
-        <i class="fa-solid fa-arrow-trend-up"></i>
+      <div class="metric-progress" role="progressbar" aria-label="Overall compliance rate" [attr.aria-valuenow]="dashboardBean?.averageCompliance || 0" aria-valuemin="0" aria-valuemax="100">
+        <span [style.width.%]="dashboardBean?.averageCompliance || 0"></span>
+      </div>
+      <div class="metric-card-footer">
+        <span class="metric-footer-icon green"><i class="fa-solid fa-circle-check"></i></span>
+        <span class="change green">{{dashboardBean?.averageComplianceLast30Days || 0}}% vs last 30 days</span>
       </div>
     </div>
   </div>
@@ -132,8 +172,8 @@
   <h3 class="title mb-4">Audit Types Overview</h3>
   
   <div class="audit-grid">-->
-  <div *ngFor="let item of auditCards">
-<div *ngIf="item.title === 'IQCU'"  [ngStyle]="{'border-top-color': item.color}" class="audit-card">
+  <ng-container *ngFor="let item of auditCards">
+<div *ngIf="item.title === 'IQCU'" [ngStyle]="{'--audit-accent': item.color, 'border-top-color': item.color}" class="audit-card dashboard-iqcu-card">
     <!-- Title + Badge -->
     <div class="card-header">
       <h3 [ngStyle]="{'color': item.color}">{{ item.title }}</h3>
@@ -171,9 +211,9 @@
     <div class="footer-row">
       <span class="audit-date">Last Audit: {{ item.lastAudit }}</span>
       <a class="view-link" (click)="openObservationDetails(showObservationDetails,item.title,item.subtitle)">View Details →</a>
-    </div></div>
+    </div>
 
-  </div></div>
+  </div></ng-container></div>
 
   <!--</div>-->
 
@@ -183,16 +223,37 @@
   <!-- LEFT SIDE : Recent Observations -->
   <div class="recent-box">
 
-    <h3 class="title"><b>Upcoming Audit</b></h3>
-    <p class="subtitle">upcoming audit findings across airports</p>
+    <div class="upcoming-header">
+      <div>
+        <span class="upcoming-eyebrow">Audit Calendar</span>
+        <h3 class="title">Upcoming Audits</h3>
+        <p class="subtitle">The next seven scheduled audits across airports</p>
+      </div>
+      <span class="upcoming-limit-badge"><i class="fa-regular fa-calendar-check me-2"></i>Next 7</span>
+    </div>
 
-    <div class="obs-item" *ngFor="let obs of dashboardBean?.upcomingAuditTemplate">
-      
+    <div class="upcoming-summary" aria-label="Upcoming audit summary">
+      <div class="upcoming-summary-item total">
+        <span class="summary-icon"><i class="fa-solid fa-list-check"></i></span>
+        <span><strong>{{ upcomingTotalCount }}</strong><small>Total scheduled</small></span>
+      </div>
+      <div class="upcoming-summary-item planned">
+        <span class="summary-icon"><i class="fa-regular fa-calendar"></i></span>
+        <span><strong>{{ upcomingPlannedCount }}</strong><small>Planned</small></span>
+      </div>
+      <div class="upcoming-summary-item attention">
+        <span class="summary-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <span><strong>{{ upcomingAttentionCount }}</strong><small>Need attention</small></span>
+      </div>
+    </div>
+
+    <div class="obs-item" [ngClass]="obs.auditType.replace(' ','')" *ngFor="let obs of upcomingAuditList">
+
       <div class="obs-left">
         <span class="obs-badge" [ngClass]="obs.auditType.replace(' ','')">{{ obs.auditType }}</span>
         <span class="obs-code">{{ obs.name }}</span>
 
-        <div class="obs-title">{{ getShortText(obs.auditDescription) }}</div>
+        <div class="obs-title" [title]="obs.auditDescription">{{ obs.auditDescription }}</div>
         <div class="obs-airport">{{ obs.unitName }}</div>
       </div>
 
@@ -216,6 +277,9 @@
               <div *ngIf="obs.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="obs.auditStatus.replace(' ','')">
                 <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}
               </div>
+              <div *ngIf="obs.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR d-flex align-items-center justify-content-between">
+                <i class="fa-solid fa-circle-exclamation"></i>{{ obs.auditStatus }}
+              </div>
         </span>
         <span class="obs-due">Due: {{ obs.auditMonth }}</span>
       </div>
@@ -224,41 +288,82 @@
     <!--Add popup to this button-->
     <!-- <div class="view-more">View all Upcoming Audit's →</div> -->
 
-    <div class="view-more-link obs-item" (click)="createModal(statusAuditTemplate)">
-      📊 View All Unit IQCU Audit Status for the Current Year →
-    </div><br/>
-<div class="view-more-link obs-item">
- <a href="/iqcuauditlist" style="text-decoration: none;">
-    📊 View All Unit IQCU Audit details →
-  </a>
-</div> 
+    <div class="iqcu-quick-actions">
+      <button type="button" class="iqcu-quick-action status-action" (click)="createModal(statusAuditTemplate)">
+        <span class="quick-action-icon"><i class="fa-solid fa-chart-column"></i></span>
+        <span class="quick-action-copy">
+          <strong>Annual Audit Status</strong>
+          <small>View the current year status for every unit</small>
+        </span>
+        <i class="fa-solid fa-arrow-right quick-action-arrow"></i>
+      </button>
+
+      <a class="iqcu-quick-action details-action" routerLink="/iqcuauditlist">
+        <span class="quick-action-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+        <span class="quick-action-copy">
+          <strong>IQCU Audit Details</strong>
+          <small>Open schedules, responses and audit records</small>
+        </span>
+        <i class="fa-solid fa-arrow-right quick-action-arrow"></i>
+      </a>
+    </div>
 
     
 
   </div>
 <ng-template #statusAuditTemplate let-modal>
-  <div class="modal-header bg-primary text-white">
-    <h5 class="modal-title">
-      <i class="fa fa-calendar-check me-2"></i> IQCU Audit Schedule
-    </h5>
+  <div class="modal-header iqcu-schedule-header">
+    <div class="iqcu-schedule-heading">
+      <span class="iqcu-schedule-eyebrow">Annual Audit Calendar</span>
+      <h5 class="modal-title"><i class="fa fa-calendar-check me-2"></i>IQCU Audit Schedule</h5>
+      <p>Track proposed dates, conducted dates, and the current schedule position for every unit.</p>
+    </div>
     <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
   </div>
 
-  <div class="modal-body">
+  <div class="modal-body iqcu-schedule-body">
 
-    <div class="table-responsive shadow-sm rounded">
-      <table class="table table-hover table-bordered align-middle text-center">
+    <div class="schedule-summary-grid">
+      <button type="button" class="schedule-summary-card total" [class.active]="selectedScheduleStatus === 'ALL'"
+              [attr.aria-pressed]="selectedScheduleStatus === 'ALL'" (click)="filterScheduleByStatus('ALL')" title="Show all units">
+        <span class="schedule-summary-icon"><i class="fa-solid fa-building-shield"></i></span>
+        <span><strong>{{ dashboardBean?.unitAuditCurrentStatuslist?.length || 0 }}</strong><small>Total Units</small></span>
+      </button>
+      <button type="button" class="schedule-summary-card scheduled" [class.active]="selectedScheduleStatus === 'SCHEDULED'"
+              [attr.aria-pressed]="selectedScheduleStatus === 'SCHEDULED'" (click)="filterScheduleByStatus('SCHEDULED')" title="Show scheduled audits">
+        <span class="schedule-summary-icon"><i class="fa-regular fa-calendar"></i></span>
+        <span><strong>{{ getScheduleStatusCount('SCHEDULED') }}</strong><small>Scheduled</small></span>
+      </button>
+      <button type="button" class="schedule-summary-card due" [class.active]="selectedScheduleStatus === 'DUE'"
+              [attr.aria-pressed]="selectedScheduleStatus === 'DUE'" (click)="filterScheduleByStatus('DUE')" title="Show due audits">
+        <span class="schedule-summary-icon"><i class="fa-regular fa-clock"></i></span>
+        <span><strong>{{ getScheduleStatusCount('DUE') }}</strong><small>Due</small></span>
+      </button>
+      <button type="button" class="schedule-summary-card overdue" [class.active]="selectedScheduleStatus === 'OVERDUE'"
+              [attr.aria-pressed]="selectedScheduleStatus === 'OVERDUE'" (click)="filterScheduleByStatus('OVERDUE')" title="Show overdue audits">
+        <span class="schedule-summary-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <span><strong>{{ getScheduleStatusCount('OVERDUE') }}</strong><small>Overdue</small></span>
+      </button>
+      <button type="button" class="schedule-summary-card completed" [class.active]="selectedScheduleStatus === 'COMPLETED'"
+              [attr.aria-pressed]="selectedScheduleStatus === 'COMPLETED'" (click)="filterScheduleByStatus('COMPLETED')" title="Show completed audits">
+        <span class="schedule-summary-icon"><i class="fa-regular fa-circle-check"></i></span>
+        <span><strong>{{ getScheduleStatusCount('COMPLETED') }}</strong><small>Completed</small></span>
+      </button>
+    </div>
+
+    <div class="table-responsive iqcu-schedule-table-wrap">
+      <table class="table table-hover align-middle iqcu-schedule-table">
 
         <thead>
-          <tr class="table-primary text-dark">
+          <tr>
             <th rowspan="2">Unit</th>
             <th rowspan="2">Audit Name</th>
             <th rowspan="2">Annual Calendar</th>
-            <th colspan="2">📅 Proposed by Auditor</th>
-            <th colspan="2">📅 Actual Conducted</th>
+            <th colspan="2"><i class="fa-regular fa-calendar me-1"></i>Proposed by Auditor</th>
+            <th colspan="2"><i class="fa-regular fa-calendar-check me-1"></i>Actual Conducted</th>
             <th rowspan="2">Status</th>
           </tr>
-          <tr  class="table-primary text-dark">
+          <tr>
             <th>From</th>
             <th>To</th>
             <th>From</th>
@@ -267,21 +372,25 @@
         </thead>
 
         <tbody>
-          <tr *ngFor="let unitAudits of dashboardBean?.unitAuditCurrentStatuslist">
-            <td class="fw-semibold">{{ unitAudits.unitname }}</td>
-            <td>{{ unitAudits.name }}</td>
-            <td class="text-muted">{{ unitAudits.auditMonth | date:'MMM-yyyy'}}</td>
+          <tr *ngFor="let unitAudits of filteredUnitAuditStatuses">
+            <td class="unit-name-cell">{{ unitAudits.unitname }}</td>
+            <td class="audit-calendar-name" [class.no-schedule]="!unitAudits.name">{{ unitAudits.name || 'No audit scheduled' }}</td>
+            <td class="calendar-month">{{ unitAudits.auditMonth ? (unitAudits.auditMonth | date:'MMM-yyyy') : '—' }}</td>
 
-            <td>{{ unitAudits.schedulefromDate | date:'dd-MMM-yyyy' }}</td>
-            <td>{{ unitAudits.scheduletoDate | date:'dd-MMM-yyyy' }}</td>
+            <td>{{ unitAudits.schedulefromDate ? (unitAudits.schedulefromDate | date:'dd-MMM-yyyy') : '—' }}</td>
+            <td>{{ unitAudits.scheduletoDate ? (unitAudits.scheduletoDate | date:'dd-MMM-yyyy') : '—' }}</td>
 
-            <td>{{ unitAudits.fromDate | date:'dd-MMM-yyyy'}}</td>
-            <td>{{ unitAudits.toDate | date:'dd-MMM-yyyy' }}</td>
+            <td>{{ unitAudits.fromDate ? (unitAudits.fromDate | date:'dd-MMM-yyyy') : '—' }}</td>
+            <td>{{ unitAudits.toDate ? (unitAudits.toDate | date:'dd-MMM-yyyy') : '—' }}</td>
 
             <td>
-            <span [ngClass]="getAuditStatusClass(unitAudits.auditStatus)">
-  {{ unitAudits.auditStatus }}
-</span>
+            <span class="schedule-status-pill" [ngClass]="getAuditStatusClass(unitAudits.auditStatus)">{{ unitAudits.auditStatus }}</span>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUnitAuditStatuses.length === 0">
+            <td colspan="8" class="schedule-empty-state">
+              <i class="fa-regular fa-folder-open"></i>
+              No {{ selectedScheduleStatus === 'ALL' ? '' : selectedScheduleStatus.toLowerCase() }} audit records found.
             </td>
           </tr>
         </tbody>
@@ -289,29 +398,31 @@
       </table>
     </div>
 
-    <!-- Info Card -->
-    <div class="card mt-3 border-0 shadow-sm">
-      <div class="card-body">
-        <h6 class="fw-bold text-primary mb-2">ℹ️ Status Guide</h6>
-        <ul class="mb-0 small">
-          <li><b>Scheduled:</b> Planned for future</li>
-          <li><b>Due:</b> It will complete in current month</li>
-          <li><b>Overdue:</b> Pending from past month</li>
-          <li><b>Completed:</b> Report submitted by Auditor</li>
-          
-        </ul>
-      </div>
+    <div class="schedule-legend">
+      <strong><i class="fa-solid fa-circle-info me-2"></i>Status meaning</strong>
+      <span><i class="legend-dot scheduled"></i><b>Scheduled</b> Planned for a future date</span>
+      <span><i class="legend-dot due"></i><b>Due</b> Expected in the current month</span>
+      <span><i class="legend-dot overdue"></i><b>Overdue</b> Pending beyond its planned month</span>
+      <span><i class="legend-dot completed"></i><b>Completed</b> Audit report has been submitted</span>
+      <span><i class="legend-dot not-scheduled"></i><b>Not Scheduled</b> No audit dates assigned</span>
     </div>
 
   </div>
+  <div class="modal-footer iqcu-schedule-footer">
+    <span><i class="fa-solid fa-circle-info me-1"></i>Dates are shown in DD-MMM-YYYY format.</span>
+    <button type="button" class="btn btn-light border" (click)="modal.dismiss()">Close</button>
+  </div>
 </ng-template>
   <!-- RIGHT SIDE : Donut Chart -->
+  <div class="dashboard-chart-column">
   <div class="chart-box">
 
     <h3 class="title">Observation Status Distribution</h3>
     <p class="subtitle">All audit types combined</p>
 
-    <canvas id="statusChart"></canvas>
+    <div class="status-chart-container">
+      <canvas id="statusChart" role="img" aria-label="Observation status distribution. Counts are listed below."></canvas>
+    </div>
 
     <div class="chart-legend">
 
@@ -332,27 +443,50 @@
 
   </div>
 
+<section class="monthly-audit-chart-box">
+  <div class="monthly-chart-header">
+    <div>
+      <span class="monthly-chart-eyebrow">Audit Trend</span>
+      <h3 class="title">Month-wise Audit Count</h3>
+      <p class="subtitle">Audits scheduled across the previous 6 and upcoming 4 months</p>
+    </div>
+    <span class="monthly-chart-badge"><i class="fa-regular fa-calendar me-2"></i>6 past · 4 upcoming</span>
+  </div>
+  <div class="monthly-chart-scale" aria-label="Audit count color scale">
+    <span><i class="scale-dot count-one"></i>1</span>
+    <span><i class="scale-dot count-two"></i>2</span>
+    <span><i class="scale-dot count-three"></i>3</span>
+    <span><i class="scale-dot count-four"></i>4</span>
+    <span><i class="scale-dot count-five"></i>5+</span>
+  </div>
+  <div class="monthly-audit-chart-container">
+    <canvas id="monthlyAuditChart" role="img" aria-label="Bar chart showing audit counts for the current and previous five months followed by the upcoming four months."></canvas>
+  </div>
+</section>
+
 </div>
+
+</div>
+
+<app-audit-status-guide></app-audit-status-guide>
 
 </div>
 
 <ng-template #dateRangeModel let-modal>
-  <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa-solid fa-clipboard-check me-2"></i> Dashboard Date Range
-    </h5>
-    <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Dashboard Controls</span>
+      <h5 class="modal-title"><i class="fa-regular fa-calendar-days me-2"></i>Dashboard Date Range</h5>
+      <p>Choose the reporting period used for dashboard statistics.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
   </div>
-  <!-- BODY -->
-  <div class="modal-body pt-2">
-    <br/>
-    <div>
+  <div class="modal-body dashboard-modal-body date-range-modal-body">
           <!-- Current Date Range -->
           <div class="current-range">
+            <i class="fa-solid fa-chart-line"></i>
             <span>
-              Data as of:
+              Current reporting period:
               <strong>{{ fromDate | date:'dd MMM yyyy' }}</strong>
               to
               <strong>{{ toDate | date:'dd MMM yyyy' }}</strong>
@@ -363,50 +497,65 @@
           <div class="date-inputs">
             <div class="input-group">
               <label>From Date</label>
-              <input type="date" [(ngModel)]="fromDate" (change)="validateDates()" />
+              <div class="dashboard-date-field"><i class="fa-regular fa-calendar"></i><input type="date" [(ngModel)]="fromDate" (change)="validateDates()" /></div>
             </div>
 
             <div class="input-group">
               <label>To Date</label>
-              <input type="date" [(ngModel)]="toDate" (change)="validateDates()" />
+              <div class="dashboard-date-field"><i class="fa-regular fa-calendar-check"></i><input type="date" [(ngModel)]="toDate" (change)="validateDates()" /></div>
             </div>
 
           </div>
 
           <!-- Error -->
           <div class="error-msg" *ngIf="dateError">
-            {{ dateError }}
+            <i class="fa-solid fa-circle-exclamation me-1"></i>{{ dateError }}
           </div>
-    </div>
   </div>
-  <!-- FOOTER -->
-  <div class="modal-footer border-0 mt-2">
-    <button type="submit" class="btn btn-primary me-2" (click)="applyFilter()"><i class="fa fa-calendar ms-1 pointer me-2"></i> Apply</button>
-    <button class="btn btn-light border px-4" (click)="modal.dismiss()">
-      <i class="fa-solid fa-xmark"></i>&nbsp;Close
-    </button>
+  <div class="modal-footer dashboard-modal-footer">
+    <button class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+    <button type="button" class="btn btn-primary" (click)="applyFilter()"><i class="fa-solid fa-filter me-2"></i>Apply Range</button>
   </div>
 
 </ng-template>
 
-<ng-template #showObservationDetails let-modal>
-  <!-- HEADER -->
-  <div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa-solid fa-clipboard-check me-2"></i> {{auditType}} - Observation Summary
-    </h5>
-    <!-- CLOSE BUTTON -->
-     <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+<ng-template #calendarViewerModal let-modal>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">IQCU</span>
+      <h5 class="modal-title"><i class="fa-solid fa-calendar-days me-2"></i>IQCU Calendar {{ currentCalendarYear }}</h5>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closeCalendarViewer(modal)"></button>
   </div>
-  <!-- BODY -->
-  <div class="modal-body pt-2">
-    <br/>
+  <div class="modal-body dashboard-modal-body calendar-viewer-body">
+    @if (!calendarViewerUrl) {
+      <div class="calendar-viewer-loading">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        <p>Loading calendar…</p>
+      </div>
+    } @else {
+      <iframe class="calendar-viewer-iframe" [src]="calendarViewerUrl" type="application/pdf"></iframe>
+    }
+  </div>
+  <div class="modal-footer dashboard-modal-footer">
+    <button class="btn btn-light border" (click)="closeCalendarViewer(modal)">Close</button>
+  </div>
+</ng-template>
+
+<ng-template #showObservationDetails let-modal>
+  <div class="modal-header dashboard-modal-header observation-summary-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Audit Performance</span>
+      <h5 class="modal-title"><i class="fa-solid fa-clipboard-check me-2"></i>{{auditType}} Observation Summary</h5>
+      <p>Airport-level observation totals and compliance performance.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body dashboard-modal-body observation-summary-body">
     <div>
           <!-- Current Date Range -->
-          <div class="current-range">
-            <span>
-             {{auditSubtitle}}
-            </span>
+          <div class="current-range observation-subtitle-bar">
+            <i class="fa-solid fa-shield-halved"></i><span>{{auditSubtitle}}</span>
           </div>
           <div class="summary-cards">
             <!-- Total Airports -->
@@ -444,7 +593,7 @@
 
                 <!-- Header -->
                 <div class="card-header">
-                  <span class="airport-name">✈ {{ airport.airportName }}</span>
+                  <span class="airport-name"><i class="fa-solid fa-plane-departure me-2"></i>{{ airport.airportName }}</span>
                 </div>
 
                 <!-- Stats -->
@@ -488,38 +637,36 @@
           
     </div>
   </div>
-  <!-- FOOTER -->
-  <div class="modal-footer border-0 mt-2">
-    <button class="btn btn-light border px-4" (click)="modal.dismiss()">
-      <i class="fa-solid fa-xmark"></i>&nbsp;Close
-    </button>
+  <div class="modal-footer dashboard-modal-footer">
+    <span>{{ airportList?.length || 0 }} airport records displayed</span>
+    <button class="btn btn-light border" (click)="modal.dismiss()">Close</button>
   </div>
 
 </ng-template>
 
 <!-- Popup Modal -->
 <ng-template #showAllNotification let-modal>
-<div class="notification-overlay">
-  <div class="notification-popup">
-
-    <div class="popup-header">
-      <h3><i class="fa fa-bell bell-icon"></i> Notifications</h3>
-      <span class="close-btn" (click)="modal.dismiss()">✕</span>
+    <div class="modal-header dashboard-modal-header notification-modal-header">
+      <div class="dashboard-modal-heading">
+        <span class="dashboard-modal-eyebrow">Activity Centre</span>
+        <h5 class="modal-title"><i class="fa-regular fa-bell me-2"></i>All Notifications</h5>
+        <p>Recent audit updates and workflow activity.</p>
+      </div>
+      <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
     </div>
-    <div class="popup-body">
+    <div class="modal-body dashboard-modal-body notification-modal-body">
       <div class="notification-card" *ngFor="let item of allNotificationList">
-        <div class="message">{{ item.title }}</div>
-        <div class="time">{{ item.createdOn }}</div>
+        <span class="notification-card-icon"><i class="fa-solid fa-bell"></i></span>
+        <div class="notification-card-copy"><div class="message">{{ item.title }}</div><div class="time"><i class="fa-regular fa-clock me-1"></i>{{ item.createdOn }}</div></div>
+      </div>
+      <div class="dashboard-empty-state" *ngIf="!allNotificationList?.length">
+        <i class="fa-regular fa-bell-slash"></i><strong>No notifications</strong><span>You are all caught up.</span>
       </div>
     </div>
 
-    <div class="popup-footer">
-      <button class="btn btn-light border px-4" (click)="modal.dismiss()">
-        <i class="fa-solid fa-xmark"></i>&nbsp;Close
-      </button>
+    <div class="modal-footer dashboard-modal-footer">
+      <span>{{ allNotificationList?.length || 0 }} notifications</span>
+      <button class="btn btn-light border" (click)="modal.dismiss()">Close</button>
     </div>
-
-  </div>
-</div>
 </ng-template>
   

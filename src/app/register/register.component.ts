@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import { AbstractControl, AsyncValidatorFn, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import { User } from '../interface/User';
 import { UsermanagementService } from '../service/usermanagement.service';
 import { CommonModule } from '@angular/common';
 import { UnitService } from '../service/unit.service';
 import { UnitDetails } from '../interface/UnitDetails';
+import { Observable, of, timer } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-register',
@@ -41,6 +43,7 @@ zones:string[]=[];
     status = false;
     confirmPasswordError = false;
     isSubmitting = false;
+    errorMessage = '';
     users: User[] = [];
     userDetailsForm: FormGroup;
 
@@ -103,7 +106,7 @@ handleScopeChange(scope: any) {
     constructor(private fb: FormBuilder, private umService: UsermanagementService, private unitService: UnitService) {
      this.userDetailsForm = this.fb.group(
     {
-      username: ['', [Validators.required, Validators.minLength(4)]],
+      fullName: ['', [Validators.required, Validators.minLength(4)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmpassword: ['', [Validators.required, Validators.minLength(6)]],
       email: ['', [Validators.required, Validators.email]],
@@ -114,7 +117,7 @@ handleScopeChange(scope: any) {
       organizationName: ['CISF'],
       address: [''],
       rank: ['', Validators.required],
-      cisfno: ['', [Validators.required, Validators.maxLength(9)]],
+      cisfno: ['', [Validators.required, Validators.pattern(/^[0-9]{9}$/)], [this.cisfNoExistsValidator()]],
       sector: [{ value: '', disabled: true }],
       zone: [{ value: '', disabled: true }],
       userscopelevel: ['', Validators.required],
@@ -138,6 +141,24 @@ handleScopeChange(scope: any) {
     
     console.log('Selected rank details:', selectedRank);
   }
+    /**
+     * Debounced so it doesn't hit the backend on every keystroke - only runs once the control is
+     * already sync-valid (Angular skips async validators while sync errors exist), so this never
+     * fires on a partial/invalid CISF number.
+     */
+    private cisfNoExistsValidator(): AsyncValidatorFn {
+      return (control: AbstractControl): Observable<ValidationErrors | null> => {
+        if (!control.value) {
+          return of(null);
+        }
+        return timer(400).pipe(
+          switchMap(() => this.umService.checkCisfNoExists(control.value)),
+          map(exists => (exists ? { cisfnoTaken: true } : null)),
+          catchError(() => of(null))
+        );
+      };
+    }
+
     passwordMatchValidator(form: FormGroup): { [key: string]: boolean } | null {
       return form.get('password')?.value === form.get('confirmpassword')?.value ? null : { 'mismatch': true };
     }
@@ -148,6 +169,7 @@ handleScopeChange(scope: any) {
 
     addUserDetails() {
       if (this.isSubmitting) return;
+      this.errorMessage = '';
 
       this.userDetailsForm.markAllAsTouched();
 
@@ -155,6 +177,9 @@ handleScopeChange(scope: any) {
         const raw = this.userDetailsForm.getRawValue();
         const user = {
           ...raw,
+          username: raw.cisfno,
+          mstr_name: raw.fullName.trim(),
+          confirmPassword: raw.confirmpassword,
           unitmaster: { id: raw.unitmaster?.id ? Number(raw.unitmaster.id) : 0 }
         };
         this.isSubmitting = true;
@@ -169,17 +194,23 @@ handleScopeChange(scope: any) {
           error: (error) => {
             console.error('Error occurred while submitting form', error);
             this.isSubmitting = false;
+            this.errorMessage = typeof error?.error === 'string' ? error.error : 'Unable to create the account. Please try again.';
           }
         });
       }
     }
 
   clearFields(): void {
-    this.userDetailsForm.reset(); // This will reset all fields to their initial values    }
+    this.userDetailsForm.reset({ fullName: '', cisfno: '', rank: '', email: '', mobileNo: '', password: '', confirmpassword: '', organizationName: 'CISF', userscopelevel: '', unitmaster: { id: '' }, sector: '', zone: '' });
+    this.handleScopeChange('');
   }
 
   get username() {
-    return this.userDetailsForm.get('username');
+    return this.userDetailsForm.get('fullName');
+  }
+  invalid(field: string): boolean {
+    const control = this.userDetailsForm.get(field);
+    return !!(control?.invalid && control.touched);
   }
   get password() {
     return this.userDetailsForm.get('password');
@@ -199,6 +230,9 @@ handleScopeChange(scope: any) {
   get rank() {
   return this.userDetailsForm.get('rank');
 }
+  get cisfno() {
+    return this.userDetailsForm.get('cisfno');
+  }
 
 
   get organizationName() {

@@ -19,6 +19,7 @@ export class UsermanagementService {
      
   private token: string | null = null;
   private registerUrl = '/v1/qcmt/auth/register'; // Use the proxy path
+  private checkCisfNoUrl = '/v1/qcmt/auth/checkcisfno';
   private loginUrl = '/v1/qcmt/auth/login';
   private captchaUrl = '/v1/qcmt/auth/captcha';
   private publicKeyUrl = '/v1/qcmt/auth/publickey';
@@ -103,6 +104,11 @@ export class UsermanagementService {
 
   addUserDetails(token: String | any): Observable<User> {
     return this.http.post<User>(this.registerUrl, token);
+  }
+
+  /** Backs the register form's live "CISF number already exists" check - see checkcisfno in AuthController. */
+  checkCisfNoExists(cisfno: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.checkCisfNoUrl}/${cisfno}`);
   }
 
   userManagement(userRoles: UserRoles): Observable<string> {

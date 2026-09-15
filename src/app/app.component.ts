@@ -41,7 +41,7 @@ export class AppComponent implements OnInit {
     this.curURL = this.router.url;
 
     if(this.curURL == '/' || this.curURL == '/about' ||    this.curURL == '/contact' ||  this.curURL == '/login' 
-      ||  this.curURL == '/updatepassword' ||  this.curURL == '/privacy' || this.curURL == '/terms') {
+      || this.curURL == '/forgot-password' || this.curURL == '/updatepassword' ||  this.curURL == '/privacy' || this.curURL == '/terms') {
       return true;
     } // Adjust the path as necessary
     return false;

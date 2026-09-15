@@ -9,6 +9,8 @@ import { StudentComponent } from './student/student.component';
 import { AuthGuard } from './service/authguard.service';
 import { SettingsComponent } from './settings/settings.component';
 import { UpdatepasswordComponent } from './login/updatepassword/updatepassword.component';
+import { UserprofileComponent } from './login/userprofile/userprofile.component';
+import { ForgotPasswordComponent } from './login/forgot-password/forgot-password.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { TermsConditionsComponent } from './terms-conditions/terms-conditions.component';
 import { UnitmasterComponent } from './master/unitmaster/unitmaster.component';
@@ -27,6 +29,7 @@ import { ChangepasswordpageComponent } from './changepassword/changepasswordpage
 import { IqcuauditlistComponent } from './iqcuaudit/iqcuauditlist/iqcuauditlist.component';
 import { OtherauditapshqrsdeskComponent } from './otherauditapshqrsdesk/otherauditapshqrsdesk.component';
 import { InternalAuditComponent } from './internal-audit/internal-audit.component';
+import { IqcuCalendarComponent } from './iqcu-calendar/iqcu-calendar.component';
 
 
 export const routes: Routes = [
@@ -34,11 +37,13 @@ export const routes: Routes = [
     {path: 'about', component: AboutComponent},
     {path: 'contact', component: ContactComponent},
     {path: 'login', component: LoginComponent},
+    {path: 'forgot-password', component: ForgotPasswordComponent},
     {path: 'updatepassword', component: UpdatepasswordComponent},
     {path: 'privacy', component: PrivacyPolicyComponent},
     {path: 'terms', component: TermsConditionsComponent},  
     {path: 'register', component: RegisterComponent, canActivate: [AuthGuard]},
     {path: 'changepassword', component: ChangepasswordpageComponent, canActivate: [AuthGuard]},
+    {path: 'profile', component: UserprofileComponent, canActivate: [AuthGuard]},
     {path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard]},
     {path: 'student', component: StudentComponent, canActivate: [AuthGuard]},
     {path: 'settings', component: SettingsComponent, canActivate: [AuthGuard]},
@@ -46,6 +51,8 @@ export const routes: Routes = [
     {path: 'categorymaster', component: CategoryComponent, canActivate: [AuthGuard]},
     {path: 'questionnairetemplate', component: QuestionnairetemplatesComponent, canActivate: [AuthGuard]},
     {path: 'auditschedule', component: AuditscheduleComponent, canActivate: [AuthGuard]},
+    {path: 'zoneboard', component: AuditboardComponent, canActivate: [AuthGuard], data: { boardScope: 'zone' }},
+    {path: 'sectorboard', component: AuditboardComponent, canActivate: [AuthGuard], data: { boardScope: 'sector' }},
     {path: 'auditboard', component: AuditboardComponent, canActivate: [AuthGuard]},
     {path: 'auditboardcaso', component: AuditBoardCasoComponent, canActivate: [AuthGuard]},
     {path: 'iqcu', component: IqcuAuditComponent, canActivate: [AuthGuard]},
@@ -54,5 +61,6 @@ export const routes: Routes = [
     {path: 'iqcuauditlist', component: IqcuauditlistComponent, canActivate: [AuthGuard]},
     {path: 'otherauditapshqrsdesk', component: OtherauditapshqrsdeskComponent, canActivate: [AuthGuard]},
     {path: 'iaudit', component: InternalAuditComponent, canActivate: [AuthGuard]},
+    {path: 'iqcucalendar', component: IqcuCalendarComponent, canActivate: [AuthGuard]},
     {path: '**', component: PageNotFoundComponentComponent, canActivate: [AuthGuard]}
 ];

@@ -1,5 +1,5 @@
 .sidenav {
-  background: #082f58;
+  background: linear-gradient(180deg, #0b365f 0%, #072b50 100%);
   transition: all 0.5s ease;
   position: fixed;
   z-index: 1;
@@ -14,40 +14,57 @@
 .sidenav .logo-container {
   display: flex;
   align-items: center;
-  padding: 0.938rem 0.938rem 0 0.938rem;
+  gap: 10px;
+  min-height: 74px;
+  padding: 12px 14px;
   width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .sidenav .logo-container .logo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  color: #123b62;
   background: #fff;
-  text-align: center;
-  width: 3rem;
-  min-width: 3rem;
-  border-radius: 0.313rem;
-  padding: 0.313rem;
-  font-size: 24px;
-  font-weight: 900;
+  border: 1px solid rgba(255,255,255,.65);
+  border-radius: 10px;
+  box-shadow: 0 5px 14px rgba(0, 15, 32, 0.2);
+  font-size: 20px;
   cursor: pointer;
-  border: none;
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
 }
+.sidenav .logo-container .logo:hover { background:#eef6ff; transform:translateY(-1px); box-shadow:0 7px 17px rgba(0,15,32,.26); }
+.sidenav .logo-container .logo:focus-visible,
+.sidebar-close:focus-visible { outline:2px solid #91c8ff; outline-offset:2px; }
 .sidenav .logo-container .logo-text {
-  margin-left: 1.5rem;
-  font-size: 24px;
-  font-weight: 700;
-  color: #fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  flex:1 1 auto;
+  min-width:0;
 }
-.sidenav .logo-container .btn-close {
-  margin-left: auto;
-  cursor: pointer;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background-color: transparent;
-  border: none;
+.sidebar-close {
+  display:grid;
+  place-items:center;
+  flex:0 0 34px;
+  width:34px;
+  height:34px;
+  padding:0;
+  margin-left:auto;
+  color:#d7e6f4;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;
+  cursor:pointer;
+  font-size:18px;
+  transition:color .18s ease,background-color .18s ease,border-color .18s ease;
 }
-.sidenav .logo-container .btn-close .fa-times {
-  color: #fff;
-  font-size: 24px;
-}
+.sidebar-close:hover { color:#fff; background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.28); }
+.sidenav-collapsed .logo-container { justify-content:center; padding-inline:18px; }
 
 .sidenav-nav {
   list-style: none;
@@ -62,8 +79,20 @@
   cursor: pointer;
 }
 .sidenav-nav .sidenav-nav-item {
+  position: relative;
   width: 100%;
-  margin-bottom: 0.625rem;
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+.sidenav-nav .sidenav-nav-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.18) 16%, rgba(255,255,255,.18) 84%, transparent);
+  pointer-events: none;
 }
 .sidenav-nav .sidenav-nav-item .sidenav-nav-link {
   display: flex;
@@ -142,20 +171,11 @@
 .logout-btn:hover {
   color: #ff6b6b;
 }
-.logo-text {
-    display: flex;          /* puts items in one line */
-    align-items: center;    /* vertical alignment */
-    gap: 8px;               /* space between logo & text */
-}
-
 .logo-text img {
-    height: 30px;           /* adjust for sidebar */
-    width: auto;
+  display:block;
+  width:auto;
+  object-fit:contain;
 }
-
-.logo-text span {
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    white-space: nowrap;    /* prevents text wrap */
-}
+.logo-text .cisf-emblem { height:34px; }
+.logo-text .esamiksha-logo { width:76px; max-height:30px; }
+.brand-divider { width:1px; height:28px; flex:0 0 1px; background:rgba(255,255,255,.22); }

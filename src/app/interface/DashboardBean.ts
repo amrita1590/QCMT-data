@@ -43,4 +43,5 @@ export interface DashboardBean {
     ICAOAuditedAirport: string;
 	unitAuditCurrentStatuslist:UnitAuditCurrentStatus[];
 	upcomingAuditTemplate: AuditScheduleTemplate[];
+	monthlyAuditCounts: { auditMonth: string; auditCount: number }[];
 }
