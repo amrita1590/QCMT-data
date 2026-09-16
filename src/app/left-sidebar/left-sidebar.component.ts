@@ -21,7 +21,7 @@ export class LeftSidebarComponent {
 
   userDetails: User | null = null;
   permissions: Permissions[] = [];
-  calendarManagerList: UserRoleDetails[] = [];
+  private allRoleDetails: UserRoleDetails[] = [];
 
   isLeftSidebarCollapsed = input.required<boolean>();
   changeIsLeftSidebarCollapsed = output<boolean>();
@@ -49,14 +49,17 @@ export class LeftSidebarComponent {
       error: (err) => console.error(err)
     });
     this.umService.getUserAuditDetailList().subscribe({
-      next: data => {
-        this.calendarManagerList = data.filter(u => u.rolename === 'APS HQrs' || u.rolename === 'ADMIN');
-      }
+      next: data => { this.allRoleDetails = data; }
     });
   }
 
+  private hasRole(...roleNames: string[]): boolean {
+    return this.allRoleDetails.some(u =>
+      Number(u.id) === Number(this.userDetails?.id) && roleNames.includes(u.rolename));
+  }
+
   get isCalendarManager(): boolean {
-    return this.calendarManagerList.some(u => Number(u.id) === Number(this.userDetails?.id));
+    return this.hasRole('APS HQrs', 'ADMIN');
   }
 
   /** Suppressed when a permission row already covers this route - same guard as zoneboard/sectorboard below. */

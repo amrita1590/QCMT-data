@@ -58,10 +58,29 @@ export class DashboardComponent {
   statusChart: any;
   monthlyAuditChart: any;
 
-  upcomingAuditList: AuditScheduleTemplate[] | null = null; 
+  private upcomingAuditsFull: AuditScheduleTemplate[] = [];
   upcomingTotalCount = 0;
   upcomingPlannedCount = 0;
   upcomingAttentionCount = 0;
+
+  private static readonly ATTENTION_STATUSES = ['Action Required', 'Observation APS', 'Observation CASO', 'ObservationZONE', 'Observation SECTOR'];
+
+  // Default view is Planned-only - clicking the "Total scheduled"/"Need attention" cards below
+  // switches this to show every status / just the attention-needing ones.
+  selectedUpcomingFilter: 'PLANNED' | 'ALL' | 'ATTENTION' = 'PLANNED';
+
+  selectUpcomingFilter(filter: 'PLANNED' | 'ALL' | 'ATTENTION'): void {
+    this.selectedUpcomingFilter = filter;
+  }
+
+  get upcomingAuditList(): AuditScheduleTemplate[] {
+    const filtered = this.selectedUpcomingFilter === 'ALL'
+      ? this.upcomingAuditsFull
+      : this.selectedUpcomingFilter === 'PLANNED'
+        ? this.upcomingAuditsFull.filter(a => a.auditStatus === 'Planned')
+        : this.upcomingAuditsFull.filter(a => DashboardComponent.ATTENTION_STATUSES.includes(a.auditStatus));
+    return filtered.slice(0, 7);
+  }
 
   auditCards : any = [];
 
@@ -210,9 +229,9 @@ export class DashboardComponent {
         this.upcomingTotalCount = upcomingAudits.length;
         this.upcomingPlannedCount = upcomingAudits.filter(audit => audit.auditStatus === 'Planned').length;
         this.upcomingAttentionCount = upcomingAudits.filter(audit =>
-          ['Action Required', 'Observation APS', 'Observation CASO', 'ObservationZONE', 'Observation SECTOR'].includes(audit.auditStatus)
+          DashboardComponent.ATTENTION_STATUSES.includes(audit.auditStatus)
         ).length;
-        this.upcomingAuditList = upcomingAudits.slice(0, 7);
+        this.upcomingAuditsFull = upcomingAudits;
         console.log('DashboardBean:', this.dashboardBean);
         this.isDashboardLoading = false;
         this.createChartView(this.dashboardBean);

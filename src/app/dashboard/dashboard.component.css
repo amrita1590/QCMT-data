@@ -1614,12 +1614,44 @@ button.iqcu-quick-action {
 
 .upcoming-summary-item {
   display: flex;
+  width: 100%;
   min-width: 0;
   align-items: center;
   gap: 9px;
   padding: 10px 11px;
   background: #f8fafc;
   border: 1px solid #e2e9f0;
+  border-radius: 9px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: .15s ease;
+}
+
+.upcoming-summary-item:hover {
+  background: #eef3f9;
+}
+
+.upcoming-summary-item.active {
+  background: #e6f1fc;
+  border-color: #236eb5;
+  box-shadow: 0 0 0 1px #236eb5 inset;
+}
+
+.upcoming-summary-item.attention.active {
+  background: #fff0e3;
+  border-color: #c65709;
+  box-shadow: 0 0 0 1px #c65709 inset;
+}
+
+.upcoming-empty-state {
+  margin: 0 0 16px;
+  padding: 16px;
+  color: #718397;
+  font-size: 12px;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #e2e9f0;
   border-radius: 9px;
 }
 

@@ -1,0 +1,171 @@
+<main class="feedback-admin-page">
+  <header class="page-heading">
+    <div class="heading-icon"><i class="fa-solid fa-inbox"></i></div>
+    <div>
+      <span class="eyebrow">ADMIN</span>
+      <h1>Manage Suggestion / Feedback</h1>
+      <p>Review and act on suggestions/feedback submitted by all users.</p>
+    </div>
+  </header>
+
+  @if (!isAdmin) {
+    <section class="denied-card">
+      <i class="fa-solid fa-lock"></i>
+      <p>Only ADMIN users can view and manage all submissions.</p>
+    </section>
+  } @else {
+    <section class="filter-card">
+      <h2><i class="fa-solid fa-filter"></i> Filters</h2>
+      <div class="filter-row">
+        <div class="field">
+          <label for="filterType">Feedback Type</label>
+          <select id="filterType" [(ngModel)]="filterType">
+            <option value="">All types</option>
+            <option value="SUGGESTION">Suggestion</option>
+            <option value="FEEDBACK">Feedback</option>
+            <option value="ISSUE">Issue / Problem</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filterStatus">Status</label>
+          <select id="filterStatus" [(ngModel)]="filterStatus">
+            <option value="">All statuses</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="UNDER_REVIEW">Under Review</option>
+            <option value="ACTION_TAKEN">Action Taken</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filterUnit">Unit/Section</label>
+          <select id="filterUnit" [(ngModel)]="filterUnit">
+            <option value="">All units</option>
+            <option *ngFor="let unit of units" [value]="unit.unitName">{{ unit.unitName }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filterFromDate">From Date</label>
+          <input id="filterFromDate" type="date" [(ngModel)]="filterFromDate" (change)="validateDateRange()">
+        </div>
+        <div class="field">
+          <label for="filterToDate">To Date</label>
+          <input id="filterToDate" type="date" [(ngModel)]="filterToDate" (change)="validateDateRange()">
+        </div>
+        <div class="field filter-actions">
+          <button type="button" class="primary" (click)="loadFeedbackList()"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
+          <button type="button" class="secondary" (click)="clearFilters()"><i class="fa-solid fa-xmark"></i> Clear</button>
+        </div>
+      </div>
+      @if (dateError) { <small class="field-error">{{ dateError }}</small> }
+    </section>
+
+    <section class="list-card">
+      <div class="list-card-header">
+        <h2><i class="fa-solid fa-list"></i> Submissions</h2>
+        @if (feedbackList.length > 0) {
+          <div class="page-size-field">
+            <label for="pageSize">Show</label>
+            <select id="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
+              <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
+            </select>
+          </div>
+        }
+      </div>
+
+      @if (isLoading) {
+        <p class="empty-state">Loading…</p>
+      } @else if (feedbackList.length === 0) {
+        <p class="empty-state">No submissions match the current filters.</p>
+      } @else {
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Unit/Section</th>
+                <th>Type</th>
+                <th>Subject</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let fb of feedbackList | slice: (page - 1) * pageSize : page * pageSize">
+                <td>{{ fb.submittedAt }}</td>
+                <td>{{ fb.userName }}</td>
+                <td>{{ fb.unitSection || '-' }}</td>
+                <td>{{ fb.feedbackType }}</td>
+                <td>{{ fb.subject }}</td>
+                <td class="description-cell">{{ fb.description }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(fb.status)">{{ formatStatusLabel(fb.status) }}</span>
+                </td>
+                <td>{{ fb.remarks || '-' }}</td>
+                <td>
+                  <button type="button" class="link-btn" (click)="openUpdateModal(fb, updateModal)">
+                    <i class="fa-solid fa-pen"></i> Update
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        @if (totalPages > 1) {
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="page === 1">
+              <button type="button" class="page-link" (click)="prevPage()">Prev</button>
+            </li>
+            <li class="page-item" *ngFor="let p of visiblePages" [class.active]="p === page">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p }}</button>
+            </li>
+            <li class="page-item" [class.disabled]="page === totalPages">
+              <button type="button" class="page-link" (click)="nextPage()">Next</button>
+            </li>
+          </ul>
+        }
+      }
+    </section>
+  }
+</main>
+
+<ng-template #updateModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title"><i class="fa-solid fa-pen me-2"></i>Update Feedback</h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" *ngIf="selectedFeedback as fb">
+    <div class="detail-block">
+      <span class="detail-label">Subject</span>
+      <p>{{ fb.subject }}</p>
+    </div>
+    <div class="detail-block">
+      <span class="detail-label">Description</span>
+      <p class="detail-description">{{ fb.description }}</p>
+    </div>
+    <div class="field">
+      <label for="updateStatus">Status</label>
+      <select id="updateStatus" [(ngModel)]="updateStatus">
+        <option value="SUBMITTED">Submitted</option>
+        <option value="UNDER_REVIEW">Under Review</option>
+        <option value="ACTION_TAKEN">Action Taken</option>
+        <option value="CLOSED">Closed</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="updateRemarks">Remarks / Action Taken</label>
+      <textarea id="updateRemarks" rows="4" [(ngModel)]="updateRemarks" placeholder="Enter remarks or action taken"></textarea>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-light border" (click)="modal.dismiss()">Cancel</button>
+    <button type="button" class="btn btn-primary" [disabled]="isUpdating" (click)="saveStatusUpdate()">
+      <i class="fa-solid" [ngClass]="isUpdating ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+      {{ isUpdating ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</ng-template>

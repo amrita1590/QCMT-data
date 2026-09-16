@@ -32,6 +32,7 @@ export const APP_CONSTANTS = {
         APS_COMPLIANCE_RESPONSE_CASO_OBSERVATION_REQUIRED: 'APS HQRs has sent response to the compliance of audit observations-  {auditname} , submitted by CASO: {casoName}.',     
         APS_OBSERVATION_REVIEW_REQUIRED: 'Observation compliance status submitted by CASO - {casoName} to APS HQRs for {auditname} , Auditor: {auditorName}.',        
         APS_TO_AUDITOR: 'Audit - {auditname} has been sent back by APS HQRs for correction and resubmission.',
-        AUDITOR_TO_APS: 'Auditor: {auditorName} has submitted the final audit report for {auditname} (CASO: {casoName} ) to APS HQRs.'
+        AUDITOR_TO_APS: 'Auditor: {auditorName} has submitted the final audit report for {auditname} (CASO: {casoName} ) to APS HQRs.',
+        AUDITOR_TO_APS_CASO_COPY: 'Auditor: {auditorName} has submitted the final audit report for {auditname} to APS HQRs.'
     }
 };

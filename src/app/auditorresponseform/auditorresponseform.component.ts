@@ -340,6 +340,18 @@ if(this.auditBoardTemplateGen?.auditBoardScheduleTemplate?.auditTemplateId){
                     console.log('Notification sent successfully', data);
                   }
                 });
+
+                // Additional notification to CASO (same trigger, second recipient) - reuses the
+                // same saveNotification()/email mechanism, so it's auto-emailed too whenever the
+                // backend's notification.email.enabled flag is on, same as the APS HQrs one above.
+                // Independent fire-and-forget call - never blocks/affects the APS HQrs notification
+                // or the report submission itself, which has already succeeded by this point.
+                const casoNotificationMessage = this.formatNotificationMessage(this.constants.NOTIFICATION.AUDITOR_TO_APS_CASO_COPY, this.auditBoardTemplateGen.auditBoardScheduleTemplate);
+                this.umService.saveNotification(casoNotificationMessage, this.auditBoardTemplateGen.auditBoardScheduleTemplate.casoId, this.auditBoardTemplateGen.auditBoardScheduleTemplate.casoName, this.auditBoardTemplateGen.auditBoardScheduleTemplate.auditorId, this.auditBoardTemplateGen.auditBoardScheduleTemplate.casoId).subscribe({
+                  next: (data) => {
+                    console.log('CASO notification sent successfully', data);
+                  }
+                });
               }
             }
           }

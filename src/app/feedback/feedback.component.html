@@ -1,0 +1,96 @@
+<main class="feedback-page">
+  <header class="page-heading">
+    <div class="heading-icon"><i class="fa-solid fa-comment-dots"></i></div>
+    <div>
+      <span class="eyebrow">e-SamikSha</span>
+      <h1>Suggestion / Feedback</h1>
+      <p>Help us improve e-SamikSha - share a suggestion, feedback, or report an issue.</p>
+    </div>
+  </header>
+
+  <section class="form-card">
+    <h2><i class="fa-solid fa-pen-to-square"></i> Submit new feedback</h2>
+    <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()">
+      <div class="field">
+        <label for="feedbackType">Feedback Type *</label>
+        <select id="feedbackType" formControlName="feedbackType">
+          <option value="">Select type</option>
+          <option value="SUGGESTION">Suggestion</option>
+          <option value="FEEDBACK">Feedback</option>
+          <option value="ISSUE">Issue / Problem</option>
+          <option value="OTHER">Other</option>
+        </select>
+        @if (invalid('feedbackType')) { <small class="field-error">Select a feedback type.</small> }
+      </div>
+
+      <div class="field">
+        <label for="subject">Subject *</label>
+        <input id="subject" formControlName="subject" [maxlength]="subjectMaxLength" placeholder="Short title/summary">
+        <div class="field-footer">
+          @if (invalid('subject') && subject?.hasError('required')) { <small class="field-error">Subject is required.</small> }
+          @else if (invalid('subject') && subject?.hasError('maxlength')) { <small class="field-error">Subject must be at most {{ subjectMaxLength }} characters.</small> }
+          @else { <small></small> }
+          <small class="char-count">{{ subject?.value?.length || 0 }}/{{ subjectMaxLength }}</small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="description">Description *</label>
+        <textarea id="description" formControlName="description" rows="6" [maxlength]="descriptionMaxLength" placeholder="Describe your suggestion, feedback, or issue in detail"></textarea>
+        <div class="field-footer">
+          @if (invalid('description') && description?.hasError('required')) { <small class="field-error">Description is required.</small> }
+          @else if (invalid('description') && description?.hasError('maxlength')) { <small class="field-error">Description must be at most {{ descriptionMaxLength }} characters.</small> }
+          @else { <small></small> }
+          <small class="char-count">{{ description?.value?.length || 0 }}/{{ descriptionMaxLength }}</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="secondary" (click)="resetForm()" [disabled]="isSubmitting">
+          <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+        <button type="submit" class="primary" [disabled]="isSubmitting">
+          <i class="fa-solid" [ngClass]="isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+          {{ isSubmitting ? 'Submitting…' : 'Submit' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="list-card">
+    <h2><i class="fa-solid fa-list"></i> My submissions</h2>
+
+    @if (isLoadingList) {
+      <p class="empty-state">Loading…</p>
+    } @else if (myFeedbackList.length === 0) {
+      <p class="empty-state">You haven't submitted any feedback yet.</p>
+    } @else {
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Subject</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fb of myFeedbackList">
+              <td>{{ fb.submittedAt }}</td>
+              <td>{{ fb.feedbackType }}</td>
+              <td>{{ fb.subject }}</td>
+              <td class="description-cell">{{ fb.description }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(fb.status)">{{ formatStatusLabel(fb.status) }}</span>
+              </td>
+              <td>{{ fb.remarks || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>

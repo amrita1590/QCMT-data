@@ -306,6 +306,15 @@ showSendBackToCaso() {
 
 sendToCaso(rowId: number) {
       console.log("Row ID ::",rowId);
+      const row = this.templates.find(t => t.id === rowId);
+      if (!row?.auditScheduleFromDate?.trim() || !row?.auditScheduleToDate?.trim()) {
+        this.toast.show('Please enter Schedule From Date and Schedule To Date before forwarding the audit to CASO.', 'error');
+        return;
+      }
+      if (new Date(row.auditScheduleToDate) < new Date(row.auditScheduleFromDate)) {
+        this.toast.show('Schedule To Date cannot be earlier than Schedule From Date.', 'error');
+        return;
+      }
       this.auditService.auditSendToCaso(rowId).subscribe({
         next: (data) => {
           this.toast.show(data, 'success');
@@ -321,7 +330,7 @@ sendToCaso(rowId: number) {
         }
         },
         error: (err) => {
-           this.toast.show('Failed to send to caso templates'+ err, 'error');
+           this.toast.show(typeof err?.error === 'string' ? err.error : 'Failed to send audit to CASO.', 'error');
            console.error('Failed to send to caso templates', err);
         }
       })

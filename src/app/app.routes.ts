@@ -30,6 +30,8 @@ import { IqcuauditlistComponent } from './iqcuaudit/iqcuauditlist/iqcuauditlist.
 import { OtherauditapshqrsdeskComponent } from './otherauditapshqrsdesk/otherauditapshqrsdesk.component';
 import { InternalAuditComponent } from './internal-audit/internal-audit.component';
 import { IqcuCalendarComponent } from './iqcu-calendar/iqcu-calendar.component';
+import { FeedbackComponent } from './feedback/feedback.component';
+import { FeedbackAdminComponent } from './feedback-admin/feedback-admin.component';
 
 
 export const routes: Routes = [
@@ -62,5 +64,7 @@ export const routes: Routes = [
     {path: 'otherauditapshqrsdesk', component: OtherauditapshqrsdeskComponent, canActivate: [AuthGuard]},
     {path: 'iaudit', component: InternalAuditComponent, canActivate: [AuthGuard]},
     {path: 'iqcucalendar', component: IqcuCalendarComponent, canActivate: [AuthGuard]},
+    {path: 'feedback', component: FeedbackComponent, canActivate: [AuthGuard]},
+    {path: 'feedbackadmin', component: FeedbackAdminComponent, canActivate: [AuthGuard]},
     {path: '**', component: PageNotFoundComponentComponent, canActivate: [AuthGuard]}
 ];

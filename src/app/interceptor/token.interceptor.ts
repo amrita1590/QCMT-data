@@ -3,7 +3,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { UsermanagementService } from '../service/usermanagement.service';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, EMPTY } from 'rxjs';
 import { ToastService } from '../service/toast.service';
 
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
@@ -40,8 +40,20 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
         }
         umService.clearSession();
         router.navigate(['/login']);
+        // Every request on this page is about to be irrelevant once the redirect above lands -
+        // don't let a 401 reach each component's own error handler too. Before this, a session
+        // expiring mid-page (or a stale token surviving a refresh) meant every component with an
+        // in-flight call at that moment - dashboard data, notifications, sidebar permissions,
+        // the calendar banner, etc. - independently showed its own "Failed to load X" toast, all
+        // firing in the same instant the redirect happened. The redirect to /login is already
+        // self-explanatory; those extra toasts were pure noise from the same one root cause.
+        return EMPTY;
       }
-      return throwError(() => new Error(error.message));
+      // Preserve the original HttpErrorResponse (status + parsed body) - callers across the app
+      // read error.status/error.error to show the server's actual message; wrapping it in a
+      // plain Error here discarded both, so every such handler silently saw "status unknown"
+      // with no body on any non-401 failure (400/403/404/409/423/429/500/...).
+      return throwError(() => error);
     })
   );
 };

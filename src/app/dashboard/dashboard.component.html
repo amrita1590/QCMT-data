@@ -227,25 +227,35 @@
       <div>
         <span class="upcoming-eyebrow">Audit Calendar</span>
         <h3 class="title">Upcoming Audits</h3>
-        <p class="subtitle">The next seven scheduled audits across airports</p>
+        <p class="subtitle">
+          The next seven
+          {{ selectedUpcomingFilter === 'PLANNED' ? ' planned' : selectedUpcomingFilter === 'ATTENTION' ? ' attention-needing' : '' }}
+          audits across airports
+        </p>
       </div>
       <span class="upcoming-limit-badge"><i class="fa-regular fa-calendar-check me-2"></i>Next 7</span>
     </div>
 
     <div class="upcoming-summary" aria-label="Upcoming audit summary">
-      <div class="upcoming-summary-item total">
+      <button type="button" class="upcoming-summary-item total" [class.active]="selectedUpcomingFilter === 'ALL'" (click)="selectUpcomingFilter('ALL')">
         <span class="summary-icon"><i class="fa-solid fa-list-check"></i></span>
         <span><strong>{{ upcomingTotalCount }}</strong><small>Total scheduled</small></span>
-      </div>
-      <div class="upcoming-summary-item planned">
+      </button>
+      <button type="button" class="upcoming-summary-item planned" [class.active]="selectedUpcomingFilter === 'PLANNED'" (click)="selectUpcomingFilter('PLANNED')">
         <span class="summary-icon"><i class="fa-regular fa-calendar"></i></span>
         <span><strong>{{ upcomingPlannedCount }}</strong><small>Planned</small></span>
-      </div>
-      <div class="upcoming-summary-item attention">
+      </button>
+      <button type="button" class="upcoming-summary-item attention" [class.active]="selectedUpcomingFilter === 'ATTENTION'" (click)="selectUpcomingFilter('ATTENTION')">
         <span class="summary-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
         <span><strong>{{ upcomingAttentionCount }}</strong><small>Need attention</small></span>
-      </div>
+      </button>
     </div>
+
+    @if (upcomingAuditList.length === 0) {
+      <p class="upcoming-empty-state">
+        No {{ selectedUpcomingFilter === 'PLANNED' ? 'planned' : selectedUpcomingFilter === 'ATTENTION' ? 'attention-needing' : '' }} audits to show.
+      </p>
+    }
 
     <div class="obs-item" [ngClass]="obs.auditType.replace(' ','')" *ngFor="let obs of upcomingAuditList">
 
