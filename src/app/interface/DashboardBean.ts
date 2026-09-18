@@ -10,6 +10,11 @@ export interface DashboardBean {
     totalCompliance: string;
     auditType: string;
     asgname?: string;
+    auditorView?: boolean;
+    casoView?: boolean;
+    zoneView?: boolean;
+    sectorView?: boolean;
+    currentUserId?: number;
     totalAirport: string;
 	totalObservation: string;
 	openObservation: string;
@@ -43,5 +48,7 @@ export interface DashboardBean {
     ICAOAuditedAirport: string;
 	unitAuditCurrentStatuslist:UnitAuditCurrentStatus[];
 	upcomingAuditTemplate: AuditScheduleTemplate[];
+	plannedAuditReminders: AuditScheduleTemplate[];
+	pendingAuditorEvaluationReminders: AuditScheduleTemplate[];
 	monthlyAuditCounts: { auditMonth: string; auditCount: number }[];
 }

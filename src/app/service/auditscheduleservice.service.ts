@@ -11,6 +11,7 @@ import { AuditObservationComponentMessage } from '../interface/AuditObservationC
 import { AuditorQuestions } from '../interface/auditor-questions';
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { AuditObservationStatusHistory } from '../interface/AuditObservationStatusHistory';
+import { AuditTemplateStatusHistory } from '../interface/AuditTemplateStatusHistory';
 
 @Injectable({
   providedIn: 'root'
@@ -87,6 +88,14 @@ export class AuditscheduleserviceService {
 
   getAuditDetails():Observable<AuditScheduleTemplate[]> {
     return this.http.get<AuditScheduleTemplate[]>(this.getAuditDetailsUrl);
+  }
+
+  getAuditTemplateStatusHistory(auditId: number): Observable<AuditTemplateStatusHistory[]> {
+    return this.http.get<AuditTemplateStatusHistory[]>(`/v1/qcmt/master/audittemplates/${auditId}/status-history`);
+  }
+
+  getDashboardAuditList(): Observable<AuditScheduleTemplate[]> {
+    return this.http.get<AuditScheduleTemplate[]>('/v1/qcmt/master/dashboard/audits');
   }
 
   getZoneAuditDetails(): Observable<AuditScheduleTemplate[]> {

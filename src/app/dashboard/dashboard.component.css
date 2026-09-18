@@ -2136,6 +2136,135 @@ body {
 }
 
 /* Shared Dashboard modal styling */
+.planned-audit-reminder-body {
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+}
+
+.planned-audit-reminder-count {
+  margin-bottom: 12px;
+  color: #304c68;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.planned-audit-reminder-list {
+  display: grid;
+  gap: 10px;
+}
+
+.planned-audit-reminder-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #d7e5f3;
+  border-left: 4px solid #2775cb;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.planned-audit-reminder-item.overdue {
+  border-left-color: #dc3545;
+}
+
+.planned-audit-reminder-main,
+.planned-audit-reminder-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.planned-audit-reminder-main strong {
+  color: #173554;
+  font-size: 14px;
+}
+
+.planned-audit-reminder-main span,
+.planned-audit-reminder-meta > span:last-child {
+  color: #60758a;
+  font-size: 12px;
+}
+
+.planned-audit-reminder-meta {
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+
+.planned-audit-reminder-status {
+  padding: 3px 9px;
+  border-radius: 20px;
+  color: #175e9d;
+  background: #e8f3ff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.planned-audit-reminder-status.overdue {
+  color: #a42432;
+  background: #ffe9ec;
+}
+
+.planned-audit-overdue-days {
+  color: #a42432;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.caso-reminder-days {
+  color: #175e9d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.caso-reminder-days.overdue {
+  color: #a42432;
+}
+
+.dashboard-audit-history-link{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;padding:9px 12px;border:1px solid #cfe0f5;border-radius:9px;background:#f4f9ff;color:#15569a;font-size:13px;font-weight:700}
+.dashboard-audit-history-link:hover,.dashboard-audit-history-link:focus-visible{background:#e8f3ff;border-color:#94bae7}
+.dashboard-audit-history-body{min-height:260px;max-height:min(72vh,700px);overflow-y:auto}
+.audit-history-list-controls{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.audit-history-list-controls input{flex:1;min-width:0}
+.audit-history-list-controls span{flex:0 0 auto;color:#60758a;font-size:12px;font-weight:700}
+.audit-history-table{margin:0;background:#fff;border:1px solid #dce6f2}
+.audit-history-table thead th{background:#21303d;color:#fff;font-size:12px;white-space:nowrap}
+.audit-history-table td{font-size:13px;color:#263b52}
+.audit-history-table td strong{display:block;font-size:13px}
+.audit-history-table td small{display:block;color:#6b7f93}
+.audit-history-table tbody tr.audit-history-reminder-row{--bs-table-bg:#fff8ef;--bs-table-accent-bg:#fff8ef;background:#fff8ef}
+.audit-history-table tbody tr.audit-history-reminder-row td:first-child{border-left:4px solid #e68a25}
+.audit-history-table tbody tr.audit-history-reminder-row:hover{--bs-table-bg:#fff1dc;--bs-table-accent-bg:#fff1dc;background:#fff1dc}
+.audit-history-reminder-message{display:inline-flex;align-items:center;gap:3px;max-width:100%;margin-top:6px;padding:5px 8px;border:1px solid #f3d3a7;border-radius:6px;background:#fff0d9;color:#814814;font-size:11px;font-weight:700;line-height:1.35;white-space:normal}
+.audit-history-list-status,.audit-history-current-status{display:inline-block;padding:5px 9px;border-radius:18px;background:#eaf3ff;color:#155a9c;font-size:11px;font-weight:700;white-space:nowrap}
+.audit-history-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:12px;color:#5b7086}
+.audit-history-state{padding:24px 12px;text-align:center;color:#60758a}
+.audit-history-back{padding:0;margin-bottom:14px;border:0;background:none;color:#1769b0;font-size:13px;font-weight:700}
+.audit-history-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.audit-history-detail-heading h6{margin:0 0 3px;color:#183650;font-size:17px;font-weight:700}
+.audit-history-detail-heading p{margin:0;color:#677d91;font-size:12px}
+.audit-history-detail-reminder{display:flex;align-items:center;margin:0 0 14px;padding:10px 12px;border:1px solid #f3d3a7;border-left:4px solid #e68a25;border-radius:8px;background:#fff8ed;color:#814814;font-size:12px;font-weight:700}
+.audit-history-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:20px}
+.audit-history-facts span{padding:10px 12px;border:1px solid #dce7f4;border-radius:8px;background:#fff;color:#213c57;font-size:12px}
+.audit-history-facts strong{display:block;margin-bottom:3px;color:#6b8195;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.audit-history-timeline{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid #b8d4f2}
+.audit-history-timeline li{position:relative;margin:0 0 12px;padding:12px 14px;border:1px solid #dce7f4;border-radius:9px;background:#fff}
+.audit-history-timeline li:before{content:'';position:absolute;left:-21px;top:17px;width:10px;height:10px;border-radius:50%;background:#1769b0}
+.audit-history-event-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#1c3854;font-size:13px}
+.audit-history-event-top span,.audit-history-event-actor{color:#657a8e;font-size:11px}
+.audit-history-event-actor{margin-top:4px}
+.audit-history-event-metrics{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.audit-history-event-metrics span{padding:4px 7px;border-radius:6px;background:#edf4fc;color:#355b7d;font-size:11px;font-weight:700}
+.audit-history-event-metrics span.delayed{background:#ffe9ec;color:#a42432}
+@media(max-width:767.98px){.audit-history-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-audit-history-link{font-size:12px}}
+@media(max-width:480px){.audit-history-facts{grid-template-columns:1fr}.audit-history-list-controls{align-items:stretch;flex-direction:column}.audit-history-detail-heading{flex-direction:column}}
+
+@media (max-width: 575.98px) {
+  .planned-audit-reminder-item { align-items: flex-start; flex-direction: column; }
+  .planned-audit-reminder-meta { align-items: flex-start; }
+}
+
 .dashboard-modal-header {
   display: flex;
   align-items: center;

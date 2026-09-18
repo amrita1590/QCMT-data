@@ -4,16 +4,18 @@
   <div class="users-toolbar"><div class="users-search"><i class="fa fa-search"></i><input type="text" name="search" placeholder="Search user name or email" [(ngModel)]="searchText" (ngModelChange)="page = 1" /></div><select class="users-page-size" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1"><option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option></select></div>
   <div class="users-table-wrap">
     <table class="users-table">
-      <thead><tr><th class="users-number-column">#</th><th>Name</th><th>Email address</th><th>Mobile number</th><th class="users-actions-column">Actions</th></tr></thead>
+      <thead><tr><th class="users-number-column">#</th><th>Name</th><th>Unit</th><th>Role</th><th>Email address</th><th>Mobile number</th><th class="users-actions-column">Actions</th></tr></thead>
       <tbody>
         <tr *ngFor="let user of filteredData | slice:(page - 1) * pageSize : page * pageSize; let i = index">
           <td class="users-number-column"><span class="users-row-number">{{ (page - 1) * pageSize + i + 1 }}</span></td>
           <td><span class="user-name"><i class="fa fa-user-circle"></i><span>{{ user?.mstr_name }}</span><b *ngIf="user?.status === 'ACCOUNT_LOCKED'" title="Account locked"><i class="fa fa-lock"></i></b></span></td>
+          <td>{{ getUnitName(user?.unitid) }}</td>
+          <td>{{ getUserRoleNames(user?.id) }}</td>
           <td><a class="user-email" [href]="'mailto:' + (user?.email || '')">{{ user?.email || 'Not available' }}</a></td>
           <td>{{ user?.mobileNo || 'Not available' }}</td>
           <td class="users-actions-column"><button type="button" class="view-user-btn" (click)="openModal(manageUser, user?.id)"><i class="fa fa-eye"></i> View Details</button></td>
         </tr>
-        <tr *ngIf="filteredData.length === 0"><td colspan="5" class="users-empty"><i class="fa fa-search"></i><strong>No users found</strong><span>Try a different search term.</span></td></tr>
+        <tr *ngIf="filteredData.length === 0"><td colspan="7" class="users-empty"><i class="fa fa-search"></i><strong>No users found</strong><span>Try a different search term.</span></td></tr>
       </tbody>
     </table>
   </div>

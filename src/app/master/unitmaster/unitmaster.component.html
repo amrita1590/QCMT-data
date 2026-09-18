@@ -30,11 +30,22 @@
           <div *ngIf="unitDetailsForm.get('unitType')!.hasError('required') && (unitDetailsForm.get('unitType')!.touched || unitDetailsForm.get('unitType')!.dirty)" class="invalid-feedback">Unit type is required.</div>
         </div>
         <div class="field-group">
-          <label for="casoId">Unit CASO <span>*</span></label>
-          <select class="form-select" id="casoId" formControlName="casoId" [class.is-invalid]="casoId.invalid && (casoId.touched || casoId.dirty)" [class.is-valid]="casoId.valid && (casoId.touched || casoId.dirty)">
-            <option value="" disabled>Choose reporting CASO</option><option *ngFor="let caso of casoList" [value]="caso.id">{{ caso.cisfno }} - {{ caso.rank }} {{ caso.name }}</option>
-          </select>
-          <div *ngIf="casoId.hasError('required') && (casoId.touched || casoId.dirty)" class="invalid-feedback">CASO is required.</div>
+          <label for="casoSearch">Unit CASO <span>*</span></label>
+          <div class="search-select-wrapper">
+            <input type="text" class="form-control" id="casoSearch" placeholder="Search & select reporting CASO"
+                   [(ngModel)]="casoSearchText" [ngModelOptions]="{standalone: true}"
+                   (focus)="onCasoSearchFocus()" (blur)="onCasoSearchBlur()"
+                   [class.is-invalid]="casoId.invalid && (casoId.touched || casoId.dirty)"
+                   [class.is-valid]="casoId.valid && (casoId.touched || casoId.dirty)"
+                   autocomplete="off" />
+            <div class="search-dropdown-list" *ngIf="showCasoDropdown">
+              <div class="search-dropdown-item" *ngFor="let caso of filteredCasoList" (mousedown)="selectCaso(caso)">
+                {{ caso.cisfno }}&nbsp;{{ caso.rank }}&nbsp;{{ caso.name }}
+              </div>
+              <div class="search-dropdown-item text-muted" *ngIf="filteredCasoList.length === 0">No matching CASO</div>
+            </div>
+          </div>
+          <div *ngIf="casoId.hasError('required') && (casoId.touched || casoId.dirty)" class="invalid-feedback d-block">CASO is required.</div>
         </div>
         <div class="field-group"><label for="isAirport">ASG Unit</label><select class="form-select" id="isAirport" formControlName="isAirport"><option value="" disabled>Select an option</option><option value="true">Yes</option><option value="false">No</option></select></div>
         <div class="field-group"><label for="zone">Zone</label><select class="form-select" id="zone" formControlName="zone"><option value="" disabled>Select zone</option><option value="NZ">North Zone</option><option value="WZ">West Zone</option><option value="SZ">South Zone</option><option value="ENEZ">East &amp; North East Zone</option></select></div>

@@ -17,6 +17,10 @@ export interface AuditScheduleTemplate {
   casoName: string;
   status: string;
   auditStatus: string;
+  observationCasoSince?: string;
+  observationZoneSince?: string;
+  observationSectorSince?: string;
+  observationScopeMatch?: boolean;
   auditScheduleList: AuditSchedule[];
 
   auditScheduleFromDate: string;

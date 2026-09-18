@@ -36,10 +36,11 @@ import { DownloadService } from '../service/download.service';
 import { AuditObservationStatusHistory } from '../interface/AuditObservationStatusHistory';
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { AuditRemarksPanelsComponent } from '../shared/audit-remarks-panels/audit-remarks-panels.component';
+import { AuditTemplateStatusHistoryComponent } from '../shared/audit-template-status-history/audit-template-status-history.component';
 
 @Component({
   selector: 'app-auditschedule',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, AuditRemarksPanelsComponent],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, AuditRemarksPanelsComponent, AuditTemplateStatusHistoryComponent],
   templateUrl: './auditschedule.component.html',
   styleUrl: './auditschedule.component.css'
 })
@@ -124,6 +125,7 @@ export class AuditscheduleComponent {
   rows: { index:number, categoryId: null | string | number, templateId: null | string | number, templateOptions: QuestionTemplate[] }[] = [];
 
   searchText = '';
+  selectedAuditStatus = '';
   page = 1;
   pageSize = 5;
   pageSizeOptions = [5, 10, 20];
@@ -942,14 +944,18 @@ listenForNameChanges() {
   }
 
   get filteredData() {
-    const search = this.searchText.toLowerCase();
+    const search = this.searchText.trim().toLowerCase();
     return this.templates
-      .filter(template =>
-        template.name.toLowerCase().includes(search)
-      )
+      .filter(template => !this.selectedAuditStatus || template.auditStatus === this.selectedAuditStatus)
+      .filter(template => [template.name, template.unitName, template.auditorName, template.auditStatus]
+        .some(value => (value ?? '').toLowerCase().includes(search)))
       .sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+  }
+
+  get auditStatusOptions(): string[] {
+    return [...new Set(this.templates.map(template => template.auditStatus).filter(Boolean))].sort();
   }
 
   get totalPages(): number {
@@ -1728,5 +1734,3 @@ loadQuestions() {
         .replace('{auditorName}', data.auditorName);
   }
 }
-
-

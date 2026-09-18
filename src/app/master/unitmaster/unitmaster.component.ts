@@ -27,6 +27,9 @@ export class UnitmasterComponent {
 
     casoList: UserRoleDetails[] = [];
 
+    casoSearchText: string = '';
+    showCasoDropdown: boolean = false;
+
     constructor(private fb: FormBuilder, private unitService: UnitService, private umService: UsermanagementService, private modalService: NgbModal) {        
         this.unitDetailsForm = this.fb.group({
           id : new FormControl(''),
@@ -42,6 +45,7 @@ export class UnitmasterComponent {
           if (data) {
             this.unitDetailsForm.patchValue(data); // Assuming you use Reactive Forms
             this.btnName = "Update";
+            this.syncCasoSearchText();
           }
         });
         this.getCASODetails();
@@ -51,14 +55,51 @@ export class UnitmasterComponent {
       this.umService.getUserAuditDetailList().subscribe({
         next: (data) => {
           console.log(":::::::::::::::"+data);
-          this.casoList = data.filter(user => user.rolename === 'CASO');        
+          this.casoList = data.filter(user => user.rolename === 'CASO');
           this.casoList = this.casoList.sort((a, b) => a.name.localeCompare(b.name));
           console.log('Auditors:', this.casoList);
+          this.syncCasoSearchText();
         },
         error: (err) => {
           console.error('Failed to fetch CASO Details', err);
-        } 
+        }
       });
+    }
+
+    private casoDisplayText(caso: UserRoleDetails): string {
+      return `${caso.cisfno} ${caso.rank} ${caso.name}`;
+    }
+
+    /** Keeps the search box's text in sync with casoId whenever either the form is patched
+     * (editing an existing unit) or casoList finishes loading - whichever happens second. */
+    private syncCasoSearchText(): void {
+      const selected = this.casoList.find(c => Number(c.id) === Number(this.casoId.value));
+      this.casoSearchText = selected ? this.casoDisplayText(selected) : '';
+    }
+
+    get filteredCasoList(): UserRoleDetails[] {
+      const search = (this.casoSearchText || '').toLowerCase().trim();
+      if (!search) return this.casoList;
+      return this.casoList.filter(c => this.casoDisplayText(c).toLowerCase().includes(search));
+    }
+
+    onCasoSearchFocus(): void {
+      this.showCasoDropdown = true;
+      this.casoSearchText = '';
+    }
+
+    onCasoSearchBlur(): void {
+      this.casoId.markAsTouched();
+      setTimeout(() => {
+        this.showCasoDropdown = false;
+        this.syncCasoSearchText();
+      }, 150);
+    }
+
+    selectCaso(caso: UserRoleDetails): void {
+      this.casoId.setValue(caso.id);
+      this.casoSearchText = this.casoDisplayText(caso);
+      this.showCasoDropdown = false;
     }
 
     addUnitDetails(unitDetails : UnitDetails) {
@@ -90,6 +131,8 @@ export class UnitmasterComponent {
     
     clearFields(): void {
       this.unitDetailsForm.reset(); // This will reset all fields to their initial values    }
+      this.casoSearchText = '';
+      this.showCasoDropdown = false;
     }
 
     resetForm(): void {

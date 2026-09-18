@@ -1,0 +1,24 @@
+<section class="audit-history" *ngIf="auditId">
+  <button type="button" class="audit-history-toggle" (click)="expanded = !expanded" [attr.aria-expanded]="expanded">
+    <span><i class="fa fa-clock-rotate-left me-2" aria-hidden="true"></i>Audit status history</span>
+    <span class="audit-history-count" *ngIf="!loading && !error">{{ events.length }}</span>
+    <i class="fa" [ngClass]="expanded ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
+  </button>
+  <div class="audit-history-body" *ngIf="expanded">
+    <p *ngIf="loading">Loading history…</p>
+    <p *ngIf="error">Unable to load status history.</p>
+    <p *ngIf="!loading && !error && !events.length">No status changes recorded yet.</p>
+    <ol *ngIf="!loading && !error && events.length">
+      <li *ngFor="let event of events">
+        <div class="audit-history-transition">
+          <span>{{ event.previousStatus || 'Created' }}</span>
+          <i class="fa fa-arrow-right" aria-hidden="true"></i>
+          <strong>{{ event.newStatus }}</strong>
+        </div>
+        <small>{{ changedByLabel(event) }} · {{ event.changedAt | date:'dd MMM yyyy, h:mm a' }}</small>
+        <small *ngIf="event.daysInPreviousStatus !== null">{{ event.daysInPreviousStatus }} day{{ event.daysInPreviousStatus === 1 ? '' : 's' }} in previous status</small>
+        <small *ngIf="event.daysAfterScheduledEnd !== null && event.daysAfterScheduledEnd > 0">Delayed by {{ event.daysAfterScheduledEnd }} day{{ event.daysAfterScheduledEnd === 1 ? '' : 's' }} after scheduled end</small>
+      </li>
+    </ol>
+  </div>
+</section>

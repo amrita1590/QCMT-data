@@ -11,11 +11,14 @@
 
     <div class="header-left">
       <h2 class="fw-bold">Welcome, {{ usernameData }} 👋</h2>
-      <p class="subtitle">Centralized monitoring of security audits across {{dashboardBean?.totalAirport || 0}} airports</p>
+      <p class="subtitle">{{ dashboardBean?.auditorView ? 'Your assigned audits across' : 'Centralized monitoring of security audits across' }} {{dashboardBean?.totalAirport || 0}} airports</p>
     </div>
 
     
     <div class="top-bar">
+      <button type="button" class="dashboard-audit-history-link" (click)="openAuditHistory(auditHistoryModal)">
+        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> All Audit History
+      </button>
       <div class="live-time-box">
         <span class="live-dot"></span>
         <span class="time-label">Data as of</span>
@@ -88,14 +91,14 @@
     <div class="card-content metric-card-content">
       <div class="metric-card-main">
         <div class="metric-card-header">
-          <h4>Total Airports</h4>
+          <h4>{{ dashboardBean?.auditorView ? 'Assigned Airports' : 'Total Airports' }}</h4>
           <div class="icon-box"><i class="fa-solid fa-plane-departure"></i></div>
         </div>
         <h2>{{ dashboardBean?.totalAirport ?? '0' }}</h2>
         @if (dashboardBean?.totalAirport === '1') {
           <p class="sub">{{ dashboardBean?.asgname }}</p>
         } @else {
-          <p class="sub">Airports under CISF security</p>
+        <p class="sub">{{ dashboardBean?.auditorView ? 'Airports with your assigned audits' : 'Airports under CISF security' }}</p>
         }
       </div>
       <div class="metric-card-footer">
@@ -226,9 +229,9 @@
     <div class="upcoming-header">
       <div>
         <span class="upcoming-eyebrow">Audit Calendar</span>
-        <h3 class="title">Upcoming Audits</h3>
+        <h3 class="title">{{ dashboardBean?.auditorView ? 'Assigned Audits' : 'Upcoming Audits' }}</h3>
         <p class="subtitle">
-          The next seven
+          The {{ dashboardBean?.auditorView ? 'first' : 'next' }} seven
           {{ selectedUpcomingFilter === 'PLANNED' ? ' planned' : selectedUpcomingFilter === 'ATTENTION' ? ' attention-needing' : '' }}
           audits across airports
         </p>
@@ -481,6 +484,205 @@
 <app-audit-status-guide></app-audit-status-guide>
 
 </div>
+
+<ng-template #plannedAuditReminder let-modal>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Audit reminders</span>
+      <h5 class="modal-title"><i class="fa-regular fa-calendar-check me-2"></i>Audits requiring action</h5>
+      <p>Review planned audits and audits still awaiting Auditor Evaluation &amp; Response.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body dashboard-modal-body planned-audit-reminder-body">
+    <div class="planned-audit-reminder-count">{{ plannedAuditAlerts.length + auditorEvaluationAlerts.length }} audit{{ plannedAuditAlerts.length + auditorEvaluationAlerts.length === 1 ? '' : 's' }} requiring action</div>
+    <div class="planned-audit-reminder-list">
+      <article class="planned-audit-reminder-item overdue" *ngFor="let audit of plannedAuditAlerts">
+        <div class="planned-audit-reminder-main">
+          <strong>{{ audit.name }}</strong>
+          <span>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></span>
+        </div>
+        <div class="planned-audit-reminder-meta">
+          <span class="planned-audit-reminder-status overdue">Action Required</span>
+          <span class="planned-audit-overdue-days">Overdue{{ overdueDays(audit) === 0 ? ' today' : ' by ' + overdueDays(audit) + ' day' + (overdueDays(audit) === 1 ? '' : 's') }}</span>
+          <span>{{ audit.auditMonth + '-01' | date:'MMMM yyyy' }}</span>
+        </div>
+      </article>
+      <article class="planned-audit-reminder-item overdue" *ngFor="let audit of auditorEvaluationAlerts">
+        <div class="planned-audit-reminder-main">
+          <strong>{{ audit.name }}</strong>
+          <span>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></span>
+          <span>Audit is pending for Auditor Evaluation &amp; Response</span>
+        </div>
+        <div class="planned-audit-reminder-meta">
+          <span class="planned-audit-reminder-status overdue">Action Required</span>
+          <span class="planned-audit-overdue-days">{{ daysSinceAuditorScheduledEnd(audit) }} days since scheduled end</span>
+          <span>Scheduled to: {{ audit.auditScheduleToDate | date:'dd MMM yyyy' }}</span>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="modal-footer dashboard-modal-footer">
+    <span>These reminders do not change the saved audit status.</span>
+    <button type="button" class="btn btn-primary" (click)="modal.close()">Close</button>
+  </div>
+</ng-template>
+
+<ng-template #casoAuditReminder let-modal>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Audit reminders</span>
+      <h5 class="modal-title"><i class="fa-regular fa-calendar-check me-2"></i>Audits requiring CASO attention</h5>
+      <p>Review upcoming audit schedules and observations awaiting a CASO response.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body dashboard-modal-body planned-audit-reminder-body">
+    <div class="planned-audit-reminder-count">{{ casoAuditAlerts.length + casoObservationAlerts.length }} audit{{ casoAuditAlerts.length + casoObservationAlerts.length === 1 ? '' : 's' }} requiring attention</div>
+    <div class="planned-audit-reminder-list">
+      <article class="planned-audit-reminder-item" *ngFor="let audit of casoAuditAlerts" [class.overdue]="(daysUntilCasoSchedule(audit) ?? 0) < 0">
+        <div class="planned-audit-reminder-main">
+          <strong>{{ audit.name }}</strong>
+          <span>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></span>
+        </div>
+        <div class="planned-audit-reminder-meta">
+          <span class="planned-audit-reminder-status">In Progress</span>
+          <span class="caso-reminder-days" [class.overdue]="(daysUntilCasoSchedule(audit) ?? 0) < 0">
+            <ng-container *ngIf="(daysUntilCasoSchedule(audit) ?? 0) > 0">Starts in {{ daysUntilCasoSchedule(audit) }} day{{ daysUntilCasoSchedule(audit) === 1 ? '' : 's' }}</ng-container>
+            <ng-container *ngIf="daysUntilCasoSchedule(audit) === 0">Starts today</ng-container>
+            <ng-container *ngIf="(daysUntilCasoSchedule(audit) ?? 0) < 0">Overdue by {{ -(daysUntilCasoSchedule(audit) ?? 0) }} day{{ daysUntilCasoSchedule(audit) === -1 ? '' : 's' }}</ng-container>
+          </span>
+          <span>Scheduled: {{ audit.auditScheduleFromDate | date:'dd MMM yyyy' }}</span>
+        </div>
+      </article>
+      <article class="planned-audit-reminder-item overdue" *ngFor="let audit of casoObservationAlerts">
+        <div class="planned-audit-reminder-main">
+          <strong>{{ audit.name }}</strong>
+          <span>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></span>
+          <span>{{ observationCasoReminderMessage(audit) }}</span>
+        </div>
+        <div class="planned-audit-reminder-meta">
+          <span class="planned-audit-reminder-status overdue">Observation CASO</span>
+          <span class="planned-audit-overdue-days">Delayed by {{ observationCasoDelayDays(audit) }} day{{ observationCasoDelayDays(audit) === 1 ? '' : 's' }}</span>
+          <span>Awaiting since: {{ audit.observationCasoSince | date:'dd MMM yyyy' }}</span>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="modal-footer dashboard-modal-footer">
+    <span>The saved audit status is unchanged.</span>
+    <button type="button" class="btn btn-primary" (click)="modal.close()">Close</button>
+  </div>
+</ng-template>
+
+<ng-template #scopedObservationReminder let-modal>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Audit reminders</span>
+      <h5 class="modal-title"><i class="fa-regular fa-calendar-check me-2"></i>Observations requiring {{ dashboardBean?.zoneView ? 'Zone' : 'Sector' }} review</h5>
+      <p>These observations have remained in your review stage for more than 30 days.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body dashboard-modal-body planned-audit-reminder-body">
+    <div class="planned-audit-reminder-count">{{ scopedObservationAlerts.length }} observation{{ scopedObservationAlerts.length === 1 ? '' : 's' }} awaiting review</div>
+    <div class="planned-audit-reminder-list">
+      <article class="planned-audit-reminder-item overdue" *ngFor="let audit of scopedObservationAlerts">
+        <div class="planned-audit-reminder-main">
+          <strong>{{ audit.name }}</strong>
+          <span>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></span>
+          <span>{{ scopedObservationReminderMessage(audit) }}</span>
+        </div>
+        <div class="planned-audit-reminder-meta">
+          <span class="planned-audit-reminder-status overdue">{{ audit.auditStatus === 'ObservationZONE' ? 'Observation ZONE' : 'Observation SECTOR' }}</span>
+          <span class="planned-audit-overdue-days">Delayed by {{ observationDelayDays(audit) }} day{{ observationDelayDays(audit) === 1 ? '' : 's' }}</span>
+          <span>Awaiting since: {{ (audit.auditStatus === 'ObservationZONE' ? audit.observationZoneSince : audit.observationSectorSince) | date:'dd MMM yyyy' }}</span>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="modal-footer dashboard-modal-footer">
+    <span>The saved audit status is unchanged.</span>
+    <button type="button" class="btn btn-primary" (click)="modal.close()">Close</button>
+  </div>
+</ng-template>
+
+<ng-template #auditHistoryModal let-modal>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Audit register</span>
+      <h5 class="modal-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>All Audit History</h5>
+      <p>Review audits in your scope and the recorded status changes for each audit.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body dashboard-modal-body dashboard-audit-history-body">
+    <ng-container *ngIf="selectedHistoryAudit as audit; else auditHistoryList">
+      <button type="button" class="audit-history-back" (click)="backToAuditHistoryList()"><i class="fa fa-arrow-left me-1"></i>All audits</button>
+      <div class="audit-history-detail-heading">
+        <div><h6>{{ audit.name }}</h6><p>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></p></div>
+        <span class="audit-history-current-status">{{ audit.auditStatus }}</span>
+      </div>
+      <div *ngIf="auditReminderMessage(audit) as reminder" class="audit-history-detail-reminder"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>{{ reminder }}</div>
+      <div class="audit-history-facts">
+        <span><strong>Audit month</strong>{{ audit.auditMonth + '-01' | date:'MMMM yyyy' }}</span>
+        <span><strong>Scheduled from</strong>{{ audit.auditScheduleFromDate ? (audit.auditScheduleFromDate | date:'dd MMM yyyy') : 'Not available' }}</span>
+        <span><strong>Scheduled to</strong>{{ audit.auditScheduleToDate ? (audit.auditScheduleToDate | date:'dd MMM yyyy') : 'Not available' }}</span>
+        <span><strong>Auditor</strong>{{ audit.auditorName || 'Not assigned' }}</span>
+      </div>
+      <div *ngIf="selectedHistoryLoading" class="audit-history-state">Loading status history…</div>
+      <div *ngIf="selectedHistoryError" class="audit-history-state text-danger">Unable to load this audit’s history.</div>
+      <div *ngIf="!selectedHistoryLoading && !selectedHistoryError && !selectedAuditHistory.length" class="audit-history-state">No recorded status changes for this audit.</div>
+      <ol *ngIf="!selectedHistoryLoading && !selectedHistoryError && selectedAuditHistory.length" class="audit-history-timeline">
+        <li *ngFor="let event of selectedAuditHistory">
+          <div class="audit-history-event-top">
+            <strong>{{ event.previousStatus || 'Created' }} <i class="fa fa-arrow-right mx-1" aria-hidden="true"></i> {{ event.newStatus }}</strong>
+            <span>{{ event.changedAt | date:'dd MMM yyyy, h:mm a' }}</span>
+          </div>
+          <div class="audit-history-event-actor">Changed by {{ event.changedByName || 'System' }}</div>
+          <div class="audit-history-event-metrics">
+            <span *ngIf="event.daysInPreviousStatus !== null">{{ event.daysInPreviousStatus }} day{{ event.daysInPreviousStatus === 1 ? '' : 's' }} in previous status</span>
+            <span *ngIf="event.daysAfterScheduledEnd !== null" [class.delayed]="event.daysAfterScheduledEnd > 0">
+              {{ event.daysAfterScheduledEnd > 0 ? ('Delayed by ' + event.daysAfterScheduledEnd + ' day' + (event.daysAfterScheduledEnd === 1 ? '' : 's')) : 'Within scheduled end date' }}
+            </span>
+          </div>
+        </li>
+      </ol>
+    </ng-container>
+    <ng-template #auditHistoryList>
+      <div class="audit-history-list-controls">
+        <input type="search" class="form-control" aria-label="Search audits" placeholder="Search audit, unit, status or person…"
+               [(ngModel)]="auditHistorySearch" (ngModelChange)="auditHistoryPage = 1" />
+        <span>{{ filteredDashboardAudits.length }} audit{{ filteredDashboardAudits.length === 1 ? '' : 's' }}<ng-container *ngIf="highlightedAuditCount"> · {{ highlightedAuditCount }} reminder{{ highlightedAuditCount === 1 ? '' : 's' }}</ng-container></span>
+      </div>
+      <div *ngIf="auditListLoading" class="audit-history-state">Loading audits…</div>
+      <div *ngIf="auditListError" class="audit-history-state text-danger">Unable to load audits.</div>
+      <div *ngIf="!auditListLoading && !auditListError && !filteredDashboardAudits.length" class="audit-history-state">No audits found.</div>
+      <div *ngIf="!auditListLoading && !auditListError && filteredDashboardAudits.length" class="table-responsive">
+        <table class="table audit-history-table align-middle">
+          <thead><tr><th>Audit</th><th>Unit</th><th>Audit month</th><th>Status</th><th>Details</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let audit of visibleDashboardAudits" [class.audit-history-reminder-row]="!!auditReminderMessage(audit)">
+              <td><strong>{{ audit.name }}</strong><small>{{ audit.auditType }}</small><span *ngIf="auditReminderMessage(audit) as reminder" class="audit-history-reminder-message"><i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>{{ reminder }}</span></td>
+              <td>{{ audit.unitName }}</td>
+              <td>{{ audit.auditMonth + '-01' | date:'MMM yyyy' }}</td>
+              <td><span class="audit-history-list-status">{{ audit.auditStatus }}</span></td>
+              <td><button type="button" class="btn btn-sm btn-outline-primary" (click)="viewAuditHistory(audit)">View Details</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="audit-history-pagination" *ngIf="auditHistoryPageCount > 1 && !auditListLoading">
+        <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="auditHistoryPage === 1" (click)="auditHistoryPage = auditHistoryPage - 1">Previous</button>
+        <span>Page {{ auditHistoryPage }} of {{ auditHistoryPageCount }}</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="auditHistoryPage === auditHistoryPageCount" (click)="auditHistoryPage = auditHistoryPage + 1">Next</button>
+      </div>
+    </ng-template>
+  </div>
+  <div class="modal-footer dashboard-modal-footer">
+    <button type="button" class="btn btn-primary" (click)="modal.close()">Close</button>
+  </div>
+</ng-template>
 
 <ng-template #dateRangeModel let-modal>
   <div class="modal-header dashboard-modal-header">

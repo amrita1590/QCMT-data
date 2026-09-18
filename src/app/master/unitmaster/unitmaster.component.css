@@ -1,4 +1,10 @@
 :host { display:block; }
+
+/* Searchable select dropdown (CASO) - matches the pattern in auditschedule.component.css */
+.search-select-wrapper { position:relative; }
+.search-dropdown-list { position:absolute; top:100%; left:0; right:0; z-index:1060; max-height:220px; overflow-y:auto; background:#fff; border:1px solid #ced4da; border-top:none; border-radius:0 0 6px 6px; box-shadow:0 4px 8px rgba(0,0,0,.08); }
+.search-dropdown-item { padding:8px 12px; cursor:pointer; font-size:14px; }
+.search-dropdown-item:hover { background:#f0f4ff; }
 .unit-master-page { min-height:100%; padding:24px 28px 42px; color:#172b3d; background:#f3f7fb; }
 .page-topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:20px; }
 .back-btn { display:inline-flex; min-height:38px; flex:0 0 auto; align-items:center; gap:8px; margin-top:6px; padding:9px 13px; color:#176fc1; border:1px solid #d8e7f6; border-radius:9px; background:#eaf3ff; font-size:13px; font-weight:600; text-decoration:none; transition:.18s ease; }

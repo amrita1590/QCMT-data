@@ -35,10 +35,11 @@ import { AuditObservation } from '../interface/AuditObservation';
 import { AuditObservationComponent } from '../interface/AuditObservationComponent';
 import { AuditObservationChatComponentComponent } from '../audit-observation-chat-component/audit-observation-chat-component.component';
 import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
+import { AuditTemplateStatusHistoryComponent } from '../shared/audit-template-status-history/audit-template-status-history.component';
 
 @Component({
   selector: 'app-auditboard',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditorresponseformComponent, NgbTooltip, AuditObservationChatComponentComponent, AuditStatusGuideComponent],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditorresponseformComponent, NgbTooltip, AuditObservationChatComponentComponent, AuditStatusGuideComponent, AuditTemplateStatusHistoryComponent],
   templateUrl: './auditboard.component.html',
   styleUrl: './auditboard.component.css'
 })
@@ -1081,6 +1082,3 @@ printPDF() {
         .replace('{auditorName}', data.auditorName);
   }
 }
-
-
-

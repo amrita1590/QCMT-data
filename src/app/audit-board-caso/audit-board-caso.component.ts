@@ -36,10 +36,11 @@ import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { APP_CONSTANTS } from '../constants/app.constants';
 import { DownloadService } from '../service/download.service';
 import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
+import { AuditTemplateStatusHistoryComponent } from '../shared/audit-template-status-history/audit-template-status-history.component';
 
 @Component({
   selector: 'app-audit-board-caso',
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgbTooltip, AuditObservationChatComponentComponent, AuditStatusGuideComponent],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgbTooltip, AuditObservationChatComponentComponent, AuditStatusGuideComponent, AuditTemplateStatusHistoryComponent],
   templateUrl: './audit-board-caso.component.html',
   styleUrl: './audit-board-caso.component.css'
 })
@@ -1209,4 +1210,3 @@ export class AuditBoardCasoComponent {
         .replace('{auditorName}', data.auditorName);
   }
 } 
-

@@ -197,6 +197,7 @@
 
   <!-- BODY -->
   <div class="modal-body">
+      <app-audit-template-status-history [auditId]="auditBoardTemplateGen.auditBoardScheduleTemplate.auditTemplateId"></app-audit-template-status-history>
       <ng-container *ngIf="auditBoardTemplateGen.auditiorResponse">
 
       <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
@@ -476,6 +477,7 @@
 
       </div>
       <div class="modal-body" id="printSection">
+        <app-audit-template-status-history [auditId]="auditTemplateGen.auditScheduleTemplate.id"></app-audit-template-status-history>
         <h3 class="text-center mb-3 title-text">
             {{auditTemplateGen.auditScheduleTemplate.name}}
         </h3>
@@ -1394,8 +1396,3 @@
   </div>
 
 </ng-template>
-
-
-
-
-

@@ -168,6 +168,7 @@ export class UsermanagementService {
     }
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('jwtToken', this.token);
+      sessionStorage.setItem('auditReminderPending', 'true');
     }
     this.isLoggedIn = true;
   }
@@ -197,6 +198,14 @@ export class UsermanagementService {
     return this.isLoggedIn;
   }
 
+  hasPendingAuditReminder(): boolean {
+    return isPlatformBrowser(this.platformId) && sessionStorage.getItem('auditReminderPending') === 'true';
+  }
+
+  consumeAuditReminder(): void {
+    if (isPlatformBrowser(this.platformId)) sessionStorage.removeItem('auditReminderPending');
+  }
+
   // Method to logout
   logout(): void {
     // Fire while the token is still attached (tokenInterceptor reads it via getToken()) so the
@@ -218,6 +227,7 @@ export class UsermanagementService {
     this.isLoggedIn = false;
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('jwtToken');
+      sessionStorage.removeItem('auditReminderPending');
     }
   }
   addRegisterUserDetails(token: String | any): Observable<User> {

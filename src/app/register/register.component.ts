@@ -4,6 +4,7 @@ import { AbstractControl, AsyncValidatorFn, FormBuilder, FormControl, FormGroup,
 import { User } from '../interface/User';
 import { UsermanagementService } from '../service/usermanagement.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { UnitService } from '../service/unit.service';
 import { UnitDetails } from '../interface/UnitDetails';
 import { Observable, of, timer } from 'rxjs';
@@ -11,7 +12,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-register',
-  imports: [CommonModule,ReactiveFormsModule],
+  imports: [CommonModule,ReactiveFormsModule,FormsModule],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
 })
@@ -40,6 +41,8 @@ export class RegisterComponent {
 units:UnitDetails[]=[];
 sectors:string[]=[];
 zones:string[]=[];
+unitSearchText: string = '';
+showUnitDropdown: boolean = false;
     status = false;
     confirmPasswordError = false;
     isSubmitting = false;
@@ -103,6 +106,37 @@ handleScopeChange(scope: any) {
 
   // scope 1 (HQ) → only unit enabled
 }
+
+  get filteredUnits(): UnitDetails[] {
+    const search = (this.unitSearchText || '').toLowerCase().trim();
+    if (!search) return this.units;
+    return this.units.filter(u => u.unitName.toLowerCase().includes(search));
+  }
+
+  private syncUnitSearchText(): void {
+    const selectedId = this.userDetailsForm.get('unitmaster.id')?.value;
+    const selected = this.units.find(u => Number(u.id) === Number(selectedId));
+    this.unitSearchText = selected ? selected.unitName : '';
+  }
+
+  onUnitSearchFocus(): void {
+    this.showUnitDropdown = true;
+    this.unitSearchText = '';
+  }
+
+  onUnitSearchBlur(): void {
+    this.userDetailsForm.get('unitmaster.id')?.markAsTouched();
+    setTimeout(() => {
+      this.showUnitDropdown = false;
+      this.syncUnitSearchText();
+    }, 150);
+  }
+
+  selectUnit(unit: UnitDetails): void {
+    this.userDetailsForm.get('unitmaster.id')?.setValue(unit.id);
+    this.unitSearchText = unit.unitName;
+    this.showUnitDropdown = false;
+  }
     constructor(private fb: FormBuilder, private umService: UsermanagementService, private unitService: UnitService) {
      this.userDetailsForm = this.fb.group(
     {
@@ -203,6 +237,8 @@ handleScopeChange(scope: any) {
   clearFields(): void {
     this.userDetailsForm.reset({ fullName: '', cisfno: '', rank: '', email: '', mobileNo: '', password: '', confirmpassword: '', organizationName: 'CISF', userscopelevel: '', unitmaster: { id: '' }, sector: '', zone: '' });
     this.handleScopeChange('');
+    this.unitSearchText = '';
+    this.showUnitDropdown = false;
   }
 
   get username() {

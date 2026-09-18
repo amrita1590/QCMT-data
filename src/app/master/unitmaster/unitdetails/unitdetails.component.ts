@@ -98,12 +98,18 @@ export class UnitdetailsComponent {
   searchText = '';
   page = 1;
   pageSize = 5;
-  pageSizeOptions = [5, 10, 20];
+  pageSizeOptions = [5, 10, 20, 50, 100];
 
   get filteredData() {
-    const search = this.searchText.toLowerCase();
+    const search = this.searchText.toLowerCase().trim();
+    if (!search) return this.units;
     return this.units.filter(user =>
-      user.unitName.toLowerCase().includes(search) || user.addDetails.toLowerCase().includes(search)
+      (user.unitName || '').toLowerCase().includes(search) ||
+      (user.casoName || '').toLowerCase().includes(search) ||
+      (user.zone || '').toLowerCase().includes(search) ||
+      (user.sector || '').toLowerCase().includes(search) ||
+      (user.unitType || '').toLowerCase().includes(search) ||
+      (user.addDetails || '').toLowerCase().includes(search)
     );
   }
   

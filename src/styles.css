@@ -569,3 +569,9 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
     padding: 10px 12px;
   }
 }
+.modal-backdrop.planned-audit-reminder-backdrop.show {
+  background: rgba(12, 29, 49, .58);
+  opacity: 1;
+  -webkit-backdrop-filter: blur(11px);
+  backdrop-filter: blur(11px);
+}

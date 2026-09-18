@@ -1,9 +1,10 @@
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { UsermanagementService } from '../service/usermanagement.service';
-import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, TemplateRef, ViewChild } from '@angular/core';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { CommonModule } from "@angular/common";
 import { DashboardService } from "../service/dashboard.service";
+import { AuditscheduleserviceService } from '../service/auditscheduleservice.service';
 import { ClassDetails } from "../interface/ClassDetails";
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { StudentService } from '../service/student.service';
@@ -11,6 +12,7 @@ import { DashboardBean } from '../interface/DashboardBean';
 import { ToastService } from '../service/toast.service';
 import { AirportListDashboard } from '../interface/AirportListDashboard';
 import { AuditScheduleTemplate } from '../interface/AuditScheduleTemplate';
+import { AuditTemplateStatusHistory } from '../interface/AuditTemplateStatusHistory';
 import { NotificationBean } from '../interface/NotificationBean';
 import { RouterModule } from '@angular/router';
 import { IqcuCalendarService } from '../service/iqcu-calendar.service';
@@ -31,6 +33,9 @@ type ScheduleStatusFilter = 'ALL' | 'SCHEDULED' | 'DUE' | 'OVERDUE' | 'COMPLETED
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent {
+  @ViewChild('plannedAuditReminder') plannedAuditReminder?: TemplateRef<unknown>;
+  @ViewChild('casoAuditReminder') casoAuditReminder?: TemplateRef<unknown>;
+  @ViewChild('scopedObservationReminder') scopedObservationReminder?: TemplateRef<unknown>;
   
   isLoading: boolean = false;
   usernameData = "";
@@ -38,6 +43,16 @@ export class DashboardComponent {
   private modalRef: NgbModalRef | null = null;
 
   dashboardBean: DashboardBean | null = null;
+  dashboardAudits: AuditScheduleTemplate[] = [];
+  auditHistorySearch = '';
+  auditHistoryPage = 1;
+  readonly auditHistoryPageSize = 10;
+  auditListLoading = false;
+  auditListError = false;
+  selectedHistoryAudit: AuditScheduleTemplate | null = null;
+  selectedAuditHistory: AuditTemplateStatusHistory[] = [];
+  selectedHistoryLoading = false;
+  selectedHistoryError = false;
   selectedScheduleStatus: ScheduleStatusFilter = 'ALL';
 
   airportList: AirportListDashboard[] | null = null
@@ -59,6 +74,13 @@ export class DashboardComponent {
   monthlyAuditChart: any;
 
   private upcomingAuditsFull: AuditScheduleTemplate[] = [];
+  plannedAuditAlerts: AuditScheduleTemplate[] = [];
+  auditorEvaluationAlerts: AuditScheduleTemplate[] = [];
+  casoAuditAlerts: AuditScheduleTemplate[] = [];
+  casoObservationAlerts: AuditScheduleTemplate[] = [];
+  scopedObservationAlerts: AuditScheduleTemplate[] = [];
+  private initialCasoReminderLoad = true;
+  private initialScopedReminderLoad = true;
   upcomingTotalCount = 0;
   upcomingPlannedCount = 0;
   upcomingAttentionCount = 0;
@@ -82,6 +104,147 @@ export class DashboardComponent {
     return filtered.slice(0, 7);
   }
 
+  private auditMonthStart(auditMonth: string): Date | null {
+    const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(auditMonth || '');
+    return match ? new Date(Number(match[1]), Number(match[2]) - 1, 1) : null;
+  }
+
+  overdueDays(audit: AuditScheduleTemplate): number {
+    const monthStart = this.auditMonthStart(audit.auditMonth);
+    if (!monthStart) return -1;
+    const reminderStart = new Date(monthStart);
+    reminderStart.setDate(reminderStart.getDate() - 30);
+    const today = new Date();
+    return Math.floor((Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+      - Date.UTC(reminderStart.getFullYear(), reminderStart.getMonth(), reminderStart.getDate())) / 86400000);
+  }
+
+  private showPlannedAuditReminders(audits: AuditScheduleTemplate[]): void {
+    this.plannedAuditAlerts = audits
+      .filter(audit => audit.auditStatus === 'Planned' && this.overdueDays(audit) >= 0)
+      .sort((a, b) => a.auditMonth.localeCompare(b.auditMonth));
+
+    if (!this.umService.hasPendingAuditReminder()) return;
+    this.umService.consumeAuditReminder();
+    if ((this.plannedAuditAlerts.length || this.auditorEvaluationAlerts.length) && this.plannedAuditReminder) {
+      this.modalRef = this.modalService.open(this.plannedAuditReminder, {
+        size: 'lg', centered: true, scrollable: true,
+        windowClass: 'planned-audit-reminder-modal',
+        backdropClass: 'planned-audit-reminder-backdrop'
+      });
+    }
+  }
+
+  daysSinceAuditorScheduledEnd(audit: AuditScheduleTemplate): number | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(audit.auditScheduleToDate || '');
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const end = new Date(Date.UTC(year, month - 1, day));
+    if (end.getUTCFullYear() !== year || end.getUTCMonth() !== month - 1 || end.getUTCDate() !== day) return null;
+    const today = new Date();
+    return Math.floor((Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) - end.getTime()) / 86400000);
+  }
+
+  private scheduledStartDay(audit: AuditScheduleTemplate): number | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(audit.auditScheduleFromDate || '');
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+      ? date.getTime() / 86400000 : null;
+  }
+
+  daysUntilCasoSchedule(audit: AuditScheduleTemplate): number | null {
+    const scheduledDay = this.scheduledStartDay(audit);
+    if (scheduledDay === null) return null;
+    const today = new Date();
+    const todayDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000;
+    return scheduledDay - todayDay;
+  }
+
+  observationCasoDelayDays(audit: AuditScheduleTemplate): number | null {
+    return audit.auditStatus === 'Observation CASO' ? this.observationDelayDays(audit) : null;
+  }
+
+  observationDelayDays(audit: AuditScheduleTemplate): number | null {
+    const since = audit.auditStatus === 'Observation CASO' ? audit.observationCasoSince
+      : audit.auditStatus === 'ObservationZONE' ? audit.observationZoneSince
+      : audit.auditStatus === 'Observation SECTOR' ? audit.observationSectorSince : null;
+    if (!since) return null;
+    const enteredAt = Date.parse(since);
+    if (!Number.isFinite(enteredAt)) return null;
+    const daysPending = Math.floor((Date.now() - enteredAt) / 86400000);
+    return daysPending > 30 ? daysPending - 30 : null;
+  }
+
+  observationCasoReminderMessage(audit: AuditScheduleTemplate): string | null {
+    const delay = this.observationCasoDelayDays(audit);
+    return delay === null ? null : `Observation awaiting CASO response for ${delay + 30} days · ${delay} day${delay === 1 ? '' : 's'} beyond the 30-day reminder threshold`;
+  }
+
+  scopedObservationReminderMessage(audit: AuditScheduleTemplate): string | null {
+    const delay = this.observationDelayDays(audit);
+    if (delay === null) return null;
+    const office = audit.auditStatus === 'ObservationZONE' ? 'Zone' : 'Sector';
+    return `Observation awaiting ${office} review for ${delay + 30} days · ${delay} day${delay === 1 ? '' : 's'} beyond the 30-day reminder threshold`;
+  }
+
+  private loadScopedObservationReminders(): void {
+    if (!this.initialScopedReminderLoad || !this.umService.hasPendingAuditReminder()) return;
+    this.initialScopedReminderLoad = false;
+    this.auditScheduleService.getDashboardAuditList().subscribe({
+      next: audits => {
+        this.scopedObservationAlerts = (audits ?? [])
+          .filter(audit => audit.observationScopeMatch
+            && ((this.dashboardBean?.zoneView && audit.auditStatus === 'ObservationZONE')
+              || (this.dashboardBean?.sectorView && audit.auditStatus === 'Observation SECTOR'))
+            && this.observationDelayDays(audit) !== null)
+          .sort((a, b) => (this.observationDelayDays(b) ?? 0) - (this.observationDelayDays(a) ?? 0));
+        this.umService.consumeAuditReminder();
+        if (this.scopedObservationAlerts.length && this.scopedObservationReminder) {
+          this.modalRef = this.modalService.open(this.scopedObservationReminder, {
+            size: 'lg', centered: true, scrollable: true,
+            windowClass: 'scoped-observation-reminder-modal',
+            backdropClass: 'planned-audit-reminder-backdrop'
+          });
+        }
+      },
+      error: () => { this.scopedObservationAlerts = []; this.initialScopedReminderLoad = true; }
+    });
+  }
+
+  private loadCasoAuditReminders(): void {
+    if (!this.initialCasoReminderLoad || !this.umService.hasPendingAuditReminder()) return;
+    this.initialCasoReminderLoad = false;
+    this.auditScheduleService.getCASOAuditDetails().subscribe({
+      next: audits => {
+        this.casoAuditAlerts = (audits ?? [])
+          .filter(audit => audit.auditStatus === 'In Progress')
+          .filter(audit => {
+            const days = this.daysUntilCasoSchedule(audit);
+            return days !== null && days <= 15;
+          })
+          .sort((a, b) => (this.scheduledStartDay(a) ?? 0) - (this.scheduledStartDay(b) ?? 0));
+        this.casoObservationAlerts = (audits ?? [])
+          .filter(audit => audit.casoId === this.dashboardBean?.currentUserId && this.observationCasoDelayDays(audit) !== null)
+          .sort((a, b) => (this.observationCasoDelayDays(b) ?? 0) - (this.observationCasoDelayDays(a) ?? 0));
+        this.umService.consumeAuditReminder();
+        if ((this.casoAuditAlerts.length || this.casoObservationAlerts.length) && this.casoAuditReminder) {
+          this.modalRef = this.modalService.open(this.casoAuditReminder, {
+            size: 'lg', centered: true, scrollable: true,
+            windowClass: 'caso-audit-reminder-modal',
+            backdropClass: 'planned-audit-reminder-backdrop'
+          });
+        }
+      },
+      error: () => { this.casoAuditAlerts = []; this.casoObservationAlerts = []; this.initialCasoReminderLoad = true; }
+    });
+  }
+
   auditCards : any = [];
 
   currentDate: Date = new Date();
@@ -100,7 +263,7 @@ export class DashboardComponent {
   calendarViewerUrl: SafeResourceUrl | null = null;
   private calendarBlobUrl: string | null = null;
 
-  constructor(private modalService: NgbModal,private umService: UsermanagementService, private dashboardService: DashboardService, private toast: ToastService, private iqcuCalendarService: IqcuCalendarService, private sanitizer: DomSanitizer) {
+  constructor(private modalService: NgbModal,private umService: UsermanagementService, private dashboardService: DashboardService, private auditScheduleService: AuditscheduleserviceService, private toast: ToastService, private iqcuCalendarService: IqcuCalendarService, private sanitizer: DomSanitizer) {
 
   }
 
@@ -213,6 +376,95 @@ export class DashboardComponent {
       backdrop: 'static', keyboard: false, windowClass: 'iqcu-schedule-modal'
     });
   }
+
+  get filteredDashboardAudits(): AuditScheduleTemplate[] {
+    const search = this.auditHistorySearch.trim().toLowerCase();
+    if (!search) return this.dashboardAudits;
+    return this.dashboardAudits.filter(audit =>
+      [audit.name, audit.unitName, audit.auditType, audit.auditStatus, audit.auditorName, audit.casoName, this.auditReminderMessage(audit)]
+        .some(value => (value || '').toLowerCase().includes(search)));
+  }
+
+  auditReminderMessage(audit: AuditScheduleTemplate): string | null {
+    const userId = this.dashboardBean?.currentUserId;
+    if (!userId) return null;
+
+    if (this.dashboardBean?.auditorView && audit.auditorId === userId) {
+      if (audit.auditStatus === 'Planned') {
+        const overdue = this.overdueDays(audit);
+        if (overdue >= 0) return `Action Required · Overdue${overdue === 0 ? ' today' : ` by ${overdue} day${overdue === 1 ? '' : 's'}`}`;
+      }
+      if (audit.auditStatus === 'Action Required') {
+        const days = this.daysSinceAuditorScheduledEnd(audit);
+        if (days !== null && days > 15) return `Audit is pending for Auditor Evaluation & Response · ${days} days since scheduled end`;
+      }
+    }
+
+    if (this.dashboardBean?.casoView && audit.casoId === userId) {
+      if (audit.auditStatus === 'In Progress') {
+        const days = this.daysUntilCasoSchedule(audit);
+        if (days !== null && days <= 15) {
+          const timing = days > 0 ? `Starts in ${days} day${days === 1 ? '' : 's'}`
+            : days === 0 ? 'Starts today' : `Overdue by ${-days} day${days === -1 ? '' : 's'}`;
+          return `In Progress · ${timing}`;
+        }
+      }
+      const casoReminder = this.observationCasoReminderMessage(audit);
+      if (casoReminder) return casoReminder;
+    }
+    if (audit.observationScopeMatch) {
+      if (this.dashboardBean?.zoneView && audit.auditStatus === 'ObservationZONE')
+        return this.scopedObservationReminderMessage(audit);
+      if (this.dashboardBean?.sectorView && audit.auditStatus === 'Observation SECTOR')
+        return this.scopedObservationReminderMessage(audit);
+    }
+    return null;
+  }
+
+  get highlightedAuditCount(): number {
+    return this.filteredDashboardAudits.filter(audit => this.auditReminderMessage(audit) !== null).length;
+  }
+
+  get auditHistoryPageCount(): number {
+    return Math.max(1, Math.ceil(this.filteredDashboardAudits.length / this.auditHistoryPageSize));
+  }
+
+  get visibleDashboardAudits(): AuditScheduleTemplate[] {
+    const start = (this.auditHistoryPage - 1) * this.auditHistoryPageSize;
+    return this.filteredDashboardAudits.slice(start, start + this.auditHistoryPageSize);
+  }
+
+  openAuditHistory(content: TemplateRef<unknown>): void {
+    this.selectedHistoryAudit = null;
+    this.selectedAuditHistory = [];
+    this.auditHistorySearch = '';
+    this.auditHistoryPage = 1;
+    this.auditListLoading = true;
+    this.auditListError = false;
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl', centered: true, scrollable: true, windowClass: 'dashboard-audit-history-modal'
+    });
+    this.auditScheduleService.getDashboardAuditList().subscribe({
+      next: audits => { this.dashboardAudits = audits ?? []; this.auditListLoading = false; },
+      error: () => { this.dashboardAudits = []; this.auditListError = true; this.auditListLoading = false; }
+    });
+  }
+
+  viewAuditHistory(audit: AuditScheduleTemplate): void {
+    this.selectedHistoryAudit = audit;
+    this.selectedAuditHistory = [];
+    this.selectedHistoryLoading = true;
+    this.selectedHistoryError = false;
+    this.auditScheduleService.getAuditTemplateStatusHistory(audit.id).subscribe({
+      next: events => { this.selectedAuditHistory = events ?? []; this.selectedHistoryLoading = false; },
+      error: () => { this.selectedHistoryError = true; this.selectedHistoryLoading = false; }
+    });
+  }
+
+  backToAuditHistoryList(): void {
+    this.selectedHistoryAudit = null;
+    this.selectedAuditHistory = [];
+  }
   getDashboardData(fromDate: string, toDate: string) {
     this.isDashboardLoading = true;
     const payload = {
@@ -232,6 +484,14 @@ export class DashboardComponent {
           DashboardComponent.ATTENTION_STATUSES.includes(audit.auditStatus)
         ).length;
         this.upcomingAuditsFull = upcomingAudits;
+        this.auditorEvaluationAlerts = (this.dashboardBean.pendingAuditorEvaluationReminders || [])
+          .filter(audit => (this.daysSinceAuditorScheduledEnd(audit) ?? -1) > 15)
+          .sort((a, b) => (this.daysSinceAuditorScheduledEnd(b) ?? 0) - (this.daysSinceAuditorScheduledEnd(a) ?? 0));
+        if (this.dashboardBean.auditorView) this.showPlannedAuditReminders(this.dashboardBean.plannedAuditReminders || []);
+        if (this.dashboardBean.zoneView || this.dashboardBean.sectorView) this.loadScopedObservationReminders();
+        else if (this.dashboardBean.casoView) this.loadCasoAuditReminders();
+        if (!this.dashboardBean.auditorView && !this.dashboardBean.casoView
+          && !this.dashboardBean.zoneView && !this.dashboardBean.sectorView) this.umService.consumeAuditReminder();
         console.log('DashboardBean:', this.dashboardBean);
         this.isDashboardLoading = false;
         this.createChartView(this.dashboardBean);

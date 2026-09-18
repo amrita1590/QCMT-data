@@ -29,7 +29,13 @@ label { display:block; margin:0 0 7px; color:#30475d; font-size:12px; font-weigh
 input,select { display:block; width:100%; min-height:42px; padding:10px 12px; color:#243b53; border:1px solid #cbd9e6; border-radius:9px; outline:0; background:#fff; font:13px/20px inherit; transition:.18s ease; }
 input::placeholder { color:#9aa9b7; }
 input:focus,select:focus { border-color:#3284ce; box-shadow:0 0 0 3px rgba(50,132,206,.12); }
-select:disabled { color:#8a99a8; background:#f1f5f9; cursor:not-allowed; }
+select:disabled,input:disabled { color:#8a99a8; background:#f1f5f9; cursor:not-allowed; }
+
+/* Searchable select dropdown (Unit) - matches the pattern in auditschedule.component.css */
+.search-select-wrapper { position:relative; }
+.search-dropdown-list { position:absolute; top:100%; left:0; right:0; z-index:1060; max-height:220px; overflow-y:auto; background:#fff; border:1px solid #cbd9e6; border-top:none; border-radius:0 0 9px 9px; box-shadow:0 8px 18px rgba(30,60,90,.12); }
+.search-dropdown-item { padding:9px 12px; cursor:pointer; font-size:13px; }
+.search-dropdown-item:hover { background:#eaf3ff; }
 small { display:block; margin-top:5px; color:#718397; font-size:10px; line-height:1.45; }
 .field-error { color:#c0392b; font-weight:600; }
 .field-checking { color:#718397; font-style:italic; }

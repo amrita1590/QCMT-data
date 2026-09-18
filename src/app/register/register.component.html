@@ -20,7 +20,22 @@
         <section><h3><i class="bi bi-envelope"></i> Contact & assignment</h3>
           <div class="field"><label for="email">Email address *</label><input type="email" id="email" formControlName="email" placeholder="Enter registered email address">@if (invalid('email')) { <small class="field-error">Enter a valid email address.</small> }</div>
           <div class="field"><label for="mobileNo">Mobile number *</label><input type="tel" id="mobileNo" formControlName="mobileNo" inputmode="numeric" maxlength="10" placeholder="Enter 10-digit mobile number"><small>Used to confirm the account during password recovery.</small>@if (invalid('mobileNo')) { <small class="field-error">Enter a valid 10-digit mobile number.</small> }</div>
-          <div class="field" formGroupName="unitmaster"><label for="unit">Unit</label><select id="unit" formControlName="id"><option value="">Select unit</option><option *ngFor="let unit of units" [value]="unit.id">{{ unit.unitName }}</option></select></div>
+          <div class="field">
+            <label for="unitSearch">Unit</label>
+            <div class="search-select-wrapper">
+              <input type="text" id="unitSearch" placeholder="Search & select unit"
+                     [(ngModel)]="unitSearchText" [ngModelOptions]="{standalone: true}"
+                     [disabled]="!!userDetailsForm.get('unitmaster.id')?.disabled"
+                     (focus)="onUnitSearchFocus()" (blur)="onUnitSearchBlur()"
+                     autocomplete="off" />
+              <div class="search-dropdown-list" *ngIf="showUnitDropdown">
+                <div class="search-dropdown-item" *ngFor="let unit of filteredUnits" (mousedown)="selectUnit(unit)">
+                  {{ unit.unitName }}
+                </div>
+                <div class="search-dropdown-item text-muted" *ngIf="filteredUnits.length === 0">No matching unit</div>
+              </div>
+            </div>
+          </div>
           <div class="field"><label for="scope">User scope level *</label><select id="scope" formControlName="userscopelevel"><option value="">Select scope level</option><option *ngFor="let scope of scopeLevels" [value]="scope.id">{{ scope.name }}</option></select>@if (invalid('userscopelevel')) { <small class="field-error">Select a scope level.</small> }</div>
           <div class="field"><label for="sector">Sector</label><select id="sector" formControlName="sector"><option value="">Select sector</option><option *ngFor="let sector of sectors" [value]="sector">{{ sector }}</option></select></div>
           <div class="field"><label for="zone">Zone</label><select id="zone" formControlName="zone"><option value="">Select zone</option><option *ngFor="let zone of zones" [value]="zone">{{ zone }}</option></select></div>

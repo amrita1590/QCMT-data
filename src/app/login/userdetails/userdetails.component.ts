@@ -9,6 +9,7 @@ import { RbacService } from '../../service/rbac.service';
 import { UserRoles } from '../../interface/UserRoles';
 import { UnitDetails } from '../../interface/UnitDetails';
 import { UnitService } from '../../service/unit.service';
+import { UserRoleDetails } from '../../interface/UserRoleDetails';
 
 
 @Component({
@@ -35,6 +36,10 @@ export class UserdetailsComponent {
   roles: Role[] = [];
   userRoles: UserRoles[] = [];
 
+  /** userId -> assigned role names, built from /audituserlist (already joins user_roles/role_master_entity
+   * server-side - avoids adding roles to the plain /userdetaillist response just for this list). */
+  userRoleNamesById = new Map<number, string[]>();
+
   errorMsg: string | null = null;
   errorStatus: boolean = false;
   successMsg: string | null = null;
@@ -57,10 +62,27 @@ export class UserdetailsComponent {
 
     this.unitService.getUnitDetails().subscribe(units => {
       this.availableUnits = units;
-      
+
        console.log(" Units Dataa:", this.availableUnits);
-   
+
     });
+
+    this.umService.getUserAuditDetailList().subscribe((data: UserRoleDetails[]) => {
+      this.userRoleNamesById = new Map<number, string[]>();
+      data.forEach(u => {
+        const existing = this.userRoleNamesById.get(u.id) || [];
+        existing.push(u.rolename);
+        this.userRoleNamesById.set(u.id, existing);
+      });
+    });
+  }
+
+  /** Only users with at least one role appear in /audituserlist (inner join) - everyone else
+   * falls back to "No role assigned" here. */
+  getUserRoleNames(userId: number | undefined): string {
+    if (!userId) return 'No role assigned';
+    const names = this.userRoleNamesById.get(userId);
+    return names && names.length > 0 ? names.join(', ') : 'No role assigned';
   }
 
   openModal(content: any, userId: number | undefined) {
@@ -117,6 +139,13 @@ export class UserdetailsComponent {
               this.successMsg = 'Unit assigned successfully.'; // backend message
               this.successStatus = true;
               this.selectedUnitname = unitToAdd.unitName;
+              // Keep the underlying list row in sync - it's a separate array from userData
+              // (the modal's own copy), so without this the table kept showing the old unit
+              // until the whole list was re-fetched (e.g. page reload).
+              const listEntry = this.userDetailsList.find(u => u.id === this.userId);
+              if (listEntry) {
+                listEntry.unitid = this.selectedUnit;
+              }
             },
             error: (error) => {
               console.error('Error assigning unit:', error);
@@ -170,6 +199,10 @@ export class UserdetailsComponent {
         this.successMsg = response; // backend message
         this.successStatus = true;
         this.userRoles.push(newUserRole);
+        // Keep the list's Role column in sync with this modal's own change.
+        const names = this.userRoleNamesById.get(this.userId!) || [];
+        names.push(roleToAdd!.roleName);
+        this.userRoleNamesById.set(this.userId!, names);
       },
       error: (error) => {
         console.error('Error assigning role:', error);
@@ -188,7 +221,13 @@ export class UserdetailsComponent {
         console.log('Role deleted successfully:', response);
         this.successMsg = 'Role deleted successfully.';
         this.successStatus = true;
+        const removedRole = this.userRoles.find(r => r.roleId === id);
         this.userRoles = this.userRoles.filter(r => r.roleId !== id);
+        // Keep the list's Role column in sync with this modal's own change.
+        if (removedRole) {
+          const names = (this.userRoleNamesById.get(this.userId!) || []).filter(n => n !== removedRole.roleName);
+          this.userRoleNamesById.set(this.userId!, names);
+        }
       },
       error: (error) => {
         console.error('Error deleting role:', error);
@@ -299,6 +338,14 @@ export class UserdetailsComponent {
     return this.userDetailsList.filter(user =>
       (user.mstr_name || '').toLowerCase().includes(search) || (user.email || '').toLowerCase().includes(search)
     );
+  }
+
+  /** /userdetaillist only returns unitid (no populated unitmaster.unitName), so resolve the
+   * display name client-side against availableUnits - same lookup openModal() already does. */
+  getUnitName(unitid: number | undefined): string {
+    if (!unitid) return 'Not assigned';
+    const unit = this.availableUnits.find(u => Number(u.id) === Number(unitid));
+    return unit?.unitName || 'Not assigned';
   }
       
     

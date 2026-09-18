@@ -58,14 +58,22 @@
   <!-- Table Section -->
   <!-- Search Box -->
   <div class="row g-2 audit-list-toolbar">
-    <div class="col-md-9">
+    <div class="col-md-6">
       <div class="audit-search">
         <i class="fa fa-search"></i>
-        <input type="text" class="form-control" name="search" placeholder="Search by audit, unit, auditor or status..." [(ngModel)]="searchText" />
+        <input type="text" class="form-control" name="search" placeholder="Search by audit, unit, auditor or status..." [(ngModel)]="searchText" (ngModelChange)="page = 1" />
       </div>
     </div>
     <div class="col-md-3">
-      <select class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
+      <label class="visually-hidden" for="audit-status-filter">Filter audits by status</label>
+      <select id="audit-status-filter" class="form-select" name="auditStatusFilter" [(ngModel)]="selectedAuditStatus" (ngModelChange)="page = 1">
+        <option value="">All statuses</option>
+        <option *ngFor="let status of auditStatusOptions" [value]="status">{{ status === 'ObservationZONE' ? 'Observation ZONE' : status }}</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="visually-hidden" for="audit-page-size">Audits per page</label>
+      <select id="audit-page-size" class="form-select" name="pageSize" [(ngModel)]="pageSize" (change)="page = 1">
         <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} per page</option>
       </select>
     </div>
@@ -213,12 +221,13 @@
             </div>
           </div></td>
         </tr>
+        <tr *ngIf="filteredData.length === 0"><td colspan="10" class="text-center py-4 text-muted">No audits match the selected status or search.</td></tr>
       </tbody>
 
     </table>
   </div>
    <!-- Pagination -->
-    <nav class="audit-pagination" aria-label="Audit list pagination">
+    <nav *ngIf="totalPages > 0" class="audit-pagination" aria-label="Audit list pagination">
       <ul class="pagination justify-content-center">
         <li class="page-item" [class.disabled]="page === 1">
           <button class="page-link" (click)="prevPage()">Prev</button>
@@ -541,6 +550,7 @@
         </div>
       </div>
       <div class="modal-body scheduled-template-body" id="scheduledTemplatePrintSection">
+          <app-audit-template-status-history [auditId]="auditTemplateGen?.auditScheduleTemplate?.id"></app-audit-template-status-history>
           <h3 class="text-center mb-4 title-text">
               {{auditTemplateGen?.auditScheduleTemplate?.name}}
           </h3>
@@ -995,6 +1005,7 @@
 
   <!-- BODY -->
   <div class="modal-body pt-2">
+      <app-audit-template-status-history [auditId]="auditBoardTemplateGen.auditBoardScheduleTemplate.auditTemplateId"></app-audit-template-status-history>
       <ng-container *ngIf="auditBoardTemplateGen.auditiorResponse">
 
       <!-- <div class="card shadow-lg border-0 rounded-3 mb-4"> -->
@@ -1444,7 +1455,5 @@
   </div>
 
 </ng-template>
-
-
 
 

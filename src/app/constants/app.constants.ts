@@ -14,7 +14,7 @@ export const APP_CONSTANTS = {
     },
 
     FILES: {
-        BASE_URL: "http://192.168.11.8:8060/"
+        BASE_URL: "http://localhost:8060/"
 
     },
      MAILNOTIFICATION: {
@@ -22,6 +22,7 @@ export const APP_CONSTANTS = {
 
     },
     NOTIFICATION: {
+        
         PRE_QUESTIONNAIRE: 'Auditor: {auditorName} has sent PQs of {auditname}  to CASO:  {casoName}.',
         PRE_QUESTIONNAIRE_FollowUp: 'Auditor: {auditorName} has sent follow up queries on PQs of {auditname}  to CASO:  {casoName}.',
         SEND_TO_CASO: 'Pre-questionnaire for {auditname} has been received from auditor- {casoName} to CASO.',        

@@ -36,10 +36,11 @@ import { NotificationBean } from '../interface/NotificationBean';
 import { AuditStatusGuideComponent } from '../shared/audit-status-guide/audit-status-guide.component';
 import { AuditorRemarktoCASO } from '../interface/AuditorRemarktoCASO';
 import { AuditRemarksPanelsComponent } from '../shared/audit-remarks-panels/audit-remarks-panels.component';
+import { AuditTemplateStatusHistoryComponent } from '../shared/audit-template-status-history/audit-template-status-history.component';
 
 @Component({
   selector: 'app-adminauditschedule',
-  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, AuditStatusGuideComponent, AuditRemarksPanelsComponent],
+  imports: [ReactiveFormsModule, NgClass, CommonModule, FormsModule, AuditObservationChatComponentComponent, AuditStatusGuideComponent, AuditRemarksPanelsComponent, AuditTemplateStatusHistoryComponent],
   templateUrl: './adminauditschedule.component.html',
   styleUrl: './adminauditschedule.component.css'
 })
@@ -1597,4 +1598,3 @@ loadQuestions() {
 
 
 }
-

@@ -1,0 +1,12 @@
+.audit-history{margin:1rem 0;border:1px solid #d9e5f5;border-radius:10px;background:#f8fbff;color:#17324f}
+.audit-history-toggle{display:flex;align-items:center;gap:.75rem;width:100%;padding:.8rem 1rem;border:0;background:transparent;color:inherit;text-align:left;font-weight:700}
+.audit-history-toggle span:first-child{flex:1}
+.audit-history-count{padding:.1rem .55rem;border-radius:1rem;background:#e8f1ff;color:#1262b8;font-size:.8rem}
+.audit-history-body{padding:0 1rem 1rem}
+.audit-history-body p{margin:.5rem 0;color:#5c6f83}
+.audit-history-body ol{margin:.2rem 0 0;padding-left:1.3rem}
+.audit-history-body li{padding:.6rem .2rem;border-bottom:1px solid #e3ebf5}
+.audit-history-body li:last-child{border-bottom:0}
+.audit-history-transition{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+.audit-history-transition i{color:#5e7999;font-size:.75rem}
+.audit-history-body small{display:block;margin-top:.2rem;color:#667a91}
