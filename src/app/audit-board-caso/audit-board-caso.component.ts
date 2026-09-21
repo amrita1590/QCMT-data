@@ -160,6 +160,21 @@ export class AuditBoardCasoComponent {
 
   ngOnInit() {
     this.getCASOAuditDetails();
+    this.unitDetails.getUnitDetails().subscribe({
+      next: (data) => { this.units = data; },
+      error: (err) => console.error('Failed to fetch units', err)
+    });
+  }
+
+  /** "Send to {Sector}" for a DIG Unit, otherwise "Send to {Zone}" - based on the unitType of
+   * the audit's own unit, not the logged-in user's. Falls back to the generic label if the
+   * audit's unit can't be resolved yet (e.g. units still loading). */
+  get responsibleOfficeLabel(): string {
+    const template = this.templates.find(t => t.id === this.auditObservation?.auditTemplateId);
+    const unit = template ? this.units.find(u => Number(u.id) === Number(template.unitId)) : undefined;
+    if (!unit) return 'Responsible Office';
+    const destination = unit.unitType === 'DIG Unit' ? unit.sector : unit.zone;
+    return destination ? destination : 'Responsible Office';
   }
 
   sendToAuditor(rowId: number) {
@@ -224,6 +239,12 @@ export class AuditBoardCasoComponent {
 
     this.selectedTemplateId = id;
     this.loadQuestions();
+    // Populates this.auditObservation, which the modal's "Observation Details" section is
+    // gated on (*ngIf="auditObservation && auditObservation.id") - missing here meant that
+    // section either never showed, or showed stale data left over from a previous "Respond to
+    // Observation" click on a different row. Matches auditschedule.component.ts's working
+    // viewAuditorResponse(), which already calls this.
+    this.getAuditObservationComponent(id);
     this.auditService.getAuditBoardDetails(id).subscribe({
       next: (data) => {
         this.auditBoardScheduleTemplate = data;
