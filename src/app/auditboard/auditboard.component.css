@@ -933,3 +933,136 @@ select.form-select {
 .zone-remark-card { border-left-color: #198754 !important; }
 .sector-remarks-box { border-left: 4px solid #0284c7; margin-bottom: 12px; }
 .sector-remark-card { border-left-color: #0284c7 !important; }
+
+/* ================= Observation Compliance History report ================= */
+.report-page {
+  padding: 18px;
+  font-size: 13px;
+  color: #2c3e50;
+  background: linear-gradient(to bottom, #f6f9fc, #eef3f9);
+}
+
+.report-title {
+  text-align: center;
+  font-weight: 800;
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: #0d3b66;
+  letter-spacing: 0.5px;
+}
+
+.observation-block {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border-left: 6px solid #0d6efd;
+  transition: all 0.2s ease;
+}
+
+.observation-block:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+/* scoped to the report so it doesn't affect the unrelated .obs-header used elsewhere in this component */
+.report-page .obs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #0d3b66;
+}
+
+.final-status {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.final-status.Pending { background: #ffe5e5; color: #d93025; }
+.final-status.Dropped { background: #fff6d9; color: #b3a26b; }
+.final-status.Compliant { background: #e3f8ee; color: #009b75; }
+.final-status.NonCompliant { background: #fff2e6; color: #ff8c00; }
+.final-status.CompliantNeedImprovement { background: #e6f4ff; color: #1a73e8; }
+.final-status.NonCompliantNonCritical { background: #fff7e6; color: #f4a100; }
+.final-status.NonCompliantCritical { background: #ffe5e5; color: #d93025; }
+.final-status.PartiallyCompliantCritical { background: #fce8ff; color: #9c27b0; }
+.final-status.PartiallyCompliantNonCritical { background: #e6fff7; color: #00a67d; }
+
+.obs-text {
+  background: linear-gradient(90deg, #e8f0fe, #f1f6ff);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+  border-left: 4px solid #4c8bf5;
+}
+
+.obs-meta {
+  display: flex;
+  gap: 25px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: #495057;
+}
+
+.timeline-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #34495e;
+}
+
+.timeline {
+  border-left: 3px dashed #b6c2d2;
+  padding-left: 14px;
+}
+
+.time-item {
+  margin-bottom: 14px;
+}
+
+.time-role {
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.time-role.APSHQrs { color: #0d6efd; }
+.time-role.CASO { color: #198754; }
+
+.time-content {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e3e8ef;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.letter {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.message {
+  margin-bottom: 6px;
+}
+
+.attach {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+.time {
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 5px;
+}

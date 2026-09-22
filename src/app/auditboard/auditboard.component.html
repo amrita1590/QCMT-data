@@ -324,6 +324,100 @@
   <div class="modal-footer"><button class="btn btn-light border" (click)="modal.dismiss()">Close</button></div>
 </ng-template>
 
+<ng-template #observationMessageHistoryModel let-modal>
+      <div class="modal-header">
+        <h5 class="modal-title">Observation Compliance History</h5>&nbsp;
+        <!-- PRINT ICON BUTTON -->
+        <button class="btn btn-sm btn-icon me-2" (click)="printObservationHistory()" title="Print" style="border:none; background:transparent;">
+            <i class="fa fa-print" style="font-size:16px;"></i>
+        </button>
+
+        <!-- CLOSE BUTTON -->
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+
+      </div>
+      <!-- ================= REPORT ================= -->
+      <div id="print-section">
+      <div class="report-page" *ngIf="auditObservation">
+
+        <div class="report-title">
+          Observation Compliance Report
+        </div>
+
+        <!-- LOOP -->
+        <div class="observation-block"
+            *ngFor="let obs of auditObservation.auditObservationComponent; let i = index">
+
+          <!-- HEADER -->
+          <div class="obs-header">
+            <div>Observation #{{i+1}}</div>
+            <div class="final-status" [ngClass]="formatStatusClass(obs.complianceStatus)">
+              {{obs.complianceStatus}}
+            </div>
+          </div>
+
+          <!-- DESCRIPTION -->
+          <div class="obs-text">
+            {{obs.observation}}
+          </div>
+
+          <!-- META -->
+          <div class="obs-meta">
+            <div><b>Remarks:</b> {{obs.remarks}}</div>
+            <div><b>Type Criticality:</b> {{obs.typeCriticality}}</div>
+          </div>
+
+          <!-- TIMELINE TITLE -->
+          <div class="timeline-title">
+            Communication History
+          </div>
+
+          <!-- ================= TIMELINE ================= -->
+          <div class="timeline">
+
+            <div *ngFor="let msg of obs.auditObservationComponentMessageList"
+                class="time-item">
+
+              <div class="time-role">
+                {{msg.status}}
+              </div>
+
+              <div class="time-content">
+
+                <div class="letter">
+                  <span><b>Letter No:</b> {{msg.letterNo}}</span>
+                  <span><b>Date:</b> {{msg.letterDate}}</span>
+                </div>
+
+                <div class="message">
+                  {{msg.complianceMessage}}
+                </div>
+
+                <div *ngIf="msg.attachmentStatus === 'Attached'" class="attach">
+                  <a class="no-underline" href="javascript:void(0)"
+                   (click)="downloadFile(msg.filePath, msg.fileName)">
+                  📎 {{msg.fileName}}
+                  </a>
+                </div>
+
+                <div class="time">
+                  {{msg.entryTime}}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+      </div>
+    <div class="modal-footer">
+        <button class="btn btn-primary ms2" (click)="printObservationHistory()"><i class="fa-solid fa-print"></i>&nbsp;Print / Save PDF</button>
+        <button class="btn btn-secondary" (click)="modal.dismiss()"><i class="fa-solid fa-xmark"></i>&nbsp;Close</button>
+    </div>
+</ng-template>
+
 <ng-template #zoneApsConfirmPopup let-modal>
   <div class="modal-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary"><i class="fa fa-comment-dots me-2"></i>Send Observation to APS HQrs</h5>
@@ -715,7 +809,7 @@
           <i class="fa-solid fa-file-alt me-2 text-primary"></i>Observation Details
           <button type="button" class="btn btn-sm btn-outline-primary ms-2"
                   title="View observation details"
-                  (click)="openObservationSummary(zoneObservationTemplate, auditObservation?.auditTemplateId || 0)">
+                  (click)="viewObservationMessageHistory(observationMessageHistoryModel)">
             <i class="fa fa-eye"></i>
           </button>
         </h5>

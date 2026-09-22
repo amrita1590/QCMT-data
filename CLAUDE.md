@@ -38,7 +38,7 @@ All API calls are proxied through the API Gateway at `http://localhost:8060`:
 | `/v1/qcmt/master/**` | Master | 8083 |
 | `/v1/qcmt/rbac/**` | RBAC | 8086 |
 
-Eureka service registry runs on port 8761. The `proxy.conf.json` handles dev-time routing — in production, the gateway is accessed directly.
+Eureka service registry runs on port 18761 (`QCMT-Eureka-Server`, not the Spring Boot default 8761 — every service's `eureka.client.serviceUrl.defaultZone` points there). The `proxy.conf.json` handles dev-time routing — in production, the gateway is accessed directly. The Gateway routes `/v1/qcmt/master/**`, `/v1/qcmt/rbac/**`, and `/v1/qcmt/auth/**` via `lb://` (Eureka-resolved), not fixed URIs — if Eureka isn't up yet (or a service hasn't finished registering), every proxied call fails even though the target service's own port is already bound. Start the Eureka server first and give services a few seconds to register before testing through the Gateway.
 
 File server base URL is hardcoded in [src/app/constants/app.constants.ts](src/app/constants/app.constants.ts): `http://192.168.11.8:8060/`.
 
@@ -198,7 +198,8 @@ src/app/
 ├── interface/                # TypeScript interfaces (models)
 ├── constants/                # APP_CONSTANTS (notification messages, file URL)
 ├── interceptor/              # tokenInterceptor (JWT injection + 401 handling)
-├── master/                   # Master data: unitmaster/, category/, questionmaster/
+├── master/                   # Master data: unitmaster/, category/, questionmaster/ (questionmaster/ is orphaned — see Gotchas)
+├── questionnairetemplates/   # LIVE question/template builder for IQCU (route `/questionnairetemplate`) — not the same as master/questionmaster/
 ├── RBAC/                     # Role & permission management: role/, permission/, permission-assignment/
 ├── auditschedule/            # Audit scheduling UI
 ├── auditboard/               # APS HQrs audit board view
@@ -229,7 +230,7 @@ src/app/
 
 **Change-password validation is triplicated**: `changepassword/childcomponent/chagepasswordchild/`, `register/changepassword/`, and `login/updatepassword/` each carry their own independent copy of the same `newPassword` form group (identical `Validators.pattern` regex, identical error messages in the template). There's no shared validator/component — a fix to the password rules or their error messages must be applied in all three, exactly like the ICAO/Internal duplication above. (One real bug found this way: the regex's lookahead accepted `@` as a valid special character but the character class didn't, silently rejecting passwords containing `@` in two of the three copies while showing an unrelated "must include uppercase/lowercase" message that the regex never actually enforced.)
 
-**Orphaned components**: `src/app/adminauditschedule/` and `src/app/student/` exist in the tree but aren't part of the audit domain — `adminauditschedule` isn't referenced in `app.routes.ts` or anywhere else (dead code), and `student`/`settings` are routed (`/student`, `/settings`, both behind `AuthGuard`) but are generic scaffolding-style pages unrelated to the CISF audit workflow. Don't assume either reflects current architecture patterns. `src/app/RBAC/` (`role/`, `permission/`, `permission-assignment/`, `rolepermission/`) is also unrouted — none of its components appear in `app.routes.ts` or the sidebar, so the role/permission management UI is built but not currently reachable.
+**Orphaned components**: `src/app/adminauditschedule/` and `src/app/student/` exist in the tree but aren't part of the audit domain — `adminauditschedule` isn't referenced in `app.routes.ts` or anywhere else (dead code), and `student`/`settings` are routed (`/student`, `/settings`, both behind `AuthGuard`) but are generic scaffolding-style pages unrelated to the CISF audit workflow. Don't assume either reflects current architecture patterns. `src/app/RBAC/` (`role/`, `permission/`, `permission-assignment/`, `rolepermission/`) is also unrouted — none of its components appear in `app.routes.ts` or the sidebar, so the role/permission management UI is built but not currently reachable. `src/app/master/questionmaster/` is the same trap: it exists, compiles, and looks like the obvious place for question/template management, but nothing imports `QuestionmasterComponent` and it has no route — the **live** question/template builder is the separate top-level `src/app/questionnairetemplates/` component, routed at `/questionnairetemplate`. Same lesson as the Register-page trap below: verify a component is actually reached via `app.routes.ts` before assuming a plausibly-named one is the live implementation.
 
 **Unit locking**: BCAS (`bcas-bcas`) and ICAO (`bcas-icao`, `icao`) lock the unit to the logged-in user's assigned unit. The `unitId` form control is disabled at construction. After any `form.reset()`, you must re-disable it. Always use `getLoggedUserDetailList()` (Master service) — never `getUserProfileDetails()` (Auth service) — to get `unitid`.
 

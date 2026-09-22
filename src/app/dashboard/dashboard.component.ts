@@ -65,13 +65,10 @@ export class DashboardComponent {
   auditSubtitle: string = '';
 
   chartcompliance: number = 0;
-  chartdropped: number = 0;
   chartopen: number = 0;
-  chartclose: number = 0;
   notificationCount: number = 0;
 
   statusChart: any;
-  monthlyAuditChart: any;
 
   private upcomingAuditsFull: AuditScheduleTemplate[] = [];
   plannedAuditAlerts: AuditScheduleTemplate[] = [];
@@ -465,6 +462,61 @@ export class DashboardComponent {
     this.selectedHistoryAudit = null;
     this.selectedAuditHistory = [];
   }
+
+  /** Rank + Name + Unit, space-separated - rank/unit are a write-time snapshot only present on
+   * entries recorded after this feature shipped, so older entries fall back to just the name. */
+  changedByLabel(event: AuditTemplateStatusHistory): string {
+    const parts = [event.changedByRank, event.changedByName, event.changedByUnit]
+      .map(p => (p || '').trim())
+      .filter(p => p.length > 0);
+    return parts.length > 0 ? parts.join(' ') : (event.changedByName || 'System');
+  }
+
+  printAuditHistory() {
+    const printContents = document.getElementById('audit-history-print-section')?.innerHTML;
+
+    const popupWindow = window.open('', '_blank', 'width=800,height=600');
+
+    popupWindow!.document.open();
+    popupWindow!.document.write(`
+      <html>
+        <head>
+          <title>Audit Status History</title>
+
+          <!-- Copy all styles -->
+          ${Array.from(document.styleSheets)
+            .map((styleSheet: any) => {
+              try {
+                if (styleSheet.href) {
+                  return `<link rel="stylesheet" href="${styleSheet.href}">`;
+                } else {
+                  return `<style>${styleSheet.cssRules
+                    ? Array.from(styleSheet.cssRules)
+                        .map((rule: any) => rule.cssText)
+                        .join('')
+                    : ''}</style>`;
+                }
+              } catch (e) {
+                return '';
+              }
+            })
+            .join('')}
+
+          <style>
+            body {
+              margin: 10px;
+            }
+          </style>
+        </head>
+
+        <body onload="window.print(); window.close();">
+          ${printContents}
+        </body>
+      </html>
+    `);
+
+    popupWindow!.document.close();
+  }
   getDashboardData(fromDate: string, toDate: string) {
     this.isDashboardLoading = true;
     const payload = {
@@ -571,23 +623,19 @@ export class DashboardComponent {
     }
 
     this.chartcompliance = Number(bean?.totalCompliance || 0);
-    this.chartdropped = Number(bean?.totalDropped || 0);
     this.chartopen = Number(bean?.openObservation || 0);
-    this.chartclose = this.chartcompliance + this.chartdropped;
 
     // ✅ FIXED HERE
     this.statusChart = new Chart(canvas, {
       type: "doughnut",
       data: {
-        labels: ["Compliance", "Dropped", "Open", "Close"],
+        labels: ["Compliance", "Open"],
         datasets: [{
           data: [
             this.chartcompliance,
-            this.chartdropped,
-            this.chartopen,
-            this.chartclose
+            this.chartopen
           ],
-          backgroundColor: ["#1abf4b", "#ffcc00", "#ff3b30", "#1b74e4"],
+          backgroundColor: ["#1abf4b", "#ff3b30"],
           borderWidth: 2,
           hoverOffset: 6
         }]
@@ -601,81 +649,6 @@ export class DashboardComponent {
         }
       }
     });
-
-    this.createMonthlyAuditChart(bean);
-  }
-
-  createMonthlyAuditChart(bean: DashboardBean | null) {
-    const canvas = document.getElementById('monthlyAuditChart') as HTMLCanvasElement | null;
-    if (!canvas) return;
-
-    if (this.monthlyAuditChart) {
-      this.monthlyAuditChart.destroy();
-    }
-
-    const monthlyCounts = bean?.monthlyAuditCounts || [];
-    const auditCounts = monthlyCounts.map(item => Number(item.auditCount || 0));
-    const monthLabels = monthlyCounts.map(item => {
-      const [year, month] = item.auditMonth.split('-').map(Number);
-      return new Intl.DateTimeFormat('en-IN', { month: 'short', year: '2-digit' })
-        .format(new Date(year, month - 1, 1));
-    });
-
-    this.monthlyAuditChart = new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: monthLabels,
-        datasets: [{
-          label: 'Audits',
-          data: auditCounts,
-          backgroundColor: auditCounts.map(count => this.getAuditCountColor(count)),
-          hoverBackgroundColor: auditCounts.map(count => this.getAuditCountColor(count, true)),
-          borderRadius: 7,
-          borderSkipped: false,
-          maxBarThickness: 54
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: '#64748b', font: { size: 11 } }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { precision: 0, color: '#64748b', stepSize: 1 },
-            grid: { color: 'rgba(148, 163, 184, .18)' }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            displayColors: false,
-            backgroundColor: '#17395d',
-            padding: 10
-          }
-        }
-      }
-    });
-  }
-
-  private getAuditCountColor(count: number, hover = false): string {
-    const colors = count <= 0
-      ? ['#d9e1e8', '#c8d2dc']
-      : count === 1
-        ? ['#27ae60', '#1f8f4e']
-        : count === 2
-          ? ['#2f80d8', '#2469b4']
-          : count === 3
-            ? ['#f2b01e', '#d5960c']
-            : count === 4
-              ? ['#f0782b', '#cc5d16']
-              : ['#dc4453', '#b92f3d'];
-
-    return colors[hover ? 1 : 0];
   }
 
   validateDates() {

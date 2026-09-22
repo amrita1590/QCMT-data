@@ -15,7 +15,6 @@ export const APP_CONSTANTS = {
 
     FILES: {
         BASE_URL: "http://localhost:8060/"
-
     },
      MAILNOTIFICATION: {
         MAIL_NOTIFICATION: "true"

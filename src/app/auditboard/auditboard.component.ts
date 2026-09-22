@@ -596,6 +596,56 @@ formatStatusClass(status: string): string {
   return status ? status.replace(/\s+/g, '').replace(/[()\-]/g, '') : '';
 }
 
+viewObservationMessageHistory(content: any) {
+  this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
+}
+
+printObservationHistory() {
+  const printContents = document.getElementById('print-section')?.innerHTML;
+
+  const popupWindow = window.open('', '_blank', 'width=800,height=600');
+
+  popupWindow!.document.open();
+  popupWindow!.document.write(`
+    <html>
+      <head>
+        <title>Observation Compliance History</title>
+
+        <!-- Copy all styles -->
+        ${Array.from(document.styleSheets)
+          .map((styleSheet: any) => {
+            try {
+              if (styleSheet.href) {
+                return `<link rel="stylesheet" href="${styleSheet.href}">`;
+              } else {
+                return `<style>${styleSheet.cssRules
+                  ? Array.from(styleSheet.cssRules)
+                      .map((rule: any) => rule.cssText)
+                      .join('')
+                  : ''}</style>`;
+              }
+            } catch (e) {
+              return '';
+            }
+          })
+          .join('')}
+
+        <style>
+          body {
+            margin: 10px;
+          }
+        </style>
+      </head>
+
+      <body onload="window.print(); window.close();">
+        ${printContents}
+      </body>
+    </html>
+  `);
+
+  popupWindow!.document.close();
+}
+
 viewBoardTemplate(content: any) {
     this.modalRef = this.modalService.open(content, {
       size: "xl", windowClass: "questionnaire-modal audit-preview-modal", scrollable: true, centered: true,

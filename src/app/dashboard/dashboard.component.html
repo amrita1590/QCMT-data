@@ -440,42 +440,17 @@
     <div class="chart-legend">
 
       <div><span class="dot green"></span> Compliance</div>
-      <div><span class="dot yellow"></span> Dropped</div>
       <div><span class="dot red"></span> Open</div>
-      <div><span class="dot blue"></span> Close</div>
 
     </div>
     <hr/>
 
     <div class="chart-stats">
       <div class="stat green">Compliance <b>{{chartcompliance}}</b></div>
-      <div class="stat yellow">Dropped <b>{{chartdropped}}</b></div>
       <div class="stat red">Open <b>{{chartopen}}</b></div>
-      <div class="stat blue">Close <b>{{chartclose}}</b></div>
     </div>
 
   </div>
-
-<section class="monthly-audit-chart-box">
-  <div class="monthly-chart-header">
-    <div>
-      <span class="monthly-chart-eyebrow">Audit Trend</span>
-      <h3 class="title">Month-wise Audit Count</h3>
-      <p class="subtitle">Audits scheduled across the previous 6 and upcoming 4 months</p>
-    </div>
-    <span class="monthly-chart-badge"><i class="fa-regular fa-calendar me-2"></i>6 past · 4 upcoming</span>
-  </div>
-  <div class="monthly-chart-scale" aria-label="Audit count color scale">
-    <span><i class="scale-dot count-one"></i>1</span>
-    <span><i class="scale-dot count-two"></i>2</span>
-    <span><i class="scale-dot count-three"></i>3</span>
-    <span><i class="scale-dot count-four"></i>4</span>
-    <span><i class="scale-dot count-five"></i>5+</span>
-  </div>
-  <div class="monthly-audit-chart-container">
-    <canvas id="monthlyAuditChart" role="img" aria-label="Bar chart showing audit counts for the current and previous five months followed by the upcoming four months."></canvas>
-  </div>
-</section>
 
 </div>
 
@@ -618,7 +593,11 @@
   </div>
   <div class="modal-body dashboard-modal-body dashboard-audit-history-body">
     <ng-container *ngIf="selectedHistoryAudit as audit; else auditHistoryList">
-      <button type="button" class="audit-history-back" (click)="backToAuditHistoryList()"><i class="fa fa-arrow-left me-1"></i>All audits</button>
+      <div class="audit-history-detail-toolbar">
+        <button type="button" class="audit-history-back" (click)="backToAuditHistoryList()"><i class="fa fa-arrow-left me-1"></i>All audits</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="printAuditHistory()"><i class="fa fa-print me-1"></i>Print</button>
+      </div>
+      <div id="audit-history-print-section">
       <div class="audit-history-detail-heading">
         <div><h6>{{ audit.name }}</h6><p>{{ audit.unitName }}<ng-container *ngIf="audit.auditType"> · {{ audit.auditType }}</ng-container></p></div>
         <span class="audit-history-current-status">{{ audit.auditStatus }}</span>
@@ -639,7 +618,7 @@
             <strong>{{ event.previousStatus || 'Created' }} <i class="fa fa-arrow-right mx-1" aria-hidden="true"></i> {{ event.newStatus }}</strong>
             <span>{{ event.changedAt | date:'dd MMM yyyy, h:mm a' }}</span>
           </div>
-          <div class="audit-history-event-actor">Changed by {{ event.changedByName || 'System' }}</div>
+          <div class="audit-history-event-actor">Changed by {{ changedByLabel(event) }}</div>
           <div class="audit-history-event-metrics">
             <span *ngIf="event.daysInPreviousStatus !== null">{{ event.daysInPreviousStatus }} day{{ event.daysInPreviousStatus === 1 ? '' : 's' }} in previous status</span>
             <span *ngIf="event.daysAfterScheduledEnd !== null" [class.delayed]="event.daysAfterScheduledEnd > 0">
@@ -648,6 +627,7 @@
           </div>
         </li>
       </ol>
+      </div>
     </ng-container>
     <ng-template #auditHistoryList>
       <div class="audit-history-list-controls">
