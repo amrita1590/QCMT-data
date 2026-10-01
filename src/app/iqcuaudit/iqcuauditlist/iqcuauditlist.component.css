@@ -118,9 +118,9 @@
 .status-badge.Planned { background: #e6f0ff; color: #0d47ff; }
 .status-badge.InProgress { background: #fff6d9; color: #c89500; }
 .status-badge.Completed { background: #e3f8ee; color: #009b75; }
-.status-badge.ActionRequired { background: #ffe5e5; color: #d93025; cursor: pointer;}
-.status-badge.ObservationAPS { background: #fff2e6; color: #ff8c00; cursor: pointer;}
-.status-badge.ObservationCASO { background: #f9e8ff; color: #7e22ce; cursor: pointer;}  
+.status-badge.ActionRequired { background: #ffe5e5; color: #d93025; }
+.status-badge.ObservationAPS { background: #fff2e6; color: #ff8c00; }
+.status-badge.ObservationCASO { background: #f9e8ff; color: #7e22ce; }
 .status-badge.ObservationSECTOR { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
 
 /* Actions */

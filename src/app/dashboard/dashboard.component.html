@@ -109,7 +109,10 @@
   </div>
 
    <!-- CARD 2 -->
-  <div class="stat-card accent-purple dashboard-metric-card">
+  <div class="stat-card accent-purple dashboard-metric-card clickable-metric-card" role="button" tabindex="0"
+       title="View observation counts by unit"
+       (click)="openUnitObservations(unitObservationsModal)"
+       (keyup.enter)="openUnitObservations(unitObservationsModal)">
     <div class="card-top-border"></div>
 
     <div class="card-content metric-card-content">
@@ -237,21 +240,6 @@
         </p>
       </div>
       <span class="upcoming-limit-badge"><i class="fa-regular fa-calendar-check me-2"></i>Next 7</span>
-    </div>
-
-    <div class="upcoming-summary" aria-label="Upcoming audit summary">
-      <button type="button" class="upcoming-summary-item total" [class.active]="selectedUpcomingFilter === 'ALL'" (click)="selectUpcomingFilter('ALL')">
-        <span class="summary-icon"><i class="fa-solid fa-list-check"></i></span>
-        <span><strong>{{ upcomingTotalCount }}</strong><small>Total scheduled</small></span>
-      </button>
-      <button type="button" class="upcoming-summary-item planned" [class.active]="selectedUpcomingFilter === 'PLANNED'" (click)="selectUpcomingFilter('PLANNED')">
-        <span class="summary-icon"><i class="fa-regular fa-calendar"></i></span>
-        <span><strong>{{ upcomingPlannedCount }}</strong><small>Planned</small></span>
-      </button>
-      <button type="button" class="upcoming-summary-item attention" [class.active]="selectedUpcomingFilter === 'ATTENTION'" (click)="selectUpcomingFilter('ATTENTION')">
-        <span class="summary-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
-        <span><strong>{{ upcomingAttentionCount }}</strong><small>Need attention</small></span>
-      </button>
     </div>
 
     @if (upcomingAuditList.length === 0) {
@@ -450,6 +438,29 @@
       <div class="stat red">Open <b>{{chartopen}}</b></div>
     </div>
 
+    <hr/>
+
+    <div class="criticality-breakdown">
+      <div class="criticality-breakdown-title">IQCU Observations by Criticality</div>
+      <table class="criticality-breakdown-table">
+        <thead>
+          <tr><th></th><th>Open</th><th>Compliance</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="crit-label critical">Critical</td>
+            <td>{{ dashboardBean?.iqcuCriticalOpen ?? 0 }}</td>
+            <td>{{ dashboardBean?.iqcuCriticalCompliance ?? 0 }}</td>
+          </tr>
+          <tr>
+            <td class="crit-label noncritical">Non Critical</td>
+            <td>{{ dashboardBean?.iqcuNonCriticalOpen ?? 0 }}</td>
+            <td>{{ dashboardBean?.iqcuNonCriticalCompliance ?? 0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
 </div>
@@ -615,18 +626,32 @@
       <ol *ngIf="!selectedHistoryLoading && !selectedHistoryError && selectedAuditHistory.length" class="audit-history-timeline">
         <li *ngFor="let event of selectedAuditHistory">
           <div class="audit-history-event-top">
-            <strong>{{ event.previousStatus || 'Created' }} <i class="fa fa-arrow-right mx-1" aria-hidden="true"></i> {{ event.newStatus }}</strong>
+            <strong class="audit-history-event-message">{{ activityMessage(event) }}</strong>
             <span>{{ event.changedAt | date:'dd MMM yyyy, h:mm a' }}</span>
           </div>
-          <div class="audit-history-event-actor">Changed by {{ changedByLabel(event) }}</div>
+          <div class="audit-history-event-actor">by {{ changedByLabel(event) }}</div>
           <div class="audit-history-event-metrics">
             <span *ngIf="event.daysInPreviousStatus !== null">{{ event.daysInPreviousStatus }} day{{ event.daysInPreviousStatus === 1 ? '' : 's' }} in previous status</span>
-            <span *ngIf="event.daysAfterScheduledEnd !== null" [class.delayed]="event.daysAfterScheduledEnd > 0">
-              {{ event.daysAfterScheduledEnd > 0 ? ('Delayed by ' + event.daysAfterScheduledEnd + ' day' + (event.daysAfterScheduledEnd === 1 ? '' : 's')) : 'Within scheduled end date' }}
+            <span *ngIf="event.delayDays !== null && event.delayDays > 0" class="delayed">
+              Due-date delay: {{ event.delayDays }} day{{ event.delayDays === 1 ? '' : 's' }}
             </span>
+          </div>
+          <div class="audit-history-event-technical" [title]="'Recorded status change: ' + (event.previousStatus || 'Created') + ' → ' + event.newStatus">
+            {{ event.previousStatus || 'Created' }} <i class="fa fa-arrow-right mx-1" aria-hidden="true"></i> {{ event.newStatus }}
           </div>
         </li>
       </ol>
+      <button type="button" class="delay-info-toggle" *ngIf="!selectedHistoryLoading && !selectedHistoryError && selectedAuditHistory.length" (click)="showDelayInfo = !showDelayInfo">
+        How are delay days calculated? <i class="fa" [ngClass]="showDelayInfo ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
+      </button>
+      <div class="delay-info-body" *ngIf="showDelayInfo">
+        <ul>
+          <li><strong>PQ sent to CASO</strong>: days from the 1st of the audit's scheduled month to when PQ was actually sent.</li>
+          <li><strong>CASO's response to PQ</strong>: days from 15 days before the scheduled audit start date — or from when PQ was sent, if PQ itself went out less than 15 days before that date.</li>
+          <li><strong>Final report submitted to APS HQrs</strong>: days from the actual audit end date (entered by the Auditor) to when the report was submitted.</li>
+          <li><strong>Observation sent from CASO to Zone/Sector, and Zone/Sector back to APS HQrs</strong>: both counted from when the observation was originally sent to CASO.</li>
+        </ul>
+      </div>
       </div>
     </ng-container>
     <ng-template #auditHistoryList>
@@ -656,6 +681,77 @@
         <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="auditHistoryPage === 1" (click)="auditHistoryPage = auditHistoryPage - 1">Previous</button>
         <span>Page {{ auditHistoryPage }} of {{ auditHistoryPageCount }}</span>
         <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="auditHistoryPage === auditHistoryPageCount" (click)="auditHistoryPage = auditHistoryPage + 1">Next</button>
+      </div>
+    </ng-template>
+  </div>
+  <div class="modal-footer dashboard-modal-footer">
+    <button type="button" class="btn btn-primary" (click)="modal.close()">Close</button>
+  </div>
+</ng-template>
+
+<ng-template #unitObservationsModal let-modal>
+  <div class="modal-header dashboard-modal-header">
+    <div class="dashboard-modal-heading">
+      <span class="dashboard-modal-eyebrow">Total Observations</span>
+      <h5 class="modal-title"><i class="fa-regular fa-clipboard me-2"></i>Unitwise Observation Details</h5>
+      <p>Click on observation count of unit to get details of observations.</p>
+    </div>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body dashboard-modal-body dashboard-audit-history-body">
+    <ng-container *ngIf="selectedUnitObservations as unit; else unitObservationCountList">
+      <div class="audit-history-detail-toolbar">
+        <button type="button" class="audit-history-back" (click)="backToUnitObservationCounts()"><i class="fa fa-arrow-left me-1"></i>All units</button>
+      </div>
+      <div class="audit-history-detail-heading">
+        <div>
+          <h6>{{ unit.unitName }}</h6>
+          <p>
+            {{ filteredUnitObservationList.length }} observation{{ filteredUnitObservationList.length === 1 ? '' : 's' }}
+            <ng-container *ngIf="unitObservationFilterLabel"> · Filtered: {{ unitObservationFilterLabel }} <a href="javascript:void(0)" class="unit-observation-clear-filter" (click)="clearUnitObservationFilter()">(clear)</a></ng-container>
+          </p>
+        </div>
+      </div>
+      <div *ngIf="unitObservationListLoading" class="audit-history-state">Loading observations…</div>
+      <div *ngIf="unitObservationListError" class="audit-history-state text-danger">Unable to load observations for this unit.</div>
+      <div *ngIf="!unitObservationListLoading && !unitObservationListError && !filteredUnitObservationList.length" class="audit-history-state">No observations match this view.</div>
+      <div *ngIf="!unitObservationListLoading && !unitObservationListError && filteredUnitObservationList.length" class="table-responsive">
+        <table class="table unit-observations-table align-middle">
+          <thead><tr><th>Audit</th><th>Letter No</th><th>Observation</th><th>Criticality</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let row of filteredUnitObservationList">
+              <td>{{ row.auditName }}</td>
+              <td>{{ row.letterNo || 'Not available' }}</td>
+              <td>{{ row.observation }}</td>
+              <td>{{ row.typeCriticality || 'Not available' }}</td>
+              <td><span class="status-badge" [ngClass]="formatComplianceClass(row.complianceStatus)">{{ row.complianceStatus || 'Open' }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+    <ng-template #unitObservationCountList>
+      <div *ngIf="unitObservationCountsLoading" class="audit-history-state">Loading units…</div>
+      <div *ngIf="unitObservationCountsError" class="audit-history-state text-danger">Unable to load observation counts.</div>
+      <div *ngIf="!unitObservationCountsLoading && !unitObservationCountsError && !unitObservationCounts.length" class="audit-history-state">No observations recorded in this range.</div>
+      <div *ngIf="!unitObservationCountsLoading && !unitObservationCountsError && unitObservationCounts.length" class="table-responsive">
+        <table class="table unit-observations-table align-middle">
+          <thead><tr><th>Unit</th><th>Total</th><th>Open (Critical/Non-Critical)</th><th>Compliant (Critical/Non-Critical)</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let unit of unitObservationCounts">
+              <td>{{ unit.unitName }}</td>
+              <td><button type="button" class="unit-observation-count-btn" (click)="viewUnitObservationList(unit)">{{ unit.observationCount }}</button></td>
+              <td class="unit-observation-inline-count">
+                <button type="button" class="unit-observation-inline-btn open" (click)="viewUnitObservationList(unit, {status: 'Open'})">{{ unit.openCount }}</button>
+                <span class="unit-observation-inline-paren">(<button type="button" class="unit-observation-inline-sublink" (click)="viewUnitObservationList(unit, {status: 'Open', criticality: 'Critical'})">{{ unit.criticalOpenCount }}</button>/<button type="button" class="unit-observation-inline-sublink" (click)="viewUnitObservationList(unit, {status: 'Open', criticality: 'Non Critical'})">{{ unit.nonCriticalOpenCount }}</button>)</span>
+              </td>
+              <td class="unit-observation-inline-count">
+                <button type="button" class="unit-observation-inline-btn compliant" (click)="viewUnitObservationList(unit, {status: 'Compliant'})">{{ unit.complianceCount }}</button>
+                <span class="unit-observation-inline-paren">(<button type="button" class="unit-observation-inline-sublink" (click)="viewUnitObservationList(unit, {status: 'Compliant', criticality: 'Critical'})">{{ unit.criticalComplianceCount }}</button>/<button type="button" class="unit-observation-inline-sublink" (click)="viewUnitObservationList(unit, {status: 'Compliant', criticality: 'Non Critical'})">{{ unit.nonCriticalComplianceCount }}</button>)</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </ng-template>
   </div>

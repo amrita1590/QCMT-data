@@ -37,7 +37,7 @@
     <section class="account-summary">
       <div class="summary-heading">
         <div class="user-avatar"><i class="fa fa-user"></i></div>
-        <div><span>ACCOUNT PROFILE</span><h2>{{ userData?.mstr_name || 'User' }} <small>{{ userData?.rank }}</small></h2></div>
+        <div><span>ACCOUNT PROFILE</span><h2>{{ userData?.cisfno ? userData?.cisfno + ' · ' : '' }}{{ userData?.mstr_name || 'User' }} <small>{{ userData?.rank }}</small></h2></div>
         <span class="status-pill" [class.active]="userData?.status === 'ACTIVE'" [class.inactive]="userData?.status === 'INACTIVE'" [class.locked]="userData?.status === 'ACCOUNT_LOCKED'">{{ userData?.status || 'UNKNOWN' }}</span>
       </div>
       <div class="detail-grid">

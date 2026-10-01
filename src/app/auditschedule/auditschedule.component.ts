@@ -121,6 +121,7 @@ export class AuditscheduleComponent {
       entryDate: '',
       entryTime: ''
   };
+  isEditingApsMessage = false;
 
   rows: { index:number, categoryId: null | string | number, templateId: null | string | number, templateOptions: QuestionTemplate[] }[] = [];
 
@@ -610,6 +611,11 @@ if (this.auditorList && this.auditorList.length > 0) {
             this.umService.saveNotification(notificationMessage, this.auditScheduleTemplate.auditorId, this.auditScheduleTemplate.auditorName,this.auditTemplateForm.value.auditorId,this.auditScheduleTemplate.casoId).subscribe({
               next: (data) => {
                 console.log('Notification sent successfully', data);
+              },
+              error: (err) => {
+                console.error('Failed to send notification to auditor', err);
+                const detail = typeof err?.error === 'string' ? err.error : (err?.message || 'Unknown error');
+                this.toast.show('Audit created, but the notification to the auditor could not be sent: ' + detail, 'error');
               }
           });
         }
@@ -618,7 +624,7 @@ if (this.auditorList && this.auditorList.length > 0) {
         this.modalService.dismissAll();
         this.isSubmitting = false;
       }, error => {
-        this.errorMsg = "Error saving audit schedule template:", error;
+        this.errorMsg = "Error saving audit schedule template: " + (typeof error?.error === 'string' ? error.error : (error?.message || 'Unknown error'));
         this.errorStatus = true;
          this.isSubmitting = false;
         setTimeout(() => {
@@ -1043,8 +1049,9 @@ listenForNameChanges() {
         }         
         
     }, error => {
-        this.errorMsg = "Error saving audit schedule template:", error;
-         this.toast.show('Error updating Audit Schedule Template!'+error, 'error');
+        const detail = typeof error?.error === 'string' ? error.error : (error?.message || 'Unknown error');
+        this.errorMsg = "Error saving audit schedule template: " + detail;
+         this.toast.show('Error updating Audit Schedule Template! ' + detail, 'error');
     });
   }
 
@@ -1213,7 +1220,27 @@ listenForNameChanges() {
 
   complianceStatusForm(content: any, auditObservationComponent: any) {
     console.log(":::::::::::::::"+auditObservationComponent.id);
+    this.isEditingApsMessage = false;
+    this.resetObservationMessageForm();
     this.modalRef = this.modalService.open(content, { size : 'md' ,   backdrop: 'static', keyboard: false});
+  }
+
+  // Mirrors editLastCasoMessage() in audit-board-caso.component.ts. An APS message's
+  // letterNo is only filled in bulk once the whole observation list is sent to CASO
+  // (submitLetterNoDateAPS) - excluding messages that already have one keeps this to
+  // the still-open, not-yet-sent round, matching the backend's own guard for the same reason.
+  editLastApsMessage(content: any, auditObservationComponent: AuditObservationComponent | null) {
+    if (!auditObservationComponent) return;
+    const lastApsMessage = [...(auditObservationComponent.auditObservationComponentMessageList ?? [])]
+      .filter(message => message.status === 'APSHQrs' && (!message.letterNo || message.letterNo.trim() === ''))
+      .sort((a, b) => b.id - a.id)[0];
+    if (!lastApsMessage) {
+      this.toast.show('No compliance message is available to edit.', 'error');
+      return;
+    }
+    this.auditObservationComponentMessage = { ...lastApsMessage };
+    this.isEditingApsMessage = true;
+    this.modalRef = this.modalService.open(content, { size: 'md', backdrop: 'static', keyboard: false });
   }
 
   submitObservationMessage(auditObservationComponent: any) {
@@ -1230,6 +1257,7 @@ listenForNameChanges() {
       // JSON part
       formData.append("auditObservationComponentMessageBean",
         new Blob([JSON.stringify({
+          id: this.isEditingApsMessage ? this.auditObservationComponentMessage.id : 0,
           auditObservationComponentId: auditObservationComponent.id,
           templateId: auditObservationComponent.templateId,
           letterNo: this.auditObservationComponentMessage.letterNo,
@@ -1250,6 +1278,7 @@ listenForNameChanges() {
             this.toast.show("Compliance message submitted successfully", "success");
             this.getAuditObservationComponent(this.templateId);
             this.resetObservationMessageForm();
+            this.isEditingApsMessage = false;
             this.refreshService.triggerRefresh();
             this.auditService.getAuditObservationDetails(this.templateId).subscribe(res => {
                 this.auditObservation = res;
@@ -1621,7 +1650,24 @@ loadQuestions() {
     return status
       .replace(/\s+/g, '')     // remove spaces
       .replace(/[()\-]/g, ''); // remove brackets & hyphens
-  }  
+  }
+
+  private static readonly STATUS_TOOLTIPS: Record<string, string> = {
+    'Planned': 'Audit is scheduled by APS HQRs. The audit process is yet to begin.',
+    'In Progress': 'The audit questionnaire has been sent by the Auditor to CASO for further action.',
+    'Action Required': 'Action is required from the Auditor for correction, clarification, or submission of the final audit report.',
+    'Observation APS': 'APS HQRs is required to create the observation list or review the observation compliance.',
+    'Observation CASO': 'CASO is required to submit the observation compliance.',
+    'ObservationZONE': 'ZONE is required to process the observation compliance submitted by CASO.',
+    'Observation SECTOR': 'SECTOR is required to review the observation compliance submitted by CASO.',
+    'Completed': 'The audit process has been completed, and no further action is pending in the audit workflow.'
+  };
+
+  /** Plain-language explanation of an audit's current status, shown as the status badge's hover
+   * tooltip so users don't need to know what the technical status name means. */
+  statusTooltip(status: string): string {
+    return AuditscheduleComponent.STATUS_TOOLTIPS[status] ?? status;
+  }
 
   printObservationHistory() {
     const printContents = document.getElementById('print-section')?.innerHTML;

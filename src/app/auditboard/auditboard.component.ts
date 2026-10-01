@@ -596,6 +596,23 @@ formatStatusClass(status: string): string {
   return status ? status.replace(/\s+/g, '').replace(/[()\-]/g, '') : '';
 }
 
+private static readonly STATUS_TOOLTIPS: Record<string, string> = {
+  'Planned': 'Audit is scheduled by APS HQRs. The audit process is yet to begin.',
+  'In Progress': 'The audit questionnaire has been sent by the Auditor to CASO for further action.',
+  'Action Required': 'Action is required from the Auditor for correction, clarification, or submission of the final audit report.',
+  'Observation APS': 'APS HQRs is required to create the observation list or review the observation compliance.',
+  'Observation CASO': 'CASO is required to submit the observation compliance.',
+  'ObservationZONE': 'ZONE is required to process the observation compliance submitted by CASO.',
+  'Observation SECTOR': 'SECTOR is required to review the observation compliance submitted by CASO.',
+  'Completed': 'The audit process has been completed, and no further action is pending in the audit workflow.'
+};
+
+/** Plain-language explanation of an audit's current status, shown as the status badge's hover
+ * tooltip so users don't need to know what the technical status name means. */
+statusTooltip(status: string): string {
+  return AuditboardComponent.STATUS_TOOLTIPS[status] ?? status;
+}
+
 viewObservationMessageHistory(content: any) {
   this.modalRef = this.modalService.open(content, { size : 'xl' ,   backdrop: 'static', keyboard: false});
 }

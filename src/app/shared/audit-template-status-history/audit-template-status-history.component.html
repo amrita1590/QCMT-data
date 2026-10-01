@@ -10,14 +10,15 @@
     <p *ngIf="!loading && !error && !events.length">No status changes recorded yet.</p>
     <ol *ngIf="!loading && !error && events.length">
       <li *ngFor="let event of events">
-        <div class="audit-history-transition">
+        <div class="audit-history-message">{{ activityMessage(event) }}</div>
+        <small>{{ changedByLabel(event) }} · {{ event.changedAt | date:'dd MMM yyyy, h:mm a' }}</small>
+        <small *ngIf="event.daysInPreviousStatus !== null">{{ event.daysInPreviousStatus }} day{{ event.daysInPreviousStatus === 1 ? '' : 's' }} in previous status</small>
+        <small *ngIf="event.delayDays !== null && event.delayDays > 0">Due-date delay: {{ event.delayDays }} day{{ event.delayDays === 1 ? '' : 's' }}</small>
+        <div class="audit-history-transition" [title]="'Recorded status change: ' + (event.previousStatus || 'Created') + ' → ' + event.newStatus">
           <span>{{ event.previousStatus || 'Created' }}</span>
           <i class="fa fa-arrow-right" aria-hidden="true"></i>
           <strong>{{ event.newStatus }}</strong>
         </div>
-        <small>{{ changedByLabel(event) }} · {{ event.changedAt | date:'dd MMM yyyy, h:mm a' }}</small>
-        <small *ngIf="event.daysInPreviousStatus !== null">{{ event.daysInPreviousStatus }} day{{ event.daysInPreviousStatus === 1 ? '' : 's' }} in previous status</small>
-        <small *ngIf="event.daysAfterScheduledEnd !== null && event.daysAfterScheduledEnd > 0">Delayed by {{ event.daysAfterScheduledEnd }} day{{ event.daysAfterScheduledEnd === 1 ? '' : 's' }} after scheduled end</small>
       </li>
     </ol>
   </div>

@@ -92,7 +92,10 @@
           <th>Created By</th>
           <th>Audit Type</th>
           <th class="status-col">Status</th>
+          <!-- Actions column hidden - uncomment to bring it back
           <th class="actions-col">Actions</th>
+          -->
+
           <th>Summary</th>
         </tr>
       </thead>
@@ -122,13 +125,13 @@
 
           <td class="status-col">
             <span>
-              <div *ngIf="row.auditStatus === 'Planned'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
-                {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>               
+              <div *ngIf="row.auditStatus === 'Planned'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
+                {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'In Progress'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
+              <div *ngIf="row.auditStatus === 'In Progress'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>
                 </div>
@@ -136,10 +139,10 @@
                   <i class="fa fa-eye action-icon"></i>
                 </div>
               </div>
-              <div *ngIf="row.auditStatus === 'Completed'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
+              <div *ngIf="row.auditStatus === 'Completed'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">APS HQRs Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>
                   {{ row.auditStatus }}<br/>
                   <span class="badge-subtitle">APS HQRs Bucket</span>
@@ -150,15 +153,15 @@
                 </div>
 
               </div>
-              <div *ngIf="row.auditStatus === 'ObservationZONE'" class="status-badge ObservationZONE d-flex align-items-center justify-content-between" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'ObservationZONE'" class="status-badge ObservationZONE d-flex align-items-center justify-content-between" [title]="statusTooltip(row.auditStatus)" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>Observation ZONE<br/><span class="badge-subtitle">Zone Bucket</span></div>
                 <i class="fa fa-eye action-icon ms-2"></i>
               </div>
-              <div *ngIf="row.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR d-flex align-items-center justify-content-between" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR d-flex align-items-center justify-content-between" [title]="statusTooltip(row.auditStatus)" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>Observation SECTOR<br/><span class="badge-subtitle">Sector Bucket</span></div>
                 <i class="fa fa-eye action-icon ms-2"></i>
               </div>
-              <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
+              <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)" (click)="viewAuditorResponse(viewAuditorResponseTemplate,row.id)">
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
                 </div>
@@ -170,8 +173,9 @@
             <input type="hidden" [value]="row.auditStatus" /> <!-- Hidden input to store status for potential use in component logic -->
           </td>
 
+          <!-- Actions column hidden - uncomment to bring it back
           <td>
-            <select class="action-dropdown" [(ngModel)]="row.auditStatus" (change)="updateAuditStatus(row.id)" [disabled]="row.auditStatus === 'Planned'">      
+            <select class="action-dropdown" [(ngModel)]="row.auditStatus" (change)="updateAuditStatus(row.id)" [disabled]="row.auditStatus === 'Planned'">
               <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
               <option value="Action Required">Action Required</option>
@@ -181,6 +185,8 @@
               <option value="ObservationZONE">Observation ZONE</option>
             </select>
           </td>
+          -->
+
           <td>
             <div class="d-flex align-items-center gap-2 flex-wrap">
             <div *ngIf="row.auditStatus === 'Observation APS'">
@@ -268,55 +274,55 @@
         <article class="status-guide-item guide-planned">
           <span class="guide-icon"><i class="fa-regular fa-calendar"></i></span>
           <div><span class="guide-status">Planned</span><span class="guide-owner">Auditor Bucket</span>
-            <p>The audit is scheduled and waiting for the assigned auditor to begin the audit process.</p>
+            <p>Audit is scheduled by APS HQRs. The audit process is yet to begin.</p>
           </div>
         </article>
 
         <article class="status-guide-item guide-progress">
           <span class="guide-icon"><i class="fa-regular fa-clock"></i></span>
           <div><span class="guide-status">In Progress</span><span class="guide-owner">CASO Bucket</span>
-            <p>The audit has started and its questionnaire or response workflow is currently active.</p>
+            <p>The audit questionnaire has been sent by the Auditor to CASO for further action.</p>
           </div>
         </article>
 
         <article class="status-guide-item guide-action">
           <span class="guide-icon"><i class="fa-solid fa-rotate-left"></i></span>
           <div><span class="guide-status">Action Required</span><span class="guide-owner">Auditor Bucket</span>
-            <p>The audit was returned to the auditor for correction, clarification, or an additional response.</p>
+            <p>Action is required from the Auditor for correction, clarification, or submission of the final audit report.</p>
           </div>
         </article>
 
         <article class="status-guide-item guide-aps">
           <span class="guide-icon"><i class="fa-solid fa-building-shield"></i></span>
           <div><span class="guide-status">Observation APS</span><span class="guide-owner">APS HQrs Bucket</span>
-            <p>The observation is with APS Headquarters for review and the next compliance decision.</p>
+            <p>APS HQRs is required to create the observation list or review the observation compliance.</p>
           </div>
         </article>
 
         <article class="status-guide-item guide-caso">
           <span class="guide-icon"><i class="fa-solid fa-user-shield"></i></span>
           <div><span class="guide-status">Observation CASO</span><span class="guide-owner">CASO Bucket</span>
-            <p>The observation is with CASO for remarks, supporting details, or a compliance response.</p>
+            <p>CASO is required to submit the observation compliance.</p>
           </div>
         </article>
 
           <article class="status-guide-item guide-zone">
           <span class="guide-icon"><i class="fa-solid fa-map-location-dot"></i></span>
           <div><span class="guide-status">Observation ZONE</span><span class="guide-owner">Zone Bucket</span>
-            <p>The Zone user is reviewing the observation and may forward it to APS HQrs or CASO.</p>
+            <p>ZONE is required to process the observation compliance submitted by CASO.</p>
           </div>
           </article>
           <article class="status-guide-item guide-sector">
             <span class="guide-icon"><i class="fa-solid fa-layer-group"></i></span>
             <div><span class="guide-status">Observation SECTOR</span><span class="guide-owner">Sector Bucket</span>
-              <p>The Sector user is reviewing the observation for a unit assigned to the same sector.</p>
+              <p>SECTOR is required to review the observation compliance submitted by CASO.</p>
             </div>
           </article>
 
         <article class="status-guide-item guide-completed">
           <span class="guide-icon"><i class="fa-regular fa-circle-check"></i></span>
           <div><span class="guide-status">Completed</span><span class="guide-owner">APS HQrs Bucket</span>
-            <p>The audit workflow is finalized and no further response is currently pending.</p>
+            <p>The audit process has been completed, and no further action is pending in the audit workflow.</p>
           </div>
         </article>
       </div>
@@ -792,34 +798,33 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let component of auditObservationComponent; let i = index">
-                    <td>{{ i + 1 }}</td>
-                    <td>
-                        <input type="text" class="form-control" [(ngModel)]="component.observation" [ngModelOptions]="{standalone: true}" novalidate/>
+                    <tr *ngFor="let component of auditObservationComponent; let i = index" style="vertical-align: middle;">
+                    <td style="vertical-align: middle;">{{ i + 1 }}</td>
+                    <td style="vertical-align: middle;">
+                        <textarea class="form-control" [(ngModel)]="component.observation" [ngModelOptions]="{standalone: true}" novalidate rows="3" style="width: 100%; resize: vertical;"></textarea>
                     </td>
-                    <td>
-                        <input type="text" class="form-control" [(ngModel)]="component.remarks" [ngModelOptions]="{standalone: true}" novalidate/>
+                    <td style="vertical-align: middle;">
+                        <textarea class="form-control" [(ngModel)]="component.remarks" [ngModelOptions]="{standalone: true}" novalidate rows="3" style="width: 100%; resize: vertical;"></textarea>
                     </td>
-                    <td>
+                    <td style="vertical-align: middle;">
                        <select class="form-select" [(ngModel)]="component.typeCriticality" [ngModelOptions]="{standalone: true}">
                           <option value="" disabled selected>-- Select --</option>
                           <option value="Non Critical">Non Critical</option>
                           <option value="Critical">Critical</option>
-                          <option value="Moderate">Moderate</option>                     
                       </select>
                     </td>
-                    <td>
+                    <td style="vertical-align: middle;">
                        <select class="form-select" [(ngModel)]="component.complianceStatus" [ngModelOptions]="{standalone: true}">
                           <option value="" disabled selected>-- Select --</option>
                           <option value="Compliant">Compliant</option>
-                          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>  
-                          <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>                        
+                          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
+                          <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>
                           <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
                           <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
                           <option value="Partially Compliant (Non-Critical)">Partially Compliant (Non-Critical)</option>
-                       </select>                        
+                       </select>
                     </td>
-                    <td>
+                    <td style="vertical-align: middle;">
                         <button type="button" class="btn btn-danger" (click)="removeObservation(deleteModalObservation, component.id, component.index)">
                         <i class="fal bi-trash-fill"></i>
                         </button>
@@ -904,8 +909,7 @@
         <select class="form-select" [(ngModel)]="chatObservationStatus" [ngModelOptions]="{standalone: true}">
           <option value="" disabled selected>-- Select --</option>
           <option value="Compliant">Compliant</option>
-          <option value="Dropped">Dropped</option>                          
-          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>  
+          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
           <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>                        
           <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
           <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>
@@ -958,6 +962,11 @@
     <!-- FOOTER -->
     <div class="modal-footer border-0 mt-2">
       <button type="submit" class="btn btn-primary me-2" (click)="complianceStatusForm(complianceStatusModel,auditObservationComponentBean)" *ngIf="auditObservationComponentBean?.status === 'CASO' && auditObservationComponentBean?.complianceStatus !== 'Dropped' && auditObservationComponentBean?.complianceStatus !== 'Compliant'"><i class="fa fa-user ms-1 pointer me-2"></i> Enter Compliance Remarks</button>
+      <button type="button" class="btn btn-warning me-2"
+              *ngIf="auditObservationComponentBean?.status === 'APSHQrs' && auditObservationComponentBean?.complianceStatus !== 'Dropped' && auditObservationComponentBean?.complianceStatus !== 'Compliant'"
+              (click)="editLastApsMessage(complianceStatusModel, auditObservationComponentBean)">
+        <i class="fa fa-edit me-2"></i>Edit Compliance Remarks
+      </button>
       <button class="btn btn-light border px-4" (click)="modal.dismiss()">
         Close
       </button>
@@ -968,7 +977,7 @@
   <!-- HEADER -->
   <div class="modal-header border-0 pb-0">
     <h5 class="modal-title fw-bold text-primary d-flex align-items-center">
-      <i class="fa-solid fa-clipboard-check me-2"></i> Compliance Remarks Form
+      <i class="fa-solid fa-clipboard-check me-2"></i> {{ isEditingApsMessage ? 'Edit Compliance Remarks' : 'Compliance Remarks Form' }}
     </h5>
     <!-- CLOSE BUTTON -->
      <button type="button" class="btn-close" (click)="modal.dismiss()"></button>

@@ -168,6 +168,9 @@
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.10);
 }
 
+.clickable-metric-card { cursor: pointer; }
+.clickable-metric-card:focus-visible { outline: 2px solid #7c40ff; outline-offset: 2px; }
+
 /* Top accent strip */
 .card-top-border {
   height: 5px;
@@ -766,6 +769,16 @@
 .stat.red { color: #ff3b30; background: #ffe9e8; }
 .stat.blue { color: #1b74e4; background: #e8f1ff; }
 
+.criticality-breakdown { margin-top: 4px; }
+.criticality-breakdown-title { font-size: 12px; font-weight: 700; color: #5c6f83; text-align: center; margin-bottom: 8px; }
+.criticality-breakdown-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.criticality-breakdown-table th { color: #98a7b6; font-weight: 600; text-align: right; padding: 4px 6px; }
+.criticality-breakdown-table th:first-child { text-align: left; }
+.criticality-breakdown-table td { text-align: right; padding: 6px; border-top: 1px solid #edf1f6; font-weight: 700; color: #24364b; }
+.criticality-breakdown-table td:first-child { text-align: left; font-weight: 600; }
+.criticality-breakdown-table td.crit-label.critical { color: #c62828; }
+.criticality-breakdown-table td.crit-label.noncritical { color: #256029; }
+
 .date-range-container {
   background: #fff;
   padding: 12px 16px;
@@ -963,7 +976,18 @@
 .status-badge.Completed { background: #e3f8ee; color: #009b75; }
 .status-badge.ActionRequired { background: #ffe5e5; color: #d93025; cursor: pointer;}
 .status-badge.ObservationAPS { background: #fff2e6; color: #ff8c00; cursor: pointer;}
-.status-badge.ObservationCASO { background: #f9e8ff; color: #7e22ce; cursor: pointer;}  
+.status-badge.ObservationCASO { background: #f9e8ff; color: #7e22ce; cursor: pointer;}
+
+/* Observation compliance-status modifiers (unit-observations drill-down table) */
+.status-badge.Open { background: #eef2f7; color: #5c6f83; }
+.status-badge.Compliant { background: #e3f8ee; color: #009b75; }
+.status-badge.Dropped { background: #fff6d9; color: #b3a26b; }
+.status-badge.NonCompliant { background: #fff2e6; color: #ff8c00; }
+.status-badge.CompliantNeedImprovement { background: #e6f4ff; color: #1a73e8; }
+.status-badge.NonCompliantNonCritical { background: #fff7e6; color: #f4a100; }
+.status-badge.NonCompliantCritical { background: #ffe5e5; color: #d93025; }
+.status-badge.PartiallyCompliantCritical { background: #fce8ff; color: #9c27b0; }
+.status-badge.PartiallyCompliantNonCritical { background: #e6fff7; color: #00a67d; }
 .status-badge.ObservationSECTOR { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
 
 .badge-subtitle {
@@ -2131,6 +2155,69 @@ body {
 .audit-history-table tbody tr.audit-history-reminder-row{--bs-table-bg:#fff8ef;--bs-table-accent-bg:#fff8ef;background:#fff8ef}
 .audit-history-table tbody tr.audit-history-reminder-row td:first-child{border-left:4px solid #e68a25}
 .audit-history-table tbody tr.audit-history-reminder-row:hover{--bs-table-bg:#fff1dc;--bs-table-accent-bg:#fff1dc;background:#fff1dc}
+
+.unit-observations-table{margin:0;background:#fff;border:1px solid #dce6f2}
+.unit-observations-table thead th{background:transparent;color:#5c6f83;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid #e1e8f0;white-space:nowrap}
+.unit-observations-table td{font-size:13px;color:#263b52}
+
+.unit-observation-count-btn{
+  min-width:44px;
+  padding:6px 16px;
+  border:none;
+  border-radius:20px;
+  background:linear-gradient(135deg,#7c40ff,#5b21d6);
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  box-shadow:0 3px 8px rgba(124,64,255,.35);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.unit-observation-count-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 5px 12px rgba(124,64,255,.45);
+}
+
+.unit-observation-inline-count{
+  white-space:nowrap;
+}
+.unit-observation-inline-btn{
+  padding:4px 12px;
+  border:none;
+  border-radius:14px;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  box-shadow:0 2px 6px rgba(0,0,0,.12);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.unit-observation-inline-btn:hover{ transform:translateY(-1px); }
+.unit-observation-inline-btn.open{ background:#ff3b30; }
+.unit-observation-inline-btn.compliant{ background:#1abf4b; }
+
+.unit-observation-inline-paren{
+  margin-left:6px;
+  color:#5c6f83;
+  font-size:12px;
+  font-weight:600;
+}
+.unit-observation-inline-sublink{
+  padding:0;
+  border:none;
+  background:none;
+  color:#1769b0;
+  font-size:12px;
+  font-weight:700;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.unit-observation-inline-sublink:hover{ color:#0d3b66; }
+
+.unit-observation-clear-filter{
+  color:#1769b0;
+  font-weight:700;
+  text-decoration:none;
+}
+.unit-observation-clear-filter:hover{ text-decoration:underline; }
 .audit-history-reminder-message{display:inline-flex;align-items:center;gap:3px;max-width:100%;margin-top:6px;padding:5px 8px;border:1px solid #f3d3a7;border-radius:6px;background:#fff0d9;color:#814814;font-size:11px;font-weight:700;line-height:1.35;white-space:normal}
 .audit-history-list-status,.audit-history-current-status{display:inline-block;padding:5px 9px;border-radius:18px;background:#eaf3ff;color:#155a9c;font-size:11px;font-weight:700;white-space:nowrap}
 .audit-history-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:12px;color:#5b7086}
@@ -2149,10 +2236,17 @@ body {
 .audit-history-timeline li:before{content:'';position:absolute;left:-21px;top:17px;width:10px;height:10px;border-radius:50%;background:#1769b0}
 .audit-history-event-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#1c3854;font-size:13px}
 .audit-history-event-top span,.audit-history-event-actor{color:#657a8e;font-size:11px}
+.audit-history-event-message{font-size:13px}
 .audit-history-event-actor{margin-top:4px}
 .audit-history-event-metrics{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
 .audit-history-event-metrics span{padding:4px 7px;border-radius:6px;background:#edf4fc;color:#355b7d;font-size:11px;font-weight:700}
 .audit-history-event-metrics span.delayed{background:#ffe9ec;color:#a42432}
+.audit-history-event-technical{margin-top:8px;color:#98a7b6;font-size:10px;opacity:.75}
+.delay-info-toggle{display:flex;align-items:center;gap:6px;margin-top:10px;padding:0;border:0;background:none;color:#1769b0;font-size:12px;font-weight:700}
+.delay-info-body{margin-top:8px;padding:12px 14px;border:1px solid #dce7f4;border-radius:9px;background:#f7fafd}
+.delay-info-body ul{margin:0;padding-left:18px}
+.delay-info-body li{margin-bottom:6px;color:#44586b;font-size:12px;line-height:1.5}
+.delay-info-body li:last-child{margin-bottom:0}
 @media(max-width:767.98px){.audit-history-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-audit-history-link{font-size:12px}}
 @media(max-width:480px){.audit-history-facts{grid-template-columns:1fr}.audit-history-list-controls{align-items:stretch;flex-direction:column}.audit-history-detail-heading{flex-direction:column}}
 

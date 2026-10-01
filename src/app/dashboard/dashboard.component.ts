@@ -13,6 +13,9 @@ import { ToastService } from '../service/toast.service';
 import { AirportListDashboard } from '../interface/AirportListDashboard';
 import { AuditScheduleTemplate } from '../interface/AuditScheduleTemplate';
 import { AuditTemplateStatusHistory } from '../interface/AuditTemplateStatusHistory';
+import { getAuditHistoryActivityMessage } from '../shared/audit-status-history-message.util';
+import { UnitObservationCount } from '../interface/UnitObservationCount';
+import { UnitObservationRow } from '../interface/UnitObservationRow';
 import { NotificationBean } from '../interface/NotificationBean';
 import { RouterModule } from '@angular/router';
 import { IqcuCalendarService } from '../service/iqcu-calendar.service';
@@ -53,6 +56,7 @@ export class DashboardComponent {
   selectedAuditHistory: AuditTemplateStatusHistory[] = [];
   selectedHistoryLoading = false;
   selectedHistoryError = false;
+  showDelayInfo = false;
   selectedScheduleStatus: ScheduleStatusFilter = 'ALL';
 
   airportList: AirportListDashboard[] | null = null
@@ -60,6 +64,18 @@ export class DashboardComponent {
   fromDate: any;
   toDate: any;
   dateError: string = '';
+
+  // "Total Observations" card drill-down (read-only view; see DashboardService)
+  unitObservationCounts: UnitObservationCount[] = [];
+  unitObservationCountsLoading = false;
+  unitObservationCountsError = false;
+  selectedUnitObservations: { unitId: number; unitName: string } | null = null;
+  unitObservationList: UnitObservationRow[] = [];
+  unitObservationListLoading = false;
+  unitObservationListError = false;
+  /** Level 2 filter, applied client-side over the already-fetched unitObservationList - no
+   * refetch needed when the user switches between Open/Compliant/Critical/Non-Critical. */
+  unitObservationFilter: { status?: 'Open' | 'Compliant'; criticality?: 'Critical' | 'Non Critical' } | null = null;
 
   auditType: string = '';
   auditSubtitle: string = '';
@@ -101,15 +117,17 @@ export class DashboardComponent {
     return filtered.slice(0, 7);
   }
 
-  private auditMonthStart(auditMonth: string): Date | null {
+  // new Date(year, month, 0) lands on the last day of `month` (1-indexed) since day 0 of a
+  // month is the previous day's end - i.e. the day before day 1 of that month index.
+  private auditMonthEnd(auditMonth: string): Date | null {
     const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(auditMonth || '');
-    return match ? new Date(Number(match[1]), Number(match[2]) - 1, 1) : null;
+    return match ? new Date(Number(match[1]), Number(match[2]), 0) : null;
   }
 
   overdueDays(audit: AuditScheduleTemplate): number {
-    const monthStart = this.auditMonthStart(audit.auditMonth);
-    if (!monthStart) return -1;
-    const reminderStart = new Date(monthStart);
+    const monthEnd = this.auditMonthEnd(audit.auditMonth);
+    if (!monthEnd) return -1;
+    const reminderStart = new Date(monthEnd);
     reminderStart.setDate(reminderStart.getDate() - 30);
     const today = new Date();
     return Math.floor((Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
@@ -452,6 +470,7 @@ export class DashboardComponent {
     this.selectedAuditHistory = [];
     this.selectedHistoryLoading = true;
     this.selectedHistoryError = false;
+    this.showDelayInfo = false;
     this.auditScheduleService.getAuditTemplateStatusHistory(audit.id).subscribe({
       next: events => { this.selectedAuditHistory = events ?? []; this.selectedHistoryLoading = false; },
       error: () => { this.selectedHistoryError = true; this.selectedHistoryLoading = false; }
@@ -463,6 +482,90 @@ export class DashboardComponent {
     this.selectedAuditHistory = [];
   }
 
+  /** Opens the "Total Observations" card drill-down (level 1: per-unit counts). Read-only. */
+  openUnitObservations(content: TemplateRef<unknown>): void {
+    this.selectedUnitObservations = null;
+    this.unitObservationList = [];
+    this.unitObservationFilter = null;
+    this.unitObservationCounts = [];
+    this.unitObservationCountsLoading = true;
+    this.unitObservationCountsError = false;
+    this.modalRef = this.modalService.open(content, {
+      size: 'xl', centered: true, scrollable: true, windowClass: 'dashboard-unit-observations-modal'
+    });
+    this.dashboardService.getObservationCountByUnit({ fromDate: this.fromDate, toDate: this.toDate }).subscribe({
+      next: counts => { this.unitObservationCounts = counts ?? []; this.unitObservationCountsLoading = false; },
+      error: () => { this.unitObservationCounts = []; this.unitObservationCountsError = true; this.unitObservationCountsLoading = false; }
+    });
+  }
+
+  /** Drills into level 2: the flat observation list for one unit. Read-only.
+   * `filter` narrows the list to Open/Compliant and/or Critical/Non-Critical - applied
+   * client-side (see filteredUnitObservationList) over the same full fetch, no extra backend
+   * call needed when the user switches which number they clicked. */
+  viewUnitObservationList(unit: UnitObservationCount, filter: { status?: 'Open' | 'Compliant'; criticality?: 'Critical' | 'Non Critical' } | null = null): void {
+    this.selectedUnitObservations = { unitId: unit.unitId, unitName: unit.unitName };
+    this.unitObservationFilter = filter;
+    this.unitObservationList = [];
+    this.unitObservationListLoading = true;
+    this.unitObservationListError = false;
+    this.dashboardService.getObservationListByUnit(unit.unitId, { fromDate: this.fromDate, toDate: this.toDate }).subscribe({
+      next: rows => { this.unitObservationList = rows ?? []; this.unitObservationListLoading = false; },
+      error: () => { this.unitObservationList = []; this.unitObservationListError = true; this.unitObservationListLoading = false; }
+    });
+  }
+
+  backToUnitObservationCounts(): void {
+    this.selectedUnitObservations = null;
+    this.unitObservationList = [];
+    this.unitObservationFilter = null;
+  }
+
+  clearUnitObservationFilter(): void {
+    this.unitObservationFilter = null;
+  }
+
+  /** Mirrors the backend's own Open/Compliant FILTER rules exactly (a row with no recorded
+   * compliance_status counts as both Open and Compliant there - see DashboardRepository's
+   * getObservationCountByUnit) so the filtered row count here always matches the number the
+   * user clicked. */
+  private isOpenRow(row: UnitObservationRow): boolean {
+    return !row.complianceStatus || (row.complianceStatus !== 'Dropped' && row.complianceStatus !== 'Compliant');
+  }
+
+  private isComplianceRow(row: UnitObservationRow): boolean {
+    return !row.complianceStatus || row.complianceStatus === 'Compliant';
+  }
+
+  private isCriticalRow(row: UnitObservationRow): boolean {
+    return row.typeCriticality === 'Critical';
+  }
+
+  get filteredUnitObservationList(): UnitObservationRow[] {
+    const filter = this.unitObservationFilter;
+    if (!filter) return this.unitObservationList;
+    return this.unitObservationList.filter(row => {
+      if (filter.status === 'Open' && !this.isOpenRow(row)) return false;
+      if (filter.status === 'Compliant' && !this.isComplianceRow(row)) return false;
+      if (filter.criticality === 'Critical' && !this.isCriticalRow(row)) return false;
+      if (filter.criticality === 'Non Critical' && this.isCriticalRow(row)) return false;
+      return true;
+    });
+  }
+
+  get unitObservationFilterLabel(): string {
+    const filter = this.unitObservationFilter;
+    if (!filter) return '';
+    return [filter.status, filter.criticality].filter(Boolean).join(', ');
+  }
+
+  /** CSS modifier class for an observation's compliance-status badge, e.g. "Compliant" -> green.
+   * Matches the same status-badge convention used elsewhere in the app (spaces/parens stripped). */
+  formatComplianceClass(status: string): string {
+    if (!status) return 'Open';
+    return status.replace(/\s+/g, '').replace(/[()\-]/g, '');
+  }
+
   /** Rank + Name + Unit, space-separated - rank/unit are a write-time snapshot only present on
    * entries recorded after this feature shipped, so older entries fall back to just the name. */
   changedByLabel(event: AuditTemplateStatusHistory): string {
@@ -470,6 +573,13 @@ export class DashboardComponent {
       .map(p => (p || '').trim())
       .filter(p => p.length > 0);
     return parts.length > 0 ? parts.join(' ') : (event.changedByName || 'System');
+  }
+
+  /** Human-readable activity message for this transition, e.g. "PQ sent to CASO" - falls back to
+   * the raw "previousStatus -> newStatus" text for any transition the mapping doesn't cover. */
+  activityMessage(event: AuditTemplateStatusHistory): string {
+    return getAuditHistoryActivityMessage(event.previousStatus, event.newStatus)
+      ?? `${event.previousStatus || 'Created'} → ${event.newStatus}`;
   }
 
   printAuditHistory() {

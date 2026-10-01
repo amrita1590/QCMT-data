@@ -1717,6 +1717,7 @@ input[readonly] {
 }
 
 .audit-table-wrap .modern-table {
+  width: 100%;
   min-width: 1120px;
   margin: 0;
   border: 0;

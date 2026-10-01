@@ -12,4 +12,5 @@ export interface AuditTemplateStatusHistory {
   changedAt: string;
   daysInPreviousStatus: number | null;
   daysAfterScheduledEnd: number | null;
+  delayDays: number | null;
 }

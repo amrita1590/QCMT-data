@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges } from '@angular/core';
 import { AuditTemplateStatusHistory } from '../../interface/AuditTemplateStatusHistory';
 import { AuditscheduleserviceService } from '../../service/auditscheduleservice.service';
+import { getAuditHistoryActivityMessage } from '../audit-status-history-message.util';
 
 @Component({
   selector: 'app-audit-template-status-history',
@@ -26,6 +27,13 @@ export class AuditTemplateStatusHistoryComponent implements OnChanges {
       .map(p => (p || '').trim())
       .filter(p => p.length > 0);
     return parts.length > 0 ? parts.join(' ') : (event.changedByName || 'System');
+  }
+
+  /** Human-readable activity message for this transition, e.g. "PQ sent to CASO" - falls back to
+   * the raw "previousStatus -> newStatus" text for any transition the mapping doesn't cover. */
+  activityMessage(event: AuditTemplateStatusHistory): string {
+    return getAuditHistoryActivityMessage(event.previousStatus, event.newStatus)
+      ?? `${event.previousStatus || 'Created'} → ${event.newStatus}`;
   }
 
   ngOnChanges(): void {

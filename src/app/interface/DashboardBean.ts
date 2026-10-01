@@ -46,6 +46,14 @@ export interface DashboardBean {
 	ICAOComplianceRate: string;
 	ICAOLastAudit: string;
     ICAOAuditedAirport: string;
+
+	// IQCU-only observation counts by criticality (Moderate folded into Non-Critical) - not
+	// available for BCAS/ICAO/Internal, which don't record a criticality field at all.
+	iqcuCriticalOpen: number;
+	iqcuCriticalCompliance: number;
+	iqcuNonCriticalOpen: number;
+	iqcuNonCriticalCompliance: number;
+
 	unitAuditCurrentStatuslist:UnitAuditCurrentStatus[];
 	upcomingAuditTemplate: AuditScheduleTemplate[];
 	plannedAuditReminders: AuditScheduleTemplate[];

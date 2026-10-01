@@ -1222,7 +1222,24 @@ loadQuestions() {
     return status
       .replace(/\s+/g, '')     // remove spaces
       .replace(/[()\-]/g, ''); // remove brackets & hyphens
-  }  
+  }
+
+  private static readonly STATUS_TOOLTIPS: Record<string, string> = {
+    'Planned': 'Audit is scheduled by APS HQRs.',
+    'In Progress': 'Audit questionnaire has been sent to CASO for further action.',
+    'Action Required': 'PQ response has been sent by CASO to the concerned Auditor.',
+    'Observation APS': 'Observation list is under preparation or compliance review at APS HQRs.',
+    'Observation CASO': 'Observation compliance is pending at CASO.',
+    'ObservationZONE': 'Observation compliance is pending at ZONE.',
+    'Observation SECTOR': 'Observation compliance is pending at SECTOR.',
+    'Completed': 'The audit process has been completed.'
+  };
+
+  /** Plain-language explanation of an audit's current status, shown as the badge's hover
+   * tooltip so users don't need to know what the technical status name means. */
+  statusTooltip(status: string): string {
+    return IqcuauditlistComponent.STATUS_TOOLTIPS[status] ?? status;
+  }
 
   printObservationHistory() {
     const printContents = document.getElementById('print-section')?.innerHTML;

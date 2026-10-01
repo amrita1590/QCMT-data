@@ -106,37 +106,37 @@
 
           <td class="status-col">
             <span>
-              <div *ngIf="row.auditStatus === 'Planned'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
-                {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>               
+              <div *ngIf="row.auditStatus === 'Planned'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
+                {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'In Progress'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
+              <div *ngIf="row.auditStatus === 'In Progress'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" >
+              <div *ngIf="row.auditStatus === 'Action Required'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">Auditor Bucket</span>
                 </div>
-                
+
               </div>
-              <div *ngIf="row.auditStatus === 'Completed'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')">
+              <div *ngIf="row.auditStatus === 'Completed'" class="status-badge" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">APS HQRs Bucket</span>
               </div>
-              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" >
+              <div *ngIf="row.auditStatus === 'Observation APS'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 <div>
                   {{ row.auditStatus }}<br/>
                   <span class="badge-subtitle">APS HQRs Bucket</span>
                 </div>
 
-                
+
 
               </div>
-              <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" >
+              <div *ngIf="row.auditStatus === 'Observation CASO'" class="status-badge d-flex align-items-center justify-content-between" [ngClass]="row.auditStatus.replace(' ','')" [title]="statusTooltip(row.auditStatus)">
                 <div>
                 {{ row.auditStatus }}<br/><span class="badge-subtitle">CASO Bucket</span>
                 </div>
-               
+
               </div>
-              <div *ngIf="row.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR">
+              <div *ngIf="row.auditStatus === 'Observation SECTOR'" class="status-badge ObservationSECTOR" [title]="statusTooltip(row.auditStatus)">
                 Observation SECTOR<br/><span class="badge-subtitle">Sector Bucket</span>
               </div>
             </span>
@@ -381,8 +381,7 @@
         <select class="form-select" [(ngModel)]="chatObservationStatus" [ngModelOptions]="{standalone: true}">
           <option value="" disabled selected>-- Select --</option>
           <option value="Compliant">Compliant</option>
-          <option value="Dropped">Dropped</option>                          
-          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>  
+          <option value="Compliant (Need Improvement)">Compliant (Need Improvement)</option>
           <option value="Non-Compliant (Non-Critical)">Non-Compliant (Non-Critical)</option>                        
           <option value="Non-Compliant (Critical)">Non-Compliant (Critical)</option>
           <option value="Partially Compliant (Critical)">Partially Compliant (Critical)</option>

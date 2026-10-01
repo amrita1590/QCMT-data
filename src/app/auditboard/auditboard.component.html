@@ -118,7 +118,8 @@
                  [ngClass]="row.auditStatus.replace(' ','')"
                  [class.d-flex]="isScopedBoard && row.auditStatus !== 'Completed'"
                  [class.align-items-center]="isScopedBoard && row.auditStatus !== 'Completed'"
-                 [class.justify-content-between]="isScopedBoard && row.auditStatus !== 'Completed'">
+                 [class.justify-content-between]="isScopedBoard && row.auditStatus !== 'Completed'"
+                 [title]="statusTooltip(row.auditStatus)">
               <div>
                 <span class="status-name">{{ row.auditStatus === 'ObservationZONE' ? 'Observation ZONE' : row.auditStatus }}</span>
                 <ng-container *ngIf="isScopedBoard">
